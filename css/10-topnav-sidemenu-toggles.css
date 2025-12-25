@@ -1,0 +1,96 @@
+    /* Layout */
+    .stage{
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      padding: 0;
+    }
+
+    /* View switching (Top Tabs) */
+    .mapstage,
+    #inventoryStage,
+    #loreStage{
+      transition: opacity .22s ease, filter .28s ease;
+      will-change: opacity, filter;
+    }
+    /* Default: map visible, inventory hidden (but kept mounted for smoother switching) */
+    #inventoryStage{
+      opacity: 0;
+      pointer-events: none;
+      filter: blur(8px);
+    }
+    #loreStage{
+      opacity: 0;
+      pointer-events: none;
+      filter: blur(8px);
+    }
+    body.view-inventory .mapstage{
+      opacity: 0;
+      pointer-events: none;
+      filter: blur(8px);
+    }
+    body.view-inventory #inventoryStage{
+      opacity: 1;
+      pointer-events: auto;
+      filter: blur(0px);
+    }
+
+    body.view-lore .mapstage{
+      opacity: 0;
+      pointer-events: none;
+      filter: blur(8px);
+    }
+    body.view-lore #loreStage{
+      opacity: 1;
+      pointer-events: auto;
+      filter: none;
+    }
+    body.view-inventory .sidemenu,
+    body.view-inventory .layerToggles,
+    body.view-inventory #popupDetails,
+    body.view-inventory #hackPrompt,
+    body.view-inventory #cmdFeed,
+    body.view-inventory #restrictedOverlay,
+    body.view-inventory #securoservWall,
+    body.view-inventory #securoservChaos,
+    body.view-inventory #securoservMidbar,
+    body.view-inventory #securoservChallenge,
+    body.view-inventory #counterhackFx,
+    body.view-inventory #screenGlitch,
+    body.view-inventory #screenOff,
+    body.view-inventory #inputBlocker{
+      display:none !important;
+    }
+
+body.view-lore .sidemenu,
+body.view-lore .layerToggles,
+body.view-lore #popupDetails,
+body.view-lore #hackPrompt,
+body.view-lore #cmdFeed,
+body.view-lore #restrictedOverlay,
+body.view-lore #securoservWall,
+body.view-lore #securoservChallenge,
+body.view-lore #counterhackFx{
+  display:none !important;
+}
+
+/* Allow SecuroServ countermeasures overlays during the lore finale. */
+body.view-lore:not(.securosserv-mode) #securoservChaos,
+body.view-lore:not(.securosserv-mode) #securoservMidbar,
+body.view-lore:not(.securosserv-mode) #screenGlitch,
+body.view-lore:not(.securosserv-mode) #screenOff,
+body.view-lore:not(.securosserv-mode) #inputBlocker{
+  display:none !important;
+}
+
+    body.view-inventory .topnav .tabs::before,
+    body.view-inventory .topnav .tabs::after{
+      border-bottom-color: rgba(96,143,255,.40);
+    }
+    /* In inventory view, keep inactive tabs blue, but let the active one stay yellow */
+    body.view-inventory .topnav .tab:not(.on) span{ border-bottom-color: rgba(96,143,255,.28); }
+    body.view-inventory .topnav .tab.on span{ border-bottom-color: rgba(var(--ylRGB), .85); }
+    body.view-inventory .topnav{ background: rgba(1,6,27,.70); box-shadow: 0 0 30px rgba(96,143,255,.12) inset; }
+

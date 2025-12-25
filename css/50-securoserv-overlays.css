@@ -1,0 +1,1643 @@
+    .mapstage{ position:absolute; inset: 0; min-width:0; }
+    .maphud{
+      position:absolute;
+      top: var(--topbar-h);
+      left: 0;
+      display:flex;
+      gap: 10px;
+      z-index: 6;
+    }
+    .hudchip{
+      margin-top: 6px;
+      padding: 8px 10px;
+      background: rgba(6,10,22,.62);
+      border: 1px solid var(--line2);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: rgba(215,230,255,.68);
+      box-shadow: var(--glowB);
+    }
+    .hudchip span{ color: var(--yl); }
+
+    /* Always-visible filter buttons */
+    .hudfilters{
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      margin-top: 6px;
+    }
+    .hudf{
+      background: rgba(6,10,22,.62);
+      border: 1px solid var(--line2);
+      color: rgba(215,230,255,.72);
+      padding: 8px 10px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      cursor:pointer;
+      box-shadow: var(--glowB);
+    }
+    .hudf:hover{
+      border-color: rgba(var(--ylRGB), .35);
+      color: var(--yl);
+      box-shadow: var(--glowY);
+    }
+    .hudf.on{
+      background: var(--yl);
+      color:#0a1024;
+      border-color: rgba(var(--ylRGB), .65);
+      box-shadow: var(--glowY);
+    }
+
+    .mapwrap{
+      position:absolute;
+      inset: 0;
+      border: none;
+      background: transparent;
+      overflow:hidden;
+    }
+
+    /* Side zoom bar (blue outline, yellow fill from center) */
+    .zoomBar{
+      position:absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 10px;
+      height: 190px;
+      border: 1px solid var(--ui);
+      background: transparent;
+      z-index: 12;
+      pointer-events:none;
+      --fill: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .zoomReadout{
+      position: absolute;
+      right: 100%;
+      margin-right: 8px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: rgba(96,143,255,.72);
+      font-weight: 600;
+      white-space: nowrap;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      pointer-events: none;
+    }
+    .zoomBar .fill{
+      position:absolute;
+      left: 1px;
+      right: 1px;
+      background: var(--yl);
+    }
+    .zoomBar .fill.up{
+      bottom: 50%;
+      height: calc(var(--fill) * 50%);
+    }
+    .zoomBar .fill.down{
+      top: 50%;
+      height: calc(var(--fill) * 50%);
+    }
+    /* Map stack: raster layers + SVG share one transform */
+    #mapStack{
+      position:absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+      cursor: grab;
+    }
+    #mapStack.grabbing{ cursor: grabbing; }
+    /* Only raster base layers are direct children of #mapStack.
+       Keep this rule from affecting district logo <img> elements. */
+    #mapStack > img{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit: fill;
+      pointer-events:none;
+      user-select:none;
+      z-index: 1;
+    }
+
+    #labelsLayer{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index: 8;
+      display: none;
+    }
+
+    #logosLayer{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index: 7;
+      --logoZoomScale: 1;
+    }
+
+    #markersLayer{
+      position:absolute;
+      inset: 0;
+      z-index: 9;
+      pointer-events: none;
+    }
+    .districtLogo{
+      position:absolute;
+      transform: translate(-50%, -50%) scale(calc(0.72 * var(--logoZoomScale, 1)));
+      transform-origin: 50% 50%;
+      opacity: .40;
+      transition: transform .12s ease, opacity .12s ease, filter .12s ease;
+      filter:
+        drop-shadow(0 0 10px rgba(96,143,255,.10));
+    }
+    .districtLogo.ready{ opacity: .40; }
+    .districtLogo img{
+      width: 88px;
+      height: 88px;
+      object-fit: contain;
+      display:block;
+      opacity: 1;
+    }
+    .districtLogo.hot{
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(calc(1.05 * var(--logoZoomScale, 1)));
+      filter:
+        drop-shadow(0 0 12px rgba(96,143,255,.18))
+        drop-shadow(0 0 18px rgba(var(--ylRGB), .10));
+    }
+    .districtLabel{
+      position:absolute;
+      transform: translate(-50%, -50%);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--yl);
+      text-shadow: 0 0 6px rgba(var(--ylRGB), .35), 0 0 12px rgba(var(--ylRGB), .25);
+      white-space: nowrap;
+    }
+    #svgHost{
+      position:absolute;
+      inset: 0;
+      display:block;
+      transform-origin: 0 0;
+      z-index: 6;
+    }
+
+    #restrictedBlurLayer{
+      position:absolute;
+      inset: 0;
+      z-index: 5; /* above raster, below regions */
+      pointer-events:none;
+      opacity: 0;
+      transition: opacity .16s ease;
+    }
+    #restrictedBlurLayer.on{ opacity: 1; }
+    #restrictedBlurSvg{
+      position:absolute;
+      inset:0;
+      display:block;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      user-select:none;
+    }
+
+    /* Tooltip */
+    .tip{
+      position:absolute;
+      pointer-events:none;
+      z-index: 10;
+      padding: 10px 12px;
+      border: 1px solid var(--ui); /* blue box */
+      background: rgba(6,10,22,.78); /* dark blue, barely transparent */
+      box-shadow: 0 0 10px rgba(96,143,255,.18), 0 0 18px rgba(96,143,255,.12); /* subtle blue glow */
+      color: var(--yl); /* neon yellow text */
+      opacity: 0;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      transition: opacity .12s ease;
+      max-width: 360px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 1.15px;
+      text-shadow: 0 0 6px rgba(var(--ylRGB), .35), 0 0 12px rgba(var(--ylRGB), .22); /* subtle yellow glow */
+      border-bottom: none;
+      border-radius: 0;
+    }
+    .tip.on{ opacity: 1; }
+
+    /* SecuroServ hover: force tooltip to red even without selection */
+    .tip.securoserv{
+      border-color: rgba(var(--ss), 1);
+      box-shadow: 0 0 12px rgba(var(--ssHot), .22), 0 0 22px rgba(var(--ssHot), .14);
+      color: rgba(var(--ssHot), .95);
+      text-shadow: 0 0 7px rgba(var(--ssHot), .40), 0 0 14px rgba(var(--ssHot), .26);
+    }
+
+    /* HARD RULE: no rounded edges anywhere */
+    *, *::before, *::after{ border-radius: 0 !important; }
+
+    /* Cursor-following district logo */
+    .cursorLogo{
+      position:absolute;
+      z-index: 11;
+      width: 69px;
+      height: 69px;
+      object-fit: contain;
+      pointer-events:none;
+      user-select:none;
+      opacity: 0;
+      /* anchor: immediately to the right of cursor, vertically centered */
+      transform: translate(16px, -50%);
+      transition: opacity .12s ease;
+      filter:
+        drop-shadow(0 0 10px rgba(96,143,255,.18))
+        drop-shadow(0 0 18px rgba(96,143,255,.10));
+    }
+    /* Disabled: logos are now rendered in-district */
+    .cursorLogo{ display:none !important; }
+    .cursorLogo.on{
+      opacity: 1;
+      animation: logoGlitchInCursor .36s ease-out both;
+    }
+
+    @keyframes logoGlitchInCursor{
+      0%{ opacity: 0; transform: translate(16px, -50%) scale(.82) skewX(12deg); filter: drop-shadow(0 0 22px rgba(96,143,255,.32)) drop-shadow(0 0 36px rgba(96,143,255,.18)); }
+      16%{ opacity: .85; transform: translate(18px, -50%) scale(1.06) skewX(-10deg); }
+      26%{ opacity: .25; transform: translate(14px, -50%) scale(.98) skewX(8deg); }
+      38%{ opacity: .95; transform: translate(17px, -50%) scale(1.02) skewX(-6deg); }
+      54%{ opacity: .55; transform: translate(15px, -50%) scale(1.00) skewX(4deg); }
+      72%{ opacity: 1; transform: translate(16px, -50%) scale(1.00) skewX(-2deg); }
+      100%{ opacity: 1; transform: translate(16px, -50%) scale(1) skewX(0deg); filter: drop-shadow(0 0 10px rgba(96,143,255,.18)) drop-shadow(0 0 18px rgba(96,143,255,.10)); }
+    }
+
+    /* Popup window */
+    .hudpopup{
+      position:fixed;
+      left: 14px;
+      top: var(--detailsTop, calc(var(--topbar-h) + 10px + 170px));
+      bottom: calc(14px + var(--dockH, 0px) + 14px);
+      width: 270px;
+      max-height: none;
+      overflow:auto;
+      z-index: 7;
+      display:none;
+    }
+    .hudpopup.on{ display:block; }
+
+    .hudhead-actions{ display:flex; gap: 8px; align-items:center; }
+    .hudbtn{
+      background: rgba(0,0,0,.32);
+      border: 1px solid rgba(96,143,255,.28);
+      color: var(--text);
+      padding: 6px 10px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor:pointer;
+    }
+    .hudbtn:hover{
+      border-color: rgba(var(--ylRGB), .45);
+      color: var(--yl);
+      box-shadow: var(--glowY);
+    }
+    .hudbtn-x{ width: 30px; padding: 6px 0; color: var(--yl); }
+
+    /* Field */
+    .field{ margin-top: 12px; }
+    .field label{
+      display:block;
+      font-size: 10px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: rgba(96,143,255,.95);
+      margin-bottom: 6px;
+    }
+    .field input{
+      width: 100%;
+      background: rgba(4,7,16,.45);
+      border: 1px solid var(--line2);
+      color: var(--text);
+      padding: 10px;
+      outline:none;
+    }
+    .field input:focus{
+      border-color: rgba(var(--ylRGB), .40);
+      box-shadow: var(--glowY);
+    }
+
+    /* Pills */
+    .pillbar{ display:flex; gap: 10px; flex-wrap:wrap; margin-top: 12px; }
+    .pill{
+      padding: 6px 10px;
+      border: 1px solid var(--line2);
+      background: rgba(4,7,16,.35);
+      color: rgba(215,230,255,.68);
+      text-transform: uppercase;
+      letter-spacing: 1.1px;
+      font-size: 10px;
+      cursor:pointer;
+    }
+    .pill.on{
+      background: var(--yl);
+      color:#0a1024;
+      border-color: rgba(var(--ylRGB), .65);
+      box-shadow: var(--glowY);
+    }
+
+    /* Details panel */
+    .details .dHeader{
+      display:flex;
+      gap: 12px;
+      align-items:flex-start;
+    }
+    .details .dKV{ flex: 1; min-width: 0; }
+    .details .dMedia{
+      width: 78px;
+      height: 78px;
+      border: 1px solid var(--ui);
+      background: color-mix(in srgb, var(--ui) 10%, transparent);
+      box-shadow: var(--glowB);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex: 0 0 auto;
+      overflow:hidden;
+    }
+    .details .dMedia img{
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+      image-rendering: auto;
+    }
+    .details .dMedia img.on{ display:block; }
+
+    .details .dRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(96,143,255,.12);
+    }
+    .details .dRow:last-child{ border-bottom:none; }
+    .details .dK{
+      color: rgba(96,143,255,.95);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+    }
+    .details .dV{
+      color: var(--text);
+      font-size: 11px;
+      text-align:right;
+    }
+    .details .dSep{
+      height: 1px;
+      background: rgba(96,143,255,.25);
+      margin: 12px 0;
+    }
+    .details .dActions{
+      display:flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .details .dLore{ display:none; }
+    .details .dLore.on{ display:block; }
+    .details .dLore .dNoteText{
+      width: 100%;
+      min-height: 56px;
+      background: rgba(4,7,16,.35);
+      border: 1px solid var(--line2);
+      color: var(--text);
+      padding: 8px;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      user-select: text;
+    }
+
+    /* (Scrapped) feed/dock/biometric UI styles removed */
+
+    /* =========================
+       SVG LAYERS (THIN STROKES)
+       ========================= */
+
+    #svgHost .region:not(.wall){
+      transition: stroke-opacity .12s ease, stroke-width .12s ease, stroke .12s ease, fill .12s ease;
+      /* Outline-only: slightly thicker, but very transparent by default */
+      stroke-width: calc(var(--sw-region) + 1.8px) !important;
+      vector-effect: non-scaling-stroke !important;
+      opacity: 1;
+      stroke-opacity: .16 !important;
+      filter: none !important;
+      /* Never show region fills; keep a tiny invisible fill for hit-testing */
+      fill: rgba(0,0,0,0.001) !important;
+    }
+
+    /* Restricted zones: always more visible than normal (idle/hover/selected). */
+    #svgHost .region.restricted:not(.wall):not(.hot):not(.selected){
+      stroke-opacity: .30 !important;
+    }
+    #svgHost .region.restricted.hot:not(.selected):not(.wall){
+      stroke-opacity: .50 !important;
+    }
+    #svgHost .region.restricted.selected:not(.wall){
+      stroke-opacity: .50 !important;
+    }
+
+    /* Hovered: less transparent */
+    #svgHost .region.hot:not(.selected):not(.wall){
+      stroke-opacity: .30 !important;
+      stroke-width: calc(var(--sw-region) + 2.4px) !important;
+      filter: none !important;
+    }
+
+    /* Selected: even less transparent */
+    #svgHost .region.selected:not(.wall){
+      stroke-opacity: .45 !important;
+      stroke-width: calc(var(--sw-region) + 3.0px) !important;
+      filter: none !important;
+    }
+
+
+
+    .restricted-overlay{
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 6;
+      opacity: 0;
+      transition: opacity .6s ease;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      padding-bottom: 12vh;
+    }
+    .restricted-overlay.on{
+      opacity: 1;
+    }
+
+    .securoserv-wall{
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      pointer-events: none;
+      z-index: 50;
+      opacity: 0;
+      transition: opacity .6s ease;
+    }
+    .securoserv-wall.on{
+      opacity: .18;
+    }
+
+.securoserv-chaos{
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 70;
+  opacity: 0;
+  transition: opacity .55s ease;
+}
+.securoserv-chaos.on{ opacity: 1; }
+
+/* In lore view, keep countermeasures behind the lore terminal window.
+   These overlays are temporarily re-parented under #loreStage during the finale,
+   so they only need to sit below the lore window's z-index (~110). */
+body.view-lore .securoserv-chaos{ z-index: 80; }
+body.view-lore #screenGlitch{ z-index: 82; }
+body.view-lore #inputBlocker{ z-index: 70; }
+
+    .screen-glitch{
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 90;
+      opacity: 0;
+      transition: opacity .45s ease;
+    }
+    .screen-glitch.on{ opacity: calc(0.18 + (var(--g, 0) * 0.82)); }
+    .screen-glitch::before{
+      content:"";
+      position:absolute;
+      inset: 0;
+      /* scanlines + slight chroma offset */
+      background:
+        repeating-linear-gradient(
+          180deg,
+          rgba(0,0,0,.00) 0px,
+          rgba(0,0,0,.00) 2px,
+          rgba(var(--ssHot), .055) 3px,
+          rgba(0,0,0,.00) 4px
+        ),
+        linear-gradient(90deg,
+          rgba(var(--ssHot), .075),
+          rgba(0,0,0,0) 35%,
+          rgba(var(--ssHot), .050) 70%,
+          rgba(0,0,0,0)
+        );
+      mix-blend-mode: screen;
+      opacity: calc(0.22 + (var(--g, 0) * 0.86));
+      filter: blur(.15px);
+      animation: securoservScanDrift calc(1.55s - (var(--g, 0) * 0.95s)) steps(2) infinite;
+    }
+    .screen-glitch::after{
+      content:"";
+      position:absolute;
+      inset: 0;
+      /* glitch bars + noise-like speckle using gradients */
+      background:
+        linear-gradient(0deg,
+          transparent 0%,
+          rgba(var(--ssHot), .00) 18%,
+          rgba(var(--ssHot), .18) 22%,
+          rgba(var(--ssHot), .00) 26%,
+          rgba(0,0,0,0) 100%
+        ),
+        repeating-linear-gradient(90deg,
+          rgba(var(--ssHot), .10) 0px,
+          rgba(var(--ssHot), .10) 1px,
+          rgba(0,0,0,0) 1px,
+          rgba(0,0,0,0) 7px
+        ),
+        radial-gradient(circle at 18% 34%, rgba(var(--ssHot), .12), transparent 40%),
+        radial-gradient(circle at 72% 68%, rgba(var(--ssHot), .08), transparent 42%);
+      mix-blend-mode: screen;
+      opacity: calc(0.12 + (var(--g, 0) * 0.80));
+      animation: securoservGlitchBars calc(1.25s - (var(--g, 0) * 0.85s)) steps(2) infinite;
+    }
+    @keyframes securoservScanDrift{
+      0%{ transform: translate3d(0,0,0); }
+      20%{ transform: translate3d(0,-1px,0) skewX(-0.3deg); }
+      45%{ transform: translate3d(0,1px,0) skewX(0.4deg); }
+      70%{ transform: translate3d(0,-2px,0) skewX(-0.6deg); }
+      100%{ transform: translate3d(0,0,0); }
+    }
+    @keyframes securoservGlitchBars{
+      0%{ transform: translate3d(0,0,0); clip-path: inset(0 0 0 0); }
+      18%{ transform: translate3d(2px,0,0); clip-path: inset(8% 0 62% 0); }
+      32%{ transform: translate3d(-3px,0,0); clip-path: inset(42% 0 38% 0); }
+      46%{ transform: translate3d(1px,0,0); clip-path: inset(64% 0 18% 0); }
+      62%{ transform: translate3d(-2px,0,0); clip-path: inset(12% 0 70% 0); }
+      78%{ transform: translate3d(3px,0,0); clip-path: inset(52% 0 26% 0); }
+      100%{ transform: translate3d(0,0,0); clip-path: inset(0 0 0 0); }
+    }
+    .securoserv-chaos .chaos-pop{
+      position: absolute;
+      min-width: 220px;
+      max-width: min(520px, 70vw);
+      background: rgba(0,0,0,.72);
+      border: 1px solid rgba(var(--ss), .82);
+      box-shadow:
+        0 0 20px rgba(var(--ssHot), .24),
+        0 0 54px rgba(var(--ss), .14);
+      padding: 10px 12px;
+      opacity: .92;
+      filter:
+        drop-shadow(0 0 12px rgba(var(--ssHot), .18))
+        drop-shadow(0 0 26px rgba(var(--ss), .12));
+      transform: translate3d(0,0,0);
+      animation: securoservPopIn .45s ease both;
+    }
+
+    /* DISTINCT STYLE “SKINS” (same red palette, different look) */
+    .securoserv-chaos .chaos-pop.style-wire{
+      background:
+        linear-gradient(180deg, rgba(var(--ssHot), .09), rgba(0,0,0,.78)),
+        repeating-linear-gradient(90deg, rgba(var(--ssHot), .06), rgba(var(--ssHot), .06) 1px, transparent 1px, transparent 14px);
+      border-color: rgba(var(--ss), .90);
+      box-shadow: 0 0 16px rgba(var(--ssHot), .20), 0 0 46px rgba(var(--ss), .12);
+    }
+    .securoserv-chaos .chaos-pop.style-solid{
+      background:
+        linear-gradient(180deg, rgba(80,0,0,.70), rgba(0,0,0,.82));
+      border-color: rgba(var(--ssHot), .40);
+      box-shadow: 0 0 24px rgba(var(--ssHot), .22), 0 0 78px rgba(var(--ss), .12);
+    }
+    .securoserv-chaos .chaos-pop.style-toast{
+      background:
+        linear-gradient(90deg, rgba(var(--ssHot), .26), rgba(0,0,0,.78) 46%, rgba(0,0,0,.78));
+      border-left-width: 4px;
+      border-left-color: rgba(var(--ss), 1);
+      padding: 10px 14px;
+    }
+    .securoserv-chaos .chaos-pop.style-dialog{
+      background:
+        radial-gradient(circle at 10% 0%, rgba(var(--ssHot), .18), transparent 40%),
+        linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.90));
+      border-width: 2px;
+    }
+    .securoserv-chaos .chaos-pop.style-terminal{
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.92), rgba(0,0,0,.78));
+      border-color: rgba(var(--ssHot), .40);
+      box-shadow: inset 0 0 0 1px rgba(var(--ssHot), .10), 0 0 28px rgba(var(--ss), .14);
+    }
+    .securoserv-chaos .chaos-pop.style-siren{
+      background:
+        linear-gradient(180deg, rgba(var(--ssHot), .18), rgba(0,0,0,.78));
+      border-color: rgba(var(--ss), .96);
+    }
+    .securoserv-chaos .chaos-pop.style-siren .chaos-h{
+      text-shadow: 0 0 14px rgba(var(--ssHot), .36);
+    }
+    .securoserv-chaos .chaos-pop.style-siren::after{
+      content:"";
+      position:absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 10px;
+      background:
+        repeating-linear-gradient(90deg, rgba(var(--ss), 1), rgba(var(--ss), 1) 14px, rgba(0,0,0,.0) 14px, rgba(0,0,0,.0) 26px);
+      opacity: .45;
+      mix-blend-mode: screen;
+    }
+
+    /* Mid-screen SecuroServ "loading" bar (appears during escalation) */
+.securoserv-midbar{
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(var(--topbar-h) + 10px);
+  z-index: 95;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(0,-10px,0);
+  transition: opacity .25s ease, transform .25s ease;
+  display: flex;
+  justify-content: center;
+  padding: 0 14px;
+}
+
+/* In lore view, keep it behind the lore terminal window. */
+body.view-lore .securoserv-midbar{ z-index: 85; }
+    .securoserv-midbar.on{ opacity: 1; transform: translate3d(0,0,0); }
+    .securoserv-midbar .frame{
+      width: min(920px, 88vw);
+      margin: 0 auto;
+      background: rgba(0,0,0,.78);
+      border: 2px solid rgba(var(--ss), .95);
+      box-shadow: 0 0 26px rgba(var(--ssHot), .22), 0 0 84px rgba(var(--ss), .14);
+      padding: 14px 16px 16px;
+      position: relative;
+      clip-path: polygon(0 18px, 18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
+    }
+    .securoserv-midbar .label{
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(var(--ssHot), .95);
+      text-shadow: 0 0 12px rgba(var(--ssHot), .22);
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    .securoserv-midbar .bar{
+      height: 22px;
+      border: 1px solid rgba(var(--ssHot), .46);
+      background: rgba(0,0,0,.55);
+      position: relative;
+      overflow: hidden;
+    }
+    .securoserv-midbar .fill{
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(var(--ss), .95), rgba(var(--ssHot), .95));
+      box-shadow: 0 0 18px rgba(var(--ssHot), .22);
+      transition: width .10s linear;
+    }
+    .securoserv-midbar .bar::after{
+      content:"";
+      position:absolute;
+      inset: -30% -10%;
+      background:
+        repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 8px, rgba(var(--ssHot), .09) 8px 9px),
+        repeating-linear-gradient(90deg, rgba(var(--ssHot), .08) 0 1px, rgba(0,0,0,0) 1px 10px);
+      mix-blend-mode: screen;
+      opacity: calc(0.22 + (var(--g, 0) * 0.72));
+      animation: midbarGlitch calc(1.15s - (var(--g,0) * 0.65s)) steps(2) infinite;
+      pointer-events:none;
+    }
+    @keyframes midbarGlitch{
+      0%{ transform: translate3d(0,0,0) skewX(0deg); clip-path: inset(0 0 0 0); }
+      20%{ transform: translate3d(3px,0,0) skewX(-0.8deg); clip-path: inset(0 0 54% 0); }
+      45%{ transform: translate3d(-4px,0,0) skewX(0.9deg); clip-path: inset(42% 0 0 0); }
+      70%{ transform: translate3d(2px,0,0) skewX(-0.6deg); clip-path: inset(18% 0 28% 0); }
+      100%{ transform: translate3d(0,0,0) skewX(0deg); clip-path: inset(0 0 0 0); }
+    }
+    .securoserv-midbar .meta{
+      display:flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+      color: rgba(var(--ssHot), .78);
+    }
+
+    /* Counterhack success transition: freeze & fade hack UI while success overlay fades in */
+    body.counterhack-resolving #securoservMidbar,
+    body.counterhack-resolving #securoservChaos,
+    body.counterhack_resolving #screenGlitch,
+    body.counterhack_resolving #securoservWall,
+    body.counterhack_resolving .counterhack-win{
+      opacity: 0 !important;
+      transition: opacity 2.9s ease !important;
+    }
+    body.counterhack_resolving .securoserv-chaos .chaos-pop{
+      animation-play-state: paused !important;
+    }
+
+    /* Dramatic screen power-off (used when countdown ends and ESC wasn't used) */
+    .screen-off{
+      position: fixed;
+      inset: 0;
+      z-index: 12050;
+      pointer-events: none;
+      opacity: 0;
+      background: rgba(0,0,0,1);
+      transition: opacity .12s linear;
+    }
+    .screen-off.on{ opacity: 1; }
+    .screen-off.black::before{ display:none; }
+    .screen-off.fadeout{ opacity: 0; transition: opacity 2.2s ease; }
+
+    /* While the screen is powering off, force-hide HUD so nothing can leak */
+    body.powering-off .topnav,
+    body.powering-off .sidemenu,
+    body.powering-off .layerToggles,
+    body.powering-off .termDock,
+    body.powering-off .hudpopup,
+    body.powering-off .securserve-badge,
+    body.powering-off .tip{
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition: opacity .10s linear;
+    }
+
+    /* Blocks all mouse input during SecuroServ countermeasures */
+    .input-blocker{
+      position: fixed;
+      inset: 0;
+      z-index: 110;
+      display: none;
+      pointer-events: auto;
+      background: transparent;
+    }
+    .input-blocker.on{ display:block; }
+
+    /* User counterhack window (yellow) — separate from red system midbar */
+    .counterhack-win{
+      --hackRGB: var(--ylRGB);
+      position: fixed;
+      /* Slightly off-center + lower to feel "manual" */
+      left: 46.5%;
+      top: 65%;
+      transform: translate(-50%, -50%) rotate(-1.15deg);
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      filter: blur(.7px);
+      transition: opacity .38s ease, transform .62s cubic-bezier(.18,.92,.12,1), filter .62s cubic-bezier(.18,.92,.12,1);
+    }
+
+    /* SecuroServ (and SecuroServ-themed BREACH) uses red "correct" symbols. */
+    body.securosserv-mode .counterhack-win,
+    body.simplehack-securosserv .counterhack-win{
+      --hackRGB: var(--ssHot);
+    }
+
+    /* Hard glitch-in for hacking UI (one-shot, on open) */
+    .counterhack-win.glitch-in::before,
+    .counterhack-win.glitch-in::after{
+      content:"";
+      position:absolute;
+      inset:-18px -22px;
+      pointer-events:none;
+      opacity: 0;
+    }
+    .counterhack-win.glitch-in::before{
+      /* scan split + bars */
+      background:
+        repeating-linear-gradient(180deg,
+          rgba(var(--hackRGB), 0) 0px,
+          rgba(var(--hackRGB), 0) 6px,
+          rgba(var(--hackRGB), .16) 7px,
+          rgba(var(--hackRGB), 0) 10px
+        ),
+        linear-gradient(90deg,
+          rgba(var(--hackRGB), .16),
+          rgba(0,0,0,0) 35%,
+          rgba(var(--hackRGB), .12) 70%,
+          rgba(0,0,0,0)
+        );
+      mix-blend-mode: screen;
+      animation: challengeHardBars .62s steps(2) both;
+    }
+    .counterhack-win.glitch-in::after{
+      /* chroma split pass */
+      background:
+        linear-gradient(0deg,
+          rgba(0,0,0,0) 0%,
+          rgba(255,255,255,.06) 18%,
+          rgba(255,255,255,0) 28%,
+          rgba(255,255,255,.08) 52%,
+          rgba(255,255,255,0) 60%,
+          rgba(0,0,0,0) 100%
+        );
+      mix-blend-mode: screen;
+      filter: drop-shadow(3px 0 0 rgba(255,0,0,.10)) drop-shadow(-3px 0 0 rgba(0,220,255,.10));
+      animation: challengeHardSplit .62s steps(2) both;
+    }
+    .counterhack-win.glitch-in .frame{
+      animation: challengeHardFrame .62s steps(2) both;
+    }
+    .counterhack-win.glitch-in .label,
+    .counterhack-win.glitch-in .instr,
+    .counterhack-win.glitch-in .hint{
+      text-shadow:
+        0 0 14px rgba(var(--hackRGB), .22),
+        2px 0 0 rgba(255,0,0,.12),
+        -2px 0 0 rgba(0,220,255,.10);
+    }
+
+    .counterhack-win.glitch-in .frame::before{
+      content:"";
+      position:absolute;
+      inset: -6px;
+      pointer-events:none;
+      background:
+        linear-gradient(0deg, rgba(255,255,255,.06), rgba(255,255,255,0) 55%),
+        repeating-linear-gradient(90deg,
+          rgba(var(--hackRGB), .18) 0px,
+          rgba(var(--hackRGB), .18) 1px,
+          rgba(0,0,0,0) 1px,
+          rgba(0,0,0,0) 9px
+        );
+      mix-blend-mode: screen;
+      opacity: 0;
+      clip-path: inset(0 0 0 0);
+      animation: challengeHardSlices .62s steps(2) both;
+    }
+    .counterhack-win.glitch-in .frame::after{
+      animation: challengeHardOutline .62s steps(2) both;
+    }
+    @keyframes challengeHardBars{
+      0%{ opacity: 0; transform: translate3d(0,0,0); clip-path: inset(0 0 0 0); }
+      14%{ opacity: 1; transform: translate3d(6px,-2px,0); clip-path: inset(0 0 70% 0); }
+      36%{ opacity: .85; transform: translate3d(-8px,2px,0); clip-path: inset(44% 0 0 0); }
+      58%{ opacity: .72; transform: translate3d(5px,0,0); clip-path: inset(12% 0 48% 0); }
+      78%{ opacity: .62; transform: translate3d(-4px,1px,0); clip-path: inset(62% 0 10% 0); }
+      100%{ opacity: 0; transform: translate3d(0,0,0); clip-path: inset(0 0 0 0); }
+    }
+    @keyframes challengeHardSplit{
+      0%{ opacity: 0; transform: translate3d(0,0,0); }
+      18%{ opacity: 1; transform: translate3d(4px,0,0) skewX(-2.4deg); }
+      44%{ opacity: .75; transform: translate3d(-6px,0,0) skewX(3.0deg); }
+      72%{ opacity: .50; transform: translate3d(3px,0,0) skewX(-1.8deg); }
+      90%{ opacity: .30; transform: translate3d(-2px,0,0) skewX(1.2deg); }
+      100%{ opacity: 0; transform: translate3d(0,0,0); }
+    }
+    @keyframes challengeHardFrame{
+      0%{ transform: translate3d(0,10px,0) skewX(-1.4deg); filter: blur(1.8px) contrast(1.22) saturate(1.10); }
+      24%{ transform: translate3d(6px,-4px,0) skewX(3.0deg); filter: blur(1.2px) contrast(1.24) saturate(1.10); }
+      52%{ transform: translate3d(-8px,2px,0) skewX(-2.8deg); filter: blur(.7px) contrast(1.16) saturate(1.06); }
+      78%{ transform: translate3d(4px,-1px,0) skewX(1.6deg); filter: blur(.35px) contrast(1.10) saturate(1.02); }
+      100%{ transform: translate3d(0,0,0) skewX(0deg); filter: blur(0px) contrast(1.02) saturate(.92); }
+    }
+
+    @keyframes challengeHardSlices{
+      0%{ opacity: 0; transform: translate3d(0,0,0); clip-path: inset(0 0 0 0); }
+      16%{ opacity: .95; transform: translate3d(8px,0,0); clip-path: inset(0 0 62% 0); }
+      38%{ opacity: .70; transform: translate3d(-10px,0,0); clip-path: inset(34% 0 0 0); }
+      62%{ opacity: .55; transform: translate3d(6px,0,0); clip-path: inset(12% 0 40% 0); }
+      82%{ opacity: .40; transform: translate3d(-4px,0,0); clip-path: inset(56% 0 10% 0); }
+      100%{ opacity: 0; transform: translate3d(0,0,0); clip-path: inset(0 0 0 0); }
+    }
+    @keyframes challengeHardOutline{
+      0%{ transform: translate3d(6px,-4px,0) skewX(-2deg); opacity: 0; }
+      26%{ transform: translate3d(-7px,3px,0) skewX(2.6deg); opacity: .95; }
+      62%{ transform: translate3d(4px,-2px,0) skewX(-2.0deg); opacity: .70; }
+      100%{ transform: translate3d(1px,-1px,0) skewX(-.6deg); opacity: .9; }
+    }
+
+    body.securosserv-mode .counterhack-win .slot.ok,
+    body.simplehack-securosserv .counterhack-win .slot.ok{
+      animation: securoOkFlash .42s steps(2) both;
+    }
+    @keyframes securoOkFlash{
+      0%{ transform: translate3d(0,0,0) scale(1); filter: brightness(1.15); }
+      35%{ transform: translate3d(1px,-1px,0) scale(1.06); filter: brightness(1.22); }
+      70%{ transform: translate3d(-1px,1px,0) scale(1.02); filter: brightness(1.08); }
+      100%{ transform: translate3d(0,0,0) scale(1); filter: brightness(1); }
+    }
+    .counterhack-win[aria-hidden="false"]{
+      opacity: 1;
+      filter: blur(0px);
+      transform: translate(-50%, -50%) rotate(-1.15deg);
+      animation: counterhackWinPop .62s cubic-bezier(.18,.92,.12,1) both;
+    }
+    @keyframes counterhackWinPop{
+      0%{ transform: translate(-50%, calc(-50% + 18px)) rotate(-1.15deg) scale(.975); opacity: 0; filter: blur(1.2px); }
+      55%{ transform: translate(-50%, calc(-50% - 2px)) rotate(-1.15deg) scale(1.01); opacity: 1; filter: blur(.2px); }
+      100%{ transform: translate(-50%, -50%) rotate(-1.15deg) scale(1); opacity: 1; filter: blur(0px); }
+    }
+    .counterhack-win .frame{
+      width: min(860px, 92vw);
+      background: rgba(0,0,0,.78);
+      border: 2px solid rgba(var(--hackRGB), .78);
+      /* Less "pretty" than the corporate UI: softer + dirtier */
+      box-shadow: 0 0 22px rgba(var(--hackRGB), .10), 0 0 58px rgba(var(--hackRGB), .06);
+      padding: 14px 16px 16px;
+      position: relative;
+      clip-path: polygon(0 18px, 18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
+      filter: contrast(1.02) saturate(.92);
+    }
+    /* No animated glitches here (keeps it lightweight). */
+    .counterhack-win .frame::after{
+      /* Slightly misaligned outline = DIY/buggy overlay feel */
+      content:"";
+      position:absolute;
+      inset:-2px -3px;
+      border: 1px solid rgba(var(--hackRGB), .24);
+      transform: translate3d(1px,-1px,0) skewX(-.6deg);
+      clip-path: polygon(0 18px, 18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
+      pointer-events:none;
+      opacity:.9;
+    }
+    .counterhack-win .label{
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(var(--hackRGB), .92);
+      text-shadow: 0 0 14px rgba(var(--hackRGB), .16);
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .counterhack-win .instr,
+    .counterhack-win .hint{
+      display:flex;
+      justify-content: space-between;
+      gap: 14px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+      color: rgba(215,230,255,.62);
+    }
+    .counterhack-win .instr{ margin-bottom: 10px; }
+    .counterhack-win .hint{ margin-top: 10px; }
+    .counterhack-win .slots{
+      display:flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .counterhack-win .slot{
+      width: 34px;
+      height: 34px;
+      display:grid;
+      place-items:center;
+      border: 1px solid rgba(var(--hackRGB), .42);
+      background: rgba(0,0,0,.42);
+      color: rgba(var(--hackRGB), .92);
+      font-size: 16px;
+      letter-spacing: 1px;
+      text-shadow: 0 0 12px rgba(var(--hackRGB), .12);
+    }
+    .counterhack-win .slot.ok{
+      border: 2px solid rgba(var(--hackRGB), .92);
+      background: rgba(var(--hackRGB), .08);
+      color: rgb(var(--hackRGB));
+      font-weight: 900;
+      text-shadow: 0 0 14px rgba(var(--hackRGB), .22);
+      box-shadow:
+        0 0 18px rgba(var(--hackRGB), .10),
+        inset 0 0 18px rgba(var(--hackRGB), .08);
+    }
+
+    /* Generic restricted hack: keep the window steady; glitch the background instead */
+    body.restricted-hack-active .counterhack-win{
+      pointer-events: none;
+      animation: none !important;
+    }
+    body.restricted-hack-active .counterhack-win .frame{
+      box-shadow:
+        0 0 26px rgba(var(--ylRGB), .14),
+        0 0 70px rgba(var(--ylRGB), .08);
+    }
+    body.restricted-hack-active .counterhack-win .frame::before{
+      content:"";
+      position:absolute;
+      inset: 0;
+      pointer-events:none;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.05), rgba(255,255,255,.05) 1px, transparent 1px, transparent 10px),
+        linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+      mix-blend-mode: screen;
+      opacity: .18;
+      animation: intelGlitch 1.05s steps(2, start) infinite;
+      clip-path: inherit;
+    }
+
+    /* Screen background glitch during generic restricted hacks and while viewing unlocked restricted intel (tinted by restricted theme) */
+    body.restricted-hack-active #screenGlitch.on,
+    body.restricted-unlocked-view #screenGlitch.on{ opacity: calc(0.10 + (var(--g, 0) * 0.60)); }
+    body.restricted-hack-active #screenGlitch::before,
+    body.restricted-unlocked-view #screenGlitch::before{
+      background:
+        repeating-linear-gradient(
+          180deg,
+          rgba(0,0,0,.00) 0px,
+          rgba(0,0,0,.00) 2px,
+          rgba(var(--restrictedRGBHot), .065) 3px,
+          rgba(0,0,0,.00) 4px
+        ),
+        linear-gradient(90deg,
+          rgba(var(--restrictedRGBHot), .08),
+          rgba(0,0,0,0) 35%,
+          rgba(var(--restrictedRGBHot), .055) 70%,
+          rgba(0,0,0,0)
+        );
+      opacity: calc(0.18 + (var(--g, 0) * 0.70));
+    }
+    body.restricted-hack-active #screenGlitch::after,
+    body.restricted-unlocked-view #screenGlitch::after{
+      background:
+        linear-gradient(0deg,
+          transparent 0%,
+          rgba(var(--restrictedRGBHot), .00) 18%,
+          rgba(var(--restrictedRGBHot), .18) 22%,
+          rgba(var(--restrictedRGBHot), .00) 26%,
+          rgba(0,0,0,0) 100%
+        ),
+        repeating-linear-gradient(90deg,
+          rgba(var(--restrictedRGBHot), .10) 0px,
+          rgba(var(--restrictedRGBHot), .10) 1px,
+          rgba(0,0,0,0) 1px,
+          rgba(0,0,0,0) 7px
+        ),
+        radial-gradient(circle at 18% 34%, rgba(var(--restrictedRGBHot), .12), transparent 40%),
+        radial-gradient(circle at 72% 68%, rgba(var(--restrictedRGBHot), .08), transparent 42%);
+      opacity: calc(0.10 + (var(--g, 0) * 0.62));
+    }
+    body.restricted-hack-active .counterhack-win .instr,
+    body.restricted-hack-active .counterhack-win .hint{
+      color: rgba(215,230,255,.78);
+    }
+    body.restricted-hack-active .counterhack-win .slot{
+      box-shadow: inset 0 0 18px rgba(var(--hackRGB), .06);
+    }
+
+    /* Counterhack success flash */
+    .counterhack-fx{
+      position: fixed;
+      inset: 0;
+      z-index: 12040;
+      pointer-events: none;
+      display: none;
+      opacity: 0;
+      background: rgba(var(--ylRGB), .92);
+    }
+    .counterhack-fx.on{
+      display: block;
+      /* Cap intensity: only 50% of previous opacity */
+      opacity: .5;
+      transition: opacity 2.9s ease;
+    }
+    .counterhack-fx.on.fade{
+      opacity: 0;
+      transition: opacity 2.9s ease;
+    }
+    .counterhack-fx .msg{
+      position:absolute;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(26px, 5vw, 54px);
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: rgba(6,10,22,.96);
+      text-shadow: 0 0 22px rgba(255,255,255,.16);
+      white-space: nowrap;
+      opacity: 0;
+      filter: blur(.6px);
+    }
+    .counterhack-fx.on .msg{
+      opacity: 1;
+      filter: blur(0px);
+      animation:
+        counterhackMsgIn .62s cubic-bezier(.18,.92,.12,1) both,
+        counterhackMsgGlitch 1.1s steps(2, end) infinite;
+    }
+    .counterhack-fx.on.fade .msg{
+      animation: counterhackMsgGlitch .9s steps(2, end) infinite;
+    }
+    @keyframes counterhackMsgIn{
+      0%{ opacity: 0; transform: translate3d(0,6px,0) scale(.99); letter-spacing: 12px; filter: blur(1.2px); }
+      40%{ opacity: .75; transform: translate3d(0,0,0) scale(1.004); letter-spacing: 6px; }
+      70%{ opacity: 1; transform: translate3d(0,0,0) scale(1.0); letter-spacing: 4px; }
+      100%{ opacity: 1; transform: translate3d(0,0,0) scale(1); letter-spacing: 4px; filter: blur(0px); }
+    }
+    @keyframes counterhackMsgGlitch{
+      0%{ transform: translate3d(0,0,0) skewX(0deg); clip-path: inset(0 0 0 0); }
+      18%{ transform: translate3d(2px,-1px,0) skewX(-2deg); clip-path: inset(0 0 58% 0); }
+      36%{ transform: translate3d(-3px,1px,0) skewX(2.5deg); clip-path: inset(42% 0 0 0); }
+      54%{ transform: translate3d(1px,0,0) skewX(-1.2deg); clip-path: inset(12% 0 28% 0); }
+      72%{ transform: translate3d(-1px,-1px,0) skewX(1.8deg); clip-path: inset(26% 0 10% 0); }
+      100%{ transform: translate3d(0,0,0) skewX(0deg); clip-path: inset(0 0 0 0); }
+    }
+    .screen-off::before{
+      content:"";
+      position:absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(var(--ssHot), .14), transparent 52%),
+        linear-gradient(180deg, rgba(var(--ssHot), .10), transparent 40%, rgba(var(--ssHot), .08));
+      mix-blend-mode: screen;
+      opacity: .9;
+      transform-origin: 50% 50%;
+    }
+    .screen-off.on::before{
+      animation: screenPowerOff .72s cubic-bezier(.2,.9,.1,1) forwards;
+    }
+    @keyframes screenPowerOff{
+      0%{ transform: scaleY(1) translate3d(0,0,0); filter: blur(0px); opacity: .95; }
+      60%{ transform: scaleY(.06) translate3d(0,0,0); filter: blur(.35px); opacity: 1; }
+      78%{ transform: scaleY(.012) translate3d(0,0,0); filter: blur(.55px); opacity: .95; }
+      100%{ transform: scaleY(0) translate3d(0,0,0); filter: blur(.8px); opacity: 0; }
+    }
+
+    /* SecuroServ reboot UI inside the existing boot overlay */
+    .boot-ss{
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(var(--ssHot), .22);
+    }
+    /* SecuroServ reboot starts as "code only" then reveals logo+bar */
+    .boot.securosserv-reboot .boot-ss{
+      display: block;
+      opacity: 0;
+      transform: translate3d(0,10px,0);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .boot.securosserv-reboot.ss-showbar .boot-ss{
+      opacity: 1;
+      transform: translate3d(0,0,0);
+    }
+
+    /* Background "code" writer layer (used during SecuroServ reboot) */
+    .boot-bgcode{
+      position: absolute;
+      inset: 0;
+      padding: 18px 18px 18px;
+      font-size: 11px;
+      letter-spacing: 1.6px;
+      line-height: 1.25;
+      white-space: pre;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      color: rgba(var(--ssHot), .42);
+      text-shadow: 0 0 10px rgba(var(--ssHot), .10);
+      filter: blur(.15px);
+    }
+    .boot.securosserv-reboot .boot-bgcode{ opacity: .9; }
+
+    /* Simplify SecuroServ reboot view: only logo+bar+bg code */
+    .boot.securosserv-reboot{
+      --bootBlack: 1;
+      border: none !important;
+    }
+    .boot.securosserv-reboot .boot-inner{
+      background: transparent;
+      border-color: rgba(var(--ssHot), .22);
+      box-shadow: none;
+    }
+    .boot.securosserv-reboot .boot-top,
+    .boot.securosserv-reboot .boot-foot,
+    .boot.securosserv-reboot .boot-lines,
+    .boot.securosserv-reboot .boot-bar,
+    .boot.securosserv-reboot .boot-meta{ display: none; }
+    .boot.securosserv-reboot .boot-mid{ padding-top: 10px; }
+
+    /* Opaque blackout phase (prevents seeing anything underneath)
+       Implemented as a black overlay that can fade back to dark-blue. */
+    .boot.blackout{
+      --bootBlack: 1;
+      border: none !important;
+    }
+    .boot.blackout .boot-inner{ opacity: 0; }
+    .boot-ssLogo{
+      width: 86px;
+      height: 86px;
+      display:block;
+      margin: 4px auto 10px;
+      filter: drop-shadow(0 0 16px rgba(var(--ssHot), .22));
+      animation: bootSpin 1.58s linear infinite;
+      opacity: .92;
+    }
+    @keyframes bootSpin{ to{ transform: rotate(360deg); } }
+    .boot-ssBar{
+      height: 18px;
+      border: 1px solid rgba(var(--ssHot), .46);
+      background: rgba(0,0,0,.55);
+      position: relative;
+      overflow: hidden;
+    }
+    .boot-ssFill{
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(var(--ss), .95), rgba(var(--ssHot), .95));
+      box-shadow: 0 0 18px rgba(var(--ssHot), .22);
+      transition: width .10s linear;
+    }
+    .boot-ssBar::after{
+      content:"";
+      position:absolute;
+      inset: -40% -10%;
+      background:
+        repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 7px, rgba(var(--ssHot), .09) 7px 8px),
+        repeating-linear-gradient(90deg, rgba(var(--ssHot), .08) 0 1px, rgba(0,0,0,0) 1px 9px);
+      mix-blend-mode: screen;
+      opacity: .55;
+      animation: midbarGlitch 1.05s steps(2) infinite;
+    }
+    .boot-ssMeta{
+      margin-top: 10px;
+      display:flex;
+      justify-content: space-between;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: rgba(var(--ssHot), .70);
+    }
+
+    /* Header bar option */
+    .securoserv-chaos .chaos-bar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin: -10px -12px 10px -12px;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(var(--ssHot), .30);
+      background: rgba(var(--ssHot), .10);
+    }
+    .securoserv-chaos .chaos-bar .tag{
+      font-weight: 900;
+      letter-spacing: 3.0px;
+      text-transform: uppercase;
+      color: rgba(var(--ssHot), .92);
+    }
+    .securoserv-chaos .chaos-bar .meta{
+      font-size: 11px;
+      letter-spacing: 2.0px;
+      color: rgba(var(--ssHot), .70);
+      text-transform: uppercase;
+      white-space: nowrap;
+      opacity: .95;
+    }
+
+    /* Dialog footer option */
+    .securoserv-chaos .chaos-foot{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap: 10px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(var(--ssHot), .22);
+      color: rgba(var(--ssHot), .70);
+      text-transform: uppercase;
+      letter-spacing: 2.2px;
+      font-size: 11px;
+    }
+    .securoserv-chaos .chaos-foot .btn{
+      padding: 4px 8px;
+      border: 1px solid rgba(var(--ssHot), .32);
+      background: rgba(0,0,0,.35);
+    }
+
+    /* Terminal body block option */
+    .securoserv-chaos .chaos-code{
+      margin-top: 6px;
+      padding: 8px 10px;
+      border: 1px solid rgba(var(--ssHot), .22);
+      background: rgba(0,0,0,.50);
+      color: rgba(var(--ssHot), .74);
+      white-space: pre;
+      overflow: hidden;
+      max-height: 220px;
+    }
+    .securoserv-chaos .chaos-pop.variant-small{
+      min-width: 180px;
+      max-width: min(360px, 62vw);
+      padding: 8px 10px;
+    }
+    .securoserv-chaos .chaos-pop.variant-wide{
+      min-width: 360px;
+      max-width: min(780px, 86vw);
+    }
+    .securoserv-chaos .chaos-pop.variant-tall{
+      min-height: 180px;
+    }
+    .securoserv-chaos .chaos-pop.variant-banner{
+      min-width: 60vw;
+      max-width: 92vw;
+      padding: 10px 14px;
+    }
+    .securoserv-chaos .chaos-pop.variant-modal{
+      min-width: min(560px, 84vw);
+      max-width: min(860px, 92vw);
+      padding: 14px 16px;
+      border-width: 2px;
+    }
+    .securoserv-chaos .chaos-pop.cut{
+      clip-path: polygon(
+        0 0,
+        calc(100% - 14px) 0,
+        100% 14px,
+        100% 100%,
+        14px 100%,
+        0 calc(100% - 14px)
+      );
+    }
+    .securoserv-chaos .chaos-pop.scan::after{
+      content:"";
+      position:absolute;
+      inset: 0;
+      pointer-events:none;
+      background:
+        repeating-linear-gradient(
+          180deg,
+          rgba(var(--ssHot), .00) 0px,
+          rgba(var(--ssHot), .00) 3px,
+          rgba(var(--ssHot), .07) 4px
+        );
+      mix-blend-mode: screen;
+      opacity: .6;
+    }
+    .securoserv-chaos .chaos-pop::before{
+      content:"";
+      position:absolute;
+      left:0; right:0; top:0;
+      height: 1px;
+      background: rgba(var(--ss), 1);
+      box-shadow: 0 0 18px rgba(var(--ssHot), .22);
+      opacity: .85;
+    }
+    .securoserv-chaos .chaos-h{
+      font-weight: 800;
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+      color: rgba(var(--ssHot), .94);
+      text-shadow: 0 0 12px rgba(var(--ssHot), .22);
+      margin-bottom: 6px;
+      line-height: 1.15;
+    }
+    .securoserv-chaos .chaos-pop.variant-modal .chaos-h{
+      letter-spacing: 3.2px;
+      font-size: 14px;
+    }
+    .securoserv-chaos .chaos-pop.variant-banner .chaos-h{
+      letter-spacing: 3.0px;
+    }
+    .securoserv-chaos .chaos-b{
+      font-size: 12px;
+      line-height: 1.3;
+      color: rgba(var(--ssHot), .78);
+      white-space: pre-wrap;
+    }
+    .securoserv-chaos .chaos-pop.variant-small .chaos-b{ font-size: 11px; }
+    .securoserv-chaos .chaos-pop.variant-modal .chaos-b{ font-size: 12px; line-height: 1.35; }
+    .securoserv-chaos .chaos-pop.glitch{
+      animation: securoservPopIn .45s ease both, securoservBoxGlitch 1.2s steps(2) infinite;
+    }
+    @keyframes securoservPopIn{
+      from{ opacity: 0; transform: translate3d(0, 10px, 0) scale(.98); }
+      to{ opacity: .92; transform: translate3d(0, 0, 0) scale(1); }
+    }
+    @keyframes securoservBoxGlitch{
+      0%{ transform: translate3d(0,0,0); }
+      12%{ transform: translate3d(1px,-1px,0); }
+      24%{ transform: translate3d(-2px,0,0); }
+      36%{ transform: translate3d(2px,1px,0); }
+      48%{ transform: translate3d(-1px,1px,0); }
+      60%{ transform: translate3d(0,-2px,0); }
+      72%{ transform: translate3d(1px,0,0); }
+      84%{ transform: translate3d(-1px,0,0); }
+      100%{ transform: translate3d(0,0,0); }
+    }
+
+    .tip.glitch{
+      animation: securoservTipGlitch .85s steps(2) infinite;
+      text-shadow:
+        0 0 10px rgba(var(--ssHot), .35),
+        2px 0 0 rgba(var(--ss), .22),
+        -2px 0 0 rgba(var(--ssHot), .18);
+    }
+    @keyframes securoservTipGlitch{
+      0%{ transform: translateX(-50%) translateY(0); opacity: 1; }
+      20%{ transform: translateX(calc(-50% + 1px)) translateY(-1px); }
+      40%{ transform: translateX(calc(-50% - 2px)) translateY(1px); }
+      60%{ transform: translateX(calc(-50% + 2px)) translateY(0); }
+      80%{ transform: translateX(calc(-50% - 1px)) translateY(-1px); }
+      100%{ transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+
+    .termline.glitch{
+      position: relative;
+      color: rgba(var(--ssHot), .86);
+      text-shadow:
+        0 0 10px rgba(var(--ssHot), .22),
+        2px 0 0 rgba(var(--ss), .18),
+        -2px 0 0 rgba(var(--ssHot), .12);
+      animation: securoservTermGlitch .9s steps(2) infinite;
+    }
+    @keyframes securoservTermGlitch{
+      0%{ transform: translate3d(0,0,0); }
+      25%{ transform: translate3d(1px,0,0); }
+      50%{ transform: translate3d(-2px,0,0); }
+      75%{ transform: translate3d(2px,0,0); }
+      100%{ transform: translate3d(0,0,0); }
+    }
+    .restricted-overlay::before{
+      content:"";
+      position:absolute;
+      top: -20px;
+      left: -20px;
+      right: -20px;
+      bottom: -20px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(var(--restrictedRGB), .34), transparent 45%),
+        radial-gradient(circle at 50% 100%, rgba(var(--restrictedRGBHot), .28), transparent 45%),
+        radial-gradient(circle at 0% 50%, rgba(var(--restrictedRGB), .24), transparent 40%),
+        radial-gradient(circle at 100% 50%, rgba(var(--restrictedRGBHot), .24), transparent 40%);
+      filter: blur(16px);
+      opacity: .55;
+      mix-blend-mode: screen;
+      pointer-events:none;
+      z-index:-1;
+    }
+    .restricted-overlay::after{
+      content:"";
+      position:absolute;
+      top: calc(var(--topbar-h) + 4px);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 0;
+      border: none;
+      background:
+        linear-gradient(0deg, rgba(var(--restrictedRGB), .14), transparent 40%),
+        linear-gradient(90deg, rgba(var(--restrictedRGB), .14), transparent 60%);
+      box-shadow:
+        0 0 42px rgba(var(--restrictedRGB), .32),
+        0 0 80px rgba(var(--restrictedRGBHot), .22);
+      opacity: .6;
+      pointer-events:none;
+      mix-blend-mode: screen;
+      z-index:-1;
+    }
+    .restricted-overlay .restricted-message{
+      position:relative;
+      color: rgba(var(--restrictedTextRGB), .95);
+      font-size: clamp(20px, 3vw, 38px);
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      font-weight: 700;
+      line-height: 1.15;
+      text-align:center;
+      text-shadow:
+        0 0 12px rgba(var(--restrictedTextRGB), .9),
+        0 0 26px rgba(var(--restrictedRGBHot), .55),
+        0 0 46px rgba(var(--restrictedRGBHot), .35);
+      filter: drop-shadow(0 0 26px rgba(var(--restrictedRGB), .55));
+      animation: restrictedPulse 2.5s ease-in-out infinite;
+      z-index: 1;
+    }
+    @keyframes restrictedPulse{
+      0%{ transform: translate3d(0, 0, 0) scale(1); opacity:.92; }
+      40%{ transform: translate3d(0, -6px, 0) scale(1.04); opacity:1; }
+      100%{ transform: translate3d(0, 0, 0) scale(1); opacity:.92; }
+    }
+    @keyframes restrictedScan{
+      from{ transform: translateY(-100%); }
+      to{ transform: translateY(100%); }
+    }
+    #svgHost .region.dimmed{ opacity: .14; }
+    #svgHost .region.hidden{ display: none !important; }
+
+    /* In outline-only mode, never boost opacity or add glow for "dimmed" regions.
+       The base/hover/selected stroke-opacity ramps handle visibility. */
+    #svgHost.dimmedOthers .region:not(.selected):not(.wall){
+      opacity: 1 !important;
+      filter: none !important;
+    }
+
+    /* WALLS: no fill, slightly stronger outline */
+    #svgHost .wall, #svgHost .wall *{
+      fill: none !important;
+      stroke: rgba(96,143,255,.85) !important;      /* default wall color (blue) */
+      stroke-width: var(--sw-wall) !important;
+      vector-effect: non-scaling-stroke !important;
+      stroke-linecap: square !important;
+      stroke-linejoin: miter !important;
+      opacity: .95 !important;
+      pointer-events: none !important;
+
+      /* subtle barrier glow */
+      filter:
+        drop-shadow(0 0 8px rgba(96,143,255,.14)) !important;
+    }
+
+    /* Wasteline labels layer */
+    #svgHost #wastelineLabelsLayer{
+      pointer-events: none !important;
+      opacity: 1 !important;
+      filter: none !important;
+    }
+
+    /* THE WASTELINE: thick solid transparent yellow line */
+    #svgHost #THE_WASTELINE, #svgHost #THE_WASTELINE *{
+      fill: none !important;
+      stroke: var(--yl) !important;
+      stroke-width: 6px !important;
+      stroke-opacity: 1 !important;
+      vector-effect: non-scaling-stroke !important;
+      stroke-linecap: square !important;
+      stroke-linejoin: miter !important;
+      opacity: 1 !important;
+      pointer-events: none !important;
+      filter:
+        drop-shadow(0 0 6px rgba(0,0,0,.9))
+        drop-shadow(0 0 16px rgba(var(--ylRGB), .35)) !important;
+    }
+
+    /* Wasteline labels at ends */
+    .wastelineEndLabel{
+      font-family: "Rajdhani", sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      pointer-events: none;
+      filter:
+        drop-shadow(0 0 6px rgba(0,0,0,.9));
+    }
+    .wastelineEndLabel.title{
+      font-size: 28px;
+      fill: var(--yl);
+      filter:
+        drop-shadow(0 0 6px rgba(0,0,0,.9))
+        drop-shadow(0 0 16px rgba(var(--ylRGB), .35));
+    }
+    .wastelineEndLabel.sub{
+      font-size: 26px;
+      fill: var(--ui);
+      opacity: 0.55;
+      filter:
+        drop-shadow(0 0 6px rgba(0,0,0,.9))
+        drop-shadow(0 0 14px rgba(96,143,255,.22));
+    }
+
+    /* Wasteline marquee (textPath along the line) */
+    #svgHost #wastelineMarqueeLayer .wastelineMarqueeText{
+      font-weight: 900;
+      letter-spacing: 10px;
+      font-size: 32px;
+      fill: var(--yl) !important;
+      stroke: none !important;
+      stroke-width: 0 !important;
+      opacity: 1;
+      filter:
+        drop-shadow(0 0 3px rgba(0,0,0,.95))
+        drop-shadow(0 0 26px rgba(0,0,0,.85))
+        drop-shadow(0 0 18px rgba(var(--ylRGB), .12)) !important;
+    }
+    /* Ensure no stroke and correct fill on marquee descendants (wall rules can override) */
+    #svgHost #wastelineMarqueeLayer .wastelineMarqueeText, #svgHost #wastelineMarqueeLayer .wastelineMarqueeText *{
+      fill: var(--yl) !important;
+      stroke: none !important;
+      stroke-width: 0 !important;
+    }
+
+    /* PERFORMANCE OPTIMIZATIONS */
+    /* Transform now applies to #mapStack; svgHost renders regions only */
+
+    /* =======================

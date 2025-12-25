@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon City Map</title>
+
+  <link rel="stylesheet" href="css/00-fonts-vars-base.css" />
+  <link rel="stylesheet" href="css/10-topnav-sidemenu-toggles.css" />
+  <link rel="stylesheet" href="css/20-inventory-lore-quickload.css" />
+  <link rel="stylesheet" href="css/30-mapstack-tooltip-logos.css" />
+  <link rel="stylesheet" href="css/40-details-popup-hackprompt.css" />
+  <link rel="stylesheet" href="css/50-securoserv-overlays.css" />
+  <link rel="stylesheet" href="css/60-boot-quickload.css" />
+</head>
+<body>
+  <header class="topnav" aria-label="Top navigation">
+    <div class="topmeta left" aria-hidden="true">
+      <div class="metaGroup"><span class="metaDot"></span><span class="metaText">POLICE</span></div>
+      <div class="metaGroup"><span class="metaDot red"></span><span class="metaText red">SERGEANT</span></div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Menu">
+      <button class="tab disabled" data-view="settings" type="button" role="tab" aria-selected="false" tabindex="-1" aria-disabled="true"><span>SETTINGS</span></button>
+      <button class="tab on" data-view="map" type="button" role="tab" aria-selected="true"><span>MAP</span></button>
+      <button class="tab disabled" data-view="inventory" type="button" role="tab" aria-selected="false" tabindex="-1" aria-disabled="true"><span>INVENTORY</span></button>
+      <button class="tab disabled" data-view="augments" type="button" role="tab" aria-selected="false" tabindex="-1" aria-disabled="true"><span>AUGMENTS</span></button>
+      <button class="tab tab-lore" data-view="lore" type="button" role="tab" aria-selected="false" tabindex="-1"><span>LORE TERMINAL</span></button>
+    </div>
+    <div class="topmeta right" aria-hidden="true">
+      <div class="metaStat"><span class="metaIcon" aria-hidden="true"></span><span>200/100</span></div>
+      <div class="metaStat yl"><span class="metaIcon" aria-hidden="true"></span><span>2000</span></div>
+    </div>
+  </header>
+
+  <div class="quickload" id="quickLoad" aria-hidden="true">
+    <div class="inner">
+      <div class="label">LOADING</div>
+      <div class="bar"><div class="fill" id="quickLoadFill"></div></div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <main class="mapstage" aria-hidden="false">
+      <div class="maphud">
+        <div class="hudfilters" id="hudFilters">
+          <button class="hudf" id="btnShowAllDistricts" type="button">SHOW ALL DISTRICTS</button>
+          <button class="hudf" id="btnRestricted" type="button">RESTRICTED ZONE</button>
+          <button class="hudf" id="btnHideAll" type="button">HIDE ALL DISTRICTS</button>
+        </div>
+      </div>
+
+      <div class="mapwrap">
+        <div id="mapStack">
+          <img id="layerOcean" draggable="false" alt="" />
+          <img id="layerLand" draggable="false" alt="" />
+          <img id="layerBuildings" draggable="false" alt="" />
+          <img id="layerRoads" draggable="false" alt="" />
+          <div id="restrictedBlurLayer" aria-hidden="true">
+            <svg id="restrictedBlurSvg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"></svg>
+          </div>
+          <div id="svgHost"></div>
+          <div id="logosLayer"></div>
+          <div id="markersLayer" aria-hidden="true"></div>
+          <div id="labelsLayer"></div>
+        </div>
+        <div class="tip" id="tooltip"></div>
+        <img id="cursorLogo" class="cursorLogo" draggable="false" alt="" />
+        <div id="zoomBar" class="zoomBar" aria-hidden="true">
+          <div id="zoomReadout" class="zoomReadout">100%</div>
+          <div class="fill up" id="zoomFillUp"></div>
+          <div class="fill down" id="zoomFillDown"></div>
+        </div>
+      </div>
+
+      <div class="securserve-badge" id="securserveBadge" aria-hidden="true">
+        <img src="./logos/SS.png" alt="" draggable="false" onerror="this.onerror=null; this.src='./logos/SS.png';" />
+      </div>
+    </main>
+
+    <main class="inventorystage" id="inventoryStage" aria-hidden="true"></main>
+
+    <main class="lorestage" id="loreStage" aria-hidden="true">
+      <div class="loreInner" id="loreInner" aria-label="Neon City history archive">
+        <div class="loreHead">
+          <div class="loreTitle">NE0N CITY :: HIST0RY ARCHIVE</div>
+          <div class="loreSub">[RECOVERED_DATASET // PARTIAL_INTEGRITY]</div>
+        </div>
+        <div class="loreScroll" id="loreScroll" aria-label="Lore log">
+          <pre class="loreCode" id="loreCode" aria-label="Archive data"></pre>
+        </div>
+      </div>
+    </main>
+
+    <div class="restricted-overlay" id="restrictedOverlay" aria-hidden="true">
+      <div class="restricted-message">WARNING:// RESTRICTED AREA SELECTED</div>
+    </div>
+
+    <svg class="securoserv-wall" id="securoservWall" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"></svg>
+    <div class="securoserv-chaos" id="securoservChaos" aria-hidden="true"></div>
+    <div class="screen-glitch" id="screenGlitch" aria-hidden="true"></div>
+
+    <div class="securoserv-midbar" id="securoservMidbar" aria-hidden="true">
+      <div class="frame">
+        <div class="label">SYNC:// SECUROSERV COUNTERMEASURES</div>
+        <div class="bar"><div class="fill" id="securoservMidbarFill"></div></div>
+        <div class="meta"><span id="securoservMidbarPct">0%</span><span>COUNTERMEASURES ACTIVE</span></div>
+      </div>
+    </div>
+    <div class="input-blocker" id="inputBlocker" aria-hidden="true"></div>
+
+    <div class="counterhack-win" id="securoservChallenge" aria-hidden="true">
+      <div class="frame" role="status" aria-live="polite">
+        <div class="label">USER OVERRIDE:// COUNTERHACK</div>
+        <div class="instr"><span>TYPE THE SYMBOLS LEFT &rarr; RIGHT</span><span>SYMBOLS SHIFT EVERY 2S</span></div>
+        <div class="slots" aria-label="Bypass code">
+          <div class="slot" id="ssSlot0">?</div>
+          <div class="slot" id="ssSlot1">?</div>
+          <div class="slot" id="ssSlot2">?</div>
+          <div class="slot" id="ssSlot3">?</div>
+          <div class="slot" id="ssSlot4">?</div>
+          <div class="slot" id="ssSlot5">?</div>
+        </div>
+        <div class="hint"><span>COUNTERMEASURES PAUSED ON SUCCESS</span><span>ESC DISABLED</span></div>
+      </div>
+    </div>
+
+    <div class="counterhack-fx" id="counterhackFx" aria-hidden="true">
+      <div class="msg">COUNTERHACK SUCCESFULL</div>
+    </div>
+    <div class="screen-off" id="screenOff" aria-hidden="true"></div>
+  </div>
+
+  <nav class="sidemenu" aria-label="District filters">
+    <div class="sidemenu-row">
+      <button class="arrow" id="menuPrev" type="button" aria-label="Previous filter"><span>&lsaquo;</span></button>
+      <div class="tabs" role="tablist" aria-label="District filters">
+        <button class="tab on" id="menuShowAll" type="button" role="tab" aria-selected="true" title="Show all zones" aria-label="Show all zones"><span>SHOW ALL</span></button>
+        <button class="tab" id="menuRestricted" type="button" role="tab" aria-selected="false" title="Only restricted zones" aria-label="Only restricted zones"><span>RESTRICTED</span></button>
+        <button class="tab" id="menuHideAll" type="button" role="tab" aria-selected="false" title="Hide all zones" aria-label="Hide all zones"><span>HIDE ALL</span></button>
+      </div>
+      <button class="arrow" id="menuNext" type="button" aria-label="Next filter"><span>&rsaquo;</span></button>
+    </div>
+  </nav>
+
+  <div class="layerToggles" id="layerToggles" role="group" aria-label="Layer visibility">
+    <button class="layerToggle" id="toggleRoads" type="button" aria-pressed="false">
+      <span class="layerToggle-icon" aria-hidden="true"></span>
+      <span>HIDE ROADS</span>
+    </button>
+    <button class="layerToggle" id="toggleBuildings" type="button" aria-pressed="false">
+      <span class="layerToggle-icon" aria-hidden="true"></span>
+      <span>HIDE BUILDINGS</span>
+    </button>
+    <button class="layerToggle" id="toggleMarkers" type="button" aria-pressed="false">
+      <span class="layerToggle-icon" aria-hidden="true"></span>
+      <span>HIDE MARKERS</span>
+    </button>
+  </div>
+
+  <section class="hudpopup" id="popupDetails" aria-live="polite">
+    <svg viewBox="0 0 600 420" class="pdSvg" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <defs>
+        <pattern id="pdScanlines" width="12" height="12" patternUnits="userSpaceOnUse">
+          <rect x="0" y="0" width="12" height="1" class="pdScan" />
+        </pattern>
+      </defs>
+      <polygon class="pdOutline" points="18,2 582,2 598,18 598,402 582,418 2,418 2,18" />
+      <polygon class="pdFill" points="26,10 574,10 590,26 590,394 574,410 10,410 10,26" />
+      <polygon class="pdLines" points="26,10 574,10 590,26 590,394 574,410 10,410 10,26" />
+    </svg>
+    <div class="hudhead">
+      <span class="hudtitle">AREA DETAILS</span>
+      <div class="hudhead-actions">
+        <span class="hudmeta" id="detailState">NO TARGET</span>
+        <button class="hudbtn hudbtn-x" id="btnCloseDetails" type="button" title="Close">X</button>
+      </div>
+    </div>
+
+    <div class="hudbody details">
+      <div class="dHeader">
+        <div class="dKV">
+          <div class="dRow"><div class="dK">NAME</div><div class="dV" id="dName">&mdash;</div></div>
+          <div class="dRow"><div class="dK">ID</div><div class="dV" id="dId">&mdash;</div></div>
+          <div class="dRow"><div class="dK">TYPE</div><div class="dV" id="dType">&mdash;</div></div>
+          <div class="dRow"><div class="dK">ZONE</div><div class="dV" id="dZone">&mdash;</div></div>
+          <div class="dRow"><div class="dK">BOUNDS</div><div class="dV" id="dBounds">&mdash;</div></div>
+        </div>
+        <div class="dMedia" aria-hidden="true">
+          <img id="detailLogo" alt="" draggable="false" />
+        </div>
+      </div>
+
+      <div class="dSep"></div>
+
+      <div class="dActions"></div>
+
+      <div class="dLore">
+        <div class="dK" style="margin-bottom:6px;">LORE / NOTES</div>
+        <div class="dNoteText" id="dNotes"></div>
+      </div>
+    </div>
+
+    <div class="hudfoot">
+      <span>MAP/INTEL</span>
+      <div id="detailFoot"><div class="intelDim">waiting</div></div>
+    </div>
+  </section>
+
+  <div class="hackPrompt" id="hackPrompt" aria-hidden="true">
+    <button class="btn" id="btnHackRestricted" type="button">
+      <svg viewBox="-3 -3 606 126" class="bpSvg" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <defs>
+          <pattern id="bpScanlines" width="12" height="12" patternUnits="userSpaceOnUse">
+            <rect x="0" y="0" width="12" height="1" class="bpScan" />
+          </pattern>
+        </defs>
+        <polygon class="bpOutline" points="0,0 168,0 226,40 594,40 600,46 600,106 572,120 92,120 46,82 0,82" />
+        <polygon class="bpFill" points="3,3 165,3 223,43 591,43 597,49 597,103 569,117 95,117 49,79 3,79" />
+        <polygon class="bpLines" points="3,3 165,3 223,43 591,43 597,49 597,103 569,117 95,117 49,79 3,79" />
+        <polygon class="bpTab" points="0,0 168,0 226,40 0,40" />
+        <path class="bpTabSep" d="M0 40 H226 M168 0 L226 40" />
+        <text class="bpTagText" x="12" y="30">SIMPLEHACK</text>
+      </svg>
+
+      <span class="bpContent">
+        <span class="bpTitle">BREACH PROTOCOL</span>
+        <span class="bpStatus">READY</span>
+      </span>
+    </button>
+  </div>
+
+  <div class="cmdFeed" id="cmdFeed" aria-live="polite" aria-label="Command feed"></div>
+
+  <div class="boot" id="boot">
+    <div class="boot-inner">
+      <div class="boot-bgcode" id="bootBgCode" aria-hidden="true"></div>
+      <div class="boot-top">
+        <div class="boot-tag">NETRUN</div>
+        <div class="boot-title">INITIALIZING MAP INTERFACE</div>
+        <div class="boot-sub">SUBSYSTEM: LS-GRID &bull; ACCESS LEVEL: LOCAL</div>
+      </div>
+
+      <div class="boot-mid">
+        <div class="boot-lines" id="bootLines" aria-live="polite"></div>
+
+        <div class="boot-bar">
+          <div class="boot-bar-fill" id="bootFill"></div>
+        </div>
+
+        <div class="boot-meta">
+          <span id="bootPct">0%</span>
+          <span id="bootPhase">handshake</span>
+        </div>
+
+        <div class="boot-ss" id="bootSecuroserv" aria-hidden="true">
+          <img class="boot-ssLogo" id="bootSecuroLogo" src="./logos/SS2.png" alt="" draggable="false" onerror="this.onerror=null; this.src='./logos/SS2.png';" />
+          <div class="boot-ssBar"><div class="boot-ssFill" id="bootSecuroFill"></div></div>
+          <div class="boot-ssMeta"><span id="bootSecuroPct">0%</span><span id="bootSecuroPhase">reboot</span></div>
+        </div>
+      </div>
+
+      <div class="boot-foot">
+        <span>PRESS ANY KEY: DISABLED</span>
+        <span id="bootHint">LINK STABLE</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/00-bootstrap-config.js"></script>
+  <script src="js/10-data-hackprompt.js"></script>
+  <script src="js/20-dom-logos.js"></script>
+  <script src="js/30-camera-and-logoslayer.js"></script>
+  <script src="js/40-svg-patterns-and-color.js"></script>
+  <script src="js/50-svg-loader-and-tooltip.js"></script>
+  <script src="js/60-securoserv.js"></script>
+  <script src="js/70-hover-selection-filters-tabs.js"></script>
+  <script src="js/80-lore-inventory.js"></script>
+  <script src="js/99-start.js"></script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+    /* =======================
+       BOOT LOADING OVERLAY
+       ======================= */
+    .boot{
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      isolation: isolate;
+      --bootBlack: 0;
+      background:
+        radial-gradient(900px 600px at 30% 20%, rgba(96,143,255,.18), transparent 60%),
+        radial-gradient(700px 500px at 70% 70%, rgba(var(--ylRGB), .10), transparent 62%),
+        linear-gradient(180deg, rgba(3,5,12,.95), rgba(6,10,22,.92));
+      border-top: 2px solid rgba(var(--ylRGB), .55);
+      border-bottom: 2px solid rgba(96,143,255,.35);
+      opacity: 1;
+      transition: opacity .6s ease;
+    }
+    .boot::before{
+      content:"";
+      position:absolute;
+      inset: 0;
+      background: #000;
+      opacity: var(--bootBlack, 0);
+      transition: opacity .8s ease;
+      pointer-events:none;
+      z-index: 0;
+    }
+    .boot-inner{
+      width: min(760px, calc(100vw - 40px));
+      border: 1px solid rgba(96,143,255,.25);
+      background: rgba(6,10,22,.72);
+      box-shadow: var(--glowB);
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      transform: translate3d(0,0,0) scale(1);
+      filter: blur(0);
+      transition: opacity .45s ease, transform .55s ease, filter .55s ease;
+    }
+    .boot-inner::before{
+      content:"";
+      position:absolute; inset:-1px;
+      border: 1px solid rgba(96,143,255,.12);
+      pointer-events:none;
+    }
+    .boot-inner::after{
+      content:"";
+      position:absolute; left:-1px; top:-1px;
+      width: 18px; height: 18px;
+      border-left: 2px solid var(--yl);
+      border-top: 2px solid var(--yl);
+      opacity:.75;
+      pointer-events:none;
+    }
+    .boot-top{
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(96,143,255,.25);
+      display: grid;
+      gap: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+    }
+    .boot-tag{
+      display:inline-block;
+      width: fit-content;
+      padding: 4px 10px;
+      background: var(--yl);
+      color: #0a1024;
+      box-shadow: var(--glowY);
+      font-size: 12px;
+    }
+    .boot-title{ font-size: 14px; color: rgba(96,143,255,.95); }
+    .boot-sub{ font-size: 12px; color: rgba(215,230,255,.62); }
+    .boot-mid{ padding: 14px 16px 16px; }
+    .boot-lines{
+      height: 220px;
+      border: 1px solid rgba(var(--ylRGB), .18);
+      background: rgba(4,7,16,.45);
+      overflow: hidden;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      line-height: 1.35;
+      color: rgba(var(--ylRGB), .85);
+    }
+    .boot-line{ opacity:.92; padding: 2px 0; }
+    .boot-line.dim{ opacity:.65; color: rgba(215,230,255,.55); }
+    .boot-bar{
+      margin-top: 12px;
+      height: 10px;
+      border: 1px solid rgba(var(--ylRGB), .25);
+      background: rgba(4,7,16,.35);
+      overflow:hidden;
+    }
+    .boot-bar-fill{
+      width: 0%;
+      height: 100%;
+      background: rgba(var(--ylRGB), .85);
+      box-shadow: var(--glowY);
+      transition: width .18s linear;
+    }
+    .boot-meta{
+      margin-top: 10px;
+      display:flex;
+      justify-content: space-between;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: rgba(215,230,255,.65);
+    }
+    #bootPct{ color: var(--yl); }
+    .boot-foot{
+      padding: 10px 16px;
+      border-top: 1px solid rgba(96,143,255,.25);
+      display:flex;
+      justify-content: space-between;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: rgba(215,230,255,.55);
+    }
+    .boot.softclose .boot-inner{
+      opacity: 0;
+      transform: translate3d(0,10px,0) scale(.985);
+      filter: blur(.6px);
+    }
+    .boot.off{ opacity: 0; }
+    .boot.hidden{ display:none; }
+  

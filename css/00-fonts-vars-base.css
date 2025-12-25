@@ -1,0 +1,464 @@
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+    :root{
+      --bg0:#01061b;
+      --bg1:#07112a;
+      --ui:#608fff;    /* buildings + UI */
+      /* Global yellow accent (aligned to Merryweather WARNING:// text) */
+      --ylRGB: 255, 238, 152;
+      --yl: rgb(var(--ylRGB));
+      /* SecuroServ base reds (matches the SecuroServ restricted outline tone) */
+      --ss: 207, 0, 0;
+      --ssHot: 255, 65, 65;
+      /* UI text uses only the two palette colors (via mixing) */
+      --text: color-mix(in srgb, var(--ui) 82%, var(--yl) 18%);
+      --muted: color-mix(in srgb, var(--ui) 62%, transparent);
+
+      --panel: rgba(6,10,22,.72);
+      --line: rgba(96,143,255,.55);
+      --line2: rgba(96,143,255,.25);
+
+      --glowB: 0 0 14px rgba(96,143,255,.20), 0 0 32px rgba(96,143,255,.10);
+      --glowY: 0 0 10px rgba(var(--ylRGB), .22), 0 0 26px rgba(var(--ylRGB), .10);
+
+      --sw-region: 0.1px;
+      --sw-road: 0.15px;
+      --sw-building: 0.1px;
+      --sw-wall: 0.2px;      /* walls slightly stronger than roads */
+
+      --topbar-h: 48px;
+      --term-h: 240px;
+    }
+
+    *{ box-sizing:border-box; }
+    /* Ensure controls inherit the global UI font (buttons often default otherwise). */
+    button, input, textarea, select{ font-family: inherit; font-size: inherit; }
+    html, body{ height:100%; margin:0; color:var(--text); overflow:hidden; }
+    body{
+      font-family: "Rajdhani", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background: var(--bg0);
+      position: relative;
+    }
+
+    /* Top tabs (game-like) */
+    .topnav{
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--topbar-h);
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items:flex-end;
+      justify-items: center;
+      padding: 0 14px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-size: 13px;
+      user-select:none;
+      z-index: 30;
+      /* Dark translucent backdrop so tabs stay readable over bright map areas */
+      background: rgba(1,6,27,.70);
+    }
+    .topnav .topmeta{
+      height: 100%;
+      width: 100%;
+      display:flex;
+      align-items:flex-end;
+      padding-bottom: 10px;
+      gap: 14px;
+      justify-content: flex-start;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .topnav .topmeta.right{ justify-content: flex-end; }
+    body.view-inventory .topnav .topmeta{ opacity: 1; }
+    .topnav .metaGroup{ display:flex; align-items:center; gap: 8px; }
+    .topnav .metaDot{
+      width: 10px;
+      height: 10px;
+      border-radius: 99px;
+      border: 1px solid rgba(215,230,255,.20);
+      background: rgba(96,143,255,.30);
+      box-shadow: 0 0 14px rgba(96,143,255,.10);
+    }
+    .topnav .metaDot.red{
+      background: rgba(96,143,255,.30);
+      box-shadow: 0 0 14px rgba(96,143,255,.10);
+    }
+    .topnav .metaText{ color: rgba(96,143,255,.92); }
+    .topnav .metaText.red{ color: rgba(96,143,255,.92); }
+    .topnav .metaStat{ display:flex; align-items:center; gap: 8px; color: rgba(96,143,255,.92); }
+    .topnav .metaStat.yl{ color: rgba(var(--ylRGB), .92); }
+    .topnav .metaIcon{
+      width: 10px;
+      height: 10px;
+      display:inline-block;
+      border-radius: 2px;
+      background: rgba(96,143,255,.70);
+      box-shadow: 0 0 14px rgba(96,143,255,.10);
+    }
+    .topnav .metaStat.yl .metaIcon{ background: rgba(var(--ylRGB), .70); box-shadow: 0 0 14px rgba(var(--ylRGB), .10); }
+    .topnav .tabs{
+      display:flex;
+      gap: 24px;
+      align-items:flex-end;
+      /* Keep underline baseline at the very bottom of the header */
+      padding-bottom: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Left-side district menu (tab-like) */
+    .sidemenu{
+      position: fixed;
+      left: 14px;
+      top: calc(var(--topbar-h) + 10px);
+      display:flex;
+      flex-direction: column;
+      align-items:flex-start;
+      justify-content:flex-start;
+      padding: 10px 12px 0;
+      background: rgba(1,6,27,.70);
+      border: 1px solid rgba(96,143,255,.18);
+      box-shadow: var(--glowB);
+      z-index: 35;
+      user-select:none;
+    }
+    /* Small title tab for the filter group (does not change layout height). */
+    .sidemenu::before{
+      content: "FILTER";
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 20px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      background: rgba(1,6,27,.70);
+      border: 1px solid rgba(96,143,255,.18);
+      box-shadow: var(--glowB);
+      color: rgba(96,143,255,.78);
+      font-size: 12px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .sidemenu-row{
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-start;
+    }
+    .sidemenu .arrow{
+      appearance:none;
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      color: rgba(96,143,255,.82);
+      cursor: default;
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-size: 44px;
+      font-weight: 700;
+    }
+    .sidemenu .arrow span{
+      display:inline-block;
+      padding: 0 10px 8px 10px;
+      /* Tall, thick, not wide */
+      transform: scaleX(.80) scaleY(1.28);
+    }
+    .sidemenu .tabs{
+      display:flex;
+      gap: 24px;
+      align-items:flex-end;
+      padding-bottom: 0;
+      position: relative;
+    }
+
+    /* Layer toggles under the district filter tabs */
+    .layerToggles{
+      position: fixed;
+      left: 14px;
+      top: calc(var(--topbar-h) + 10px + 72px);
+      z-index: 34;
+      display:flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 0 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+    .layerToggle{
+      appearance:none;
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      color: rgba(96,143,255,.78);
+      cursor: pointer;
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-size: 12px;
+    }
+    .layerToggle:hover{ color: rgba(96,143,255,.98); }
+    .layerToggle-icon{
+      width: 30px;
+      height: 14px;
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .layerToggle-icon::before{
+      content:"";
+      position:absolute;
+      inset: 2px 0;
+      background: rgba(96,143,255,.22);
+      box-shadow: 0 0 14px rgba(96,143,255,.12);
+    }
+    .layerToggle-icon::after{
+      content:"";
+      position:absolute;
+      top: 1px;
+      left: 1px;
+      width: 12px;
+      height: 12px;
+      background: rgba(96,143,255,.75);
+      box-shadow: 0 0 12px rgba(96,143,255,.18);
+      transition: transform .14s ease, background .14s ease;
+    }
+    .layerToggle.on{ color: var(--yl); }
+    .layerToggle.on .layerToggle-icon::before{ background: rgba(var(--ylRGB), .22); box-shadow: 0 0 14px rgba(var(--ylRGB), .10); }
+    .layerToggle.on .layerToggle-icon::after{ transform: translate3d(16px,0,0); background: rgba(var(--ylRGB), .92); box-shadow: 0 0 14px rgba(var(--ylRGB), .16); }
+
+    /* In SecuroServ mode, toggles inherit the red theme */
+    body.securosserv-mode .layerToggle{ color: rgba(var(--ssHot), .78); }
+    body.securosserv-mode .layerToggle:hover{ color: rgba(var(--ssHot), .98); }
+    body.securosserv-mode .layerToggle-icon::before{ background: rgba(var(--ssHot), .14); box-shadow: 0 0 14px rgba(var(--ssHot), .10); }
+    body.securosserv-mode .layerToggle-icon::after{ background: rgba(var(--ssHot), .70); box-shadow: 0 0 14px rgba(var(--ssHot), .12); }
+    body.securosserv-mode .layerToggle.on{ color: rgba(var(--ssHot), .95); }
+
+    /* Actual visibility control */
+    #layerBuildings,
+    #layerRoads,
+    #markersLayer{
+      transition: opacity .16s ease;
+    }
+    #layerBuildings{ opacity: .75; }
+    #layerRoads{ opacity: .50; }
+    body.hide-buildings #layerBuildings{ opacity: 0; }
+    body.hide-roads #layerRoads{ opacity: 0; }
+    body.hide-markers #markersLayer{ opacity: 0; }
+    .sidemenu .tab{
+      appearance:none;
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: rgba(96,143,255,.82);
+      cursor: default;
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-size: 13px;
+      position: relative;
+      z-index: 1;
+    }
+    .sidemenu .tab.on{ color: var(--yl); font-weight: 700; z-index: 3; }
+    .sidemenu .tab span{
+      display:inline-block;
+      padding: 0 0 8px 0;
+      border-bottom: 2px solid rgba(96,143,255,.28);
+    }
+    .sidemenu .tab.on span{
+      border-bottom: 2px solid rgba(var(--ylRGB), .85);
+      filter:
+        drop-shadow(0 0 10px rgba(var(--ylRGB), .16))
+        drop-shadow(0 0 18px rgba(var(--ylRGB), .10));
+    }
+
+    /* Interactivity: blue glow on hover; yellow only when selected */
+    .sidemenu .tab:hover:not(.on),
+    .sidemenu .arrow:hover{
+      color: rgba(96,143,255,.98);
+    }
+    .sidemenu .tab:hover:not(.on) span,
+    .sidemenu .arrow:hover span{
+      filter:
+        drop-shadow(0 0 10px rgba(96,143,255,.22))
+        drop-shadow(0 0 18px rgba(96,143,255,.12));
+    }
+    .sidemenu .tab:hover:not(.on) span{
+      border-bottom-color: rgba(96,143,255,.65);
+    }
+
+    /* Bottom-right pan readout */
+    .cornerReadout{
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 24;
+      pointer-events:none;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      align-items:flex-end;
+    }
+
+    .securserve-badge{
+      position: fixed;
+      top: calc(var(--topbar-h) + 14px);
+      right: 14px;
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+      z-index: 18;
+    }
+    .securserve-badge img{
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+      animation: securserveSpin 16s linear infinite;
+    }
+    @keyframes securserveSpin{
+      from{ transform: rotate(0deg); }
+      to{ transform: rotate(360deg); }
+    }
+    /* Side underline segments: start at the sides with a gap = tab spacing */
+    .topnav .tabs::before,
+    .topnav .tabs::after{
+      content:"";
+      position:absolute;
+      bottom: 0;
+      border-bottom: 2px solid rgba(96,143,255,.18); /* slightly dimmer than inactive tab underline */
+      pointer-events:none;
+    }
+    .topnav .tabs::before{
+      left: -100vw;
+      right: calc(100% + 24px);
+    }
+    .topnav .tabs::after{
+      left: calc(100% + 24px);
+      right: -100vw;
+    }
+    .topnav .tab{
+      appearance:none;
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: rgba(96,143,255,.82);
+      cursor: pointer;
+      line-height: 1;
+    }
+    .topnav .tab:hover{ color: var(--yl); }
+    .topnav .tab.on{ color: var(--yl); }
+
+    /* Disabled tabs (placeholders until pages exist)
+       - Hover should still work
+       - Clicks are blocked in JS (see DISABLED_VIEWS)
+    */
+    .topnav .tab.disabled{
+      opacity: .65;
+      cursor: pointer;
+      filter: none;
+    }
+    .topnav .tab.disabled span{
+      border-bottom-color: rgba(96,143,255,.18);
+      filter: none !important;
+    }
+    .topnav .tab.disabled:hover{
+      color: rgba(var(--ssHot), .95);
+    }
+    .topnav .tab.disabled:hover span{
+      border-bottom-color: rgba(var(--ssHot), .75);
+    }
+
+    /* If Lore Terminal is disabled, don't run the glitch animation */
+    .topnav .tab.tab-lore.disabled span{
+      animation: none !important;
+      text-shadow: none;
+    }
+    .topnav .tab.tab-lore.disabled span::before,
+    .topnav .tab.tab-lore.disabled span::after{
+      display: none;
+    }
+    .topnav .tab span{
+      display:inline-block;
+      padding: 0 0 8px 0;
+      border-bottom: 2px solid rgba(96,143,255,.28);
+    }
+    .topnav .tab:hover span{
+      border-bottom-color: rgba(var(--ylRGB), .65);
+    }
+    .topnav .tab.on span{
+      border-bottom: 2px solid rgba(var(--ylRGB), .85);
+    }
+    .topnav .tab.on{ font-weight: 700; }
+
+    /* Slightly glitchy (inviting) LORE TERMINAL tab */
+    .topnav .tab.tab-lore span{
+      position: relative;
+      text-shadow:
+        0 0 16px rgba(var(--ylRGB), .22),
+        0 0 28px rgba(var(--ylRGB), .12);
+      animation: loreTabGlitch .72s steps(2, end) infinite;
+    }
+    .topnav .tab.tab-lore span::after{
+      content: "LORE TERMINAL";
+      position: absolute;
+      inset: 0;
+      opacity: .22;
+      color: rgba(var(--ylRGB), .92);
+      mix-blend-mode: screen;
+      text-shadow:
+        2px 0 0 rgba(255,0,0,.22),
+        -2px 0 0 rgba(0,220,255,.18);
+      transform: translate3d(0,0,0);
+      pointer-events: none;
+      animation: loreTabGlitchGhost .72s steps(2, end) infinite;
+    }
+    .topnav .tab.tab-lore span::before{
+      content: "LORE TERMINAL";
+      position: absolute;
+      inset: 0;
+      opacity: .10;
+      color: rgba(96,143,255,.95);
+      mix-blend-mode: screen;
+      transform: translate3d(0,0,0);
+      filter: blur(.3px);
+      pointer-events: none;
+      animation: loreTabGlitchGhost2 .72s steps(2, end) infinite;
+    }
+    @keyframes loreTabGlitch{
+      /* IMPORTANT: no transform/letter-spacing here, so the tab doesn't shift layout */
+      0%{ filter:none; }
+      20%{ filter: contrast(1.18) saturate(1.08) brightness(1.02); }
+      40%{ filter: contrast(1.06); }
+      60%{ filter: contrast(1.22) saturate(1.10) brightness(1.03); }
+      80%{ filter: contrast(1.10); }
+      100%{ filter:none; }
+    }
+    @keyframes loreTabGlitchGhost{
+      0%{ opacity: .18; transform: translate3d(0,0,0); clip-path: inset(0 0 0 0); }
+      25%{ opacity: .44; transform: translate3d(2px,0,0); clip-path: inset(0 0 58% 0); }
+      50%{ opacity: .22; transform: translate3d(-2px,0,0); clip-path: inset(42% 0 0 0); }
+      75%{ opacity: .38; transform: translate3d(1px,0,0); clip-path: inset(14% 0 36% 0); }
+      100%{ opacity: .18; transform: translate3d(0,0,0); clip-path: inset(0 0 0 0); }
+    }
+    @keyframes loreTabGlitchGhost2{
+      0%{ opacity: .08; transform: translate3d(-1px,0,0); clip-path: inset(8% 0 48% 0); }
+      33%{ opacity: .14; transform: translate3d(1px,0,0); clip-path: inset(0 0 62% 0); }
+      66%{ opacity: .10; transform: translate3d(-2px,0,0); clip-path: inset(52% 0 0 0); }
+      100%{ opacity: .08; transform: translate3d(0,0,0); clip-path: inset(8% 0 48% 0); }
+    }
+

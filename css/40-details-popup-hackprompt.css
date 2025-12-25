@@ -1,0 +1,455 @@
+    /* Restricted hack prompt ("BREACH PROTOCOL" button next to Area Details)
+       Implemented as an SVG polygon so the outline stroke follows diagonals perfectly. */
+    .hackPrompt{
+      position: fixed;
+      z-index: 65;
+      display: none;
+      pointer-events: auto;
+      transform: translate3d(0,0,0);
+    }
+    .hackPrompt.on{ display: block; }
+
+    .hackPrompt .btn{
+      --bpStroke: 96, 143, 255;
+      --bpStrokeHot: var(--ylRGB);
+      --bpFillA: 6, 10, 22;
+      --bpContentShift: 12px;
+      --bpPress: 0px;
+      appearance: none;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      position: relative;
+      width: 320px;
+      height: 78px;
+      text-transform: uppercase;
+    }
+    .hackPrompt.on .btn{ animation: breachPop .55s cubic-bezier(.18,.92,.12,1) both; }
+    @keyframes breachPop{
+      0%{ opacity: 0; transform: translate3d(-6px, 10px, 0) scale(.985); filter: blur(1.1px); }
+      55%{ opacity: 1; transform: translate3d(2px, -2px, 0) scale(1.01); filter: blur(.25px); }
+      100%{ opacity: 1; transform: translate3d(0,0,0) scale(1); filter: blur(0px); }
+    }
+
+    .hackPrompt .btn .bpSvg{
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      transform: translateY(var(--bpPress));
+      transition: transform 70ms linear, filter 70ms linear;
+    }
+    .hackPrompt .btn .bpOutline{
+      fill: none;
+      stroke: rgba(var(--bpStroke), .92);
+      stroke-width: 2;
+      filter: drop-shadow(0 0 4px rgba(var(--bpStroke), .34));
+    }
+    .hackPrompt .btn .bpFill{ fill: rgba(var(--bpFillA), .86); }
+    .hackPrompt .btn .bpTab{ fill: rgba(var(--bpStroke), .78); }
+    .hackPrompt .btn .bpTabSep{
+      fill: none;
+      stroke: rgba(0,0,0,.55);
+      stroke-width: 1.5;
+      opacity: .48;
+    }
+    .hackPrompt .btn .bpTagText{
+      font-family: "Rajdhani", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      font-weight: 900;
+      font-size: 28px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      fill: rgba(0,0,0,.86);
+    }
+    .hackPrompt .btn .bpScan{ fill: rgba(255,255,255,.22); }
+    .hackPrompt .btn .bpLines{
+      fill: url(#bpScanlines);
+      opacity: .10;
+    }
+
+    .hackPrompt .btn .bpContent{
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      gap: 12px;
+      /* Center content in the main bar area (the left tab raises the overall box) */
+      transform: translateY(calc(var(--bpContentShift) + var(--bpPress)));
+      transition: transform 70ms linear;
+    }
+
+    /* Click/press feedback ("boop" like a physical button) */
+    .hackPrompt .btn:active{ --bpPress: 2px; }
+    .hackPrompt .btn:active .bpOutline{ filter: drop-shadow(0 0 14px rgba(var(--bpStrokeHot), .58)); }
+    .hackPrompt .btn:active .bpFill{ filter: brightness(.92); }
+    .hackPrompt .btn:active .bpStatus{ transform: translateY(1px); }
+    .hackPrompt .btn .bpTitle{
+      font-weight: 900;
+      letter-spacing: 2.4px;
+      font-size: 14px;
+      line-height: 1;
+      color: rgba(var(--bpStroke), .94);
+      text-shadow: 0 0 12px rgba(var(--bpStroke), .14);
+      white-space: nowrap;
+      /* Push title toward the center of the long bar */
+      margin-left: 34px;
+    }
+    .hackPrompt .btn .bpStatus{
+      display: inline-flex;
+      align-items: center;
+      font-weight: 800;
+      letter-spacing: 1.8px;
+      font-size: 11px;
+      padding: 4px 10px;
+      border: 1px solid rgba(var(--bpStroke), .70);
+      color: rgba(var(--bpStroke), .92);
+      background: rgba(0,0,0,.22);
+      white-space: nowrap;
+    }
+
+    .hackPrompt .btn:hover .bpOutline{
+      stroke: rgba(var(--bpStrokeHot), .98);
+      filter: drop-shadow(0 0 10px rgba(var(--bpStrokeHot), .48));
+    }
+    .hackPrompt .btn:hover .bpTab{ fill: rgba(var(--bpStrokeHot), .92); }
+    .hackPrompt .btn:hover .bpTitle{
+      color: rgba(var(--bpStrokeHot), .92);
+      text-shadow: 0 0 12px rgba(var(--bpStrokeHot), .16);
+    }
+
+    .hackPrompt .btn:hover .bpStatus{
+      border-color: rgba(var(--bpStrokeHot), .92);
+      color: rgba(0,0,0,.92);
+      background: rgba(var(--bpStrokeHot), .92);
+      text-shadow: none;
+    }
+
+    /* Keep BREACH PROTOCOL blue; just darken the fill slightly when the Area Details panel is restricted. */
+    #popupDetails.restricted + .hackPrompt .btn{ --bpFillA: 0, 0, 0; }
+    #popupDetails.restricted + .hackPrompt .btn .bpFill{ fill: rgba(0,0,0,.70); }
+
+    /* Generic hack timer line inside the existing counterhack window */
+    body.restricted-hack-active .counterhack-win .instr span:last-child{
+      color: rgba(var(--ylRGB), .88);
+      font-weight: 800;
+      letter-spacing: 1.4px;
+    }
+    body.restricted-hack-active .counterhack-win .label{ letter-spacing: 2px; }
+
+    /* Restricted theming (defaults to Merryweather-style yellow) */
+    .restricted-overlay,
+    #popupDetails.restricted{
+      --restrictedRGB: 255, 238, 152;
+      --restrictedRGBHot: 255, 196, 44;
+      --restrictedTextRGB: 255, 238, 152;
+    }
+    #popupDetails.restricted{
+      --pdStroke: var(--restrictedRGB);
+      --pdStrokeHot: var(--restrictedRGBHot);
+    }
+    .restricted-overlay.theme-blue,
+    #popupDetails.restricted.theme-blue{
+      --restrictedRGB: 96, 143, 255;
+      --restrictedRGBHot: 96, 143, 255;
+      --restrictedTextRGB: 96, 143, 255;
+    }
+    .restricted-overlay.theme-red,
+    #popupDetails.restricted.theme-red{
+      --restrictedRGB: 207, 0, 0;
+      --restrictedRGBHot: 255, 65, 65;
+      --restrictedTextRGB: 255, 65, 65;
+    }
+
+    /* SecuroServ global UI mode: force the entire HUD palette to red shades */
+    body.securosserv-mode{
+      --ui: rgb(var(--ssHot));
+      --yl: rgb(var(--ssHot));
+      --panel: rgba(18, 4, 6, .78);
+      --line: rgba(var(--ssHot), .70);
+      --line2: rgba(var(--ssHot), .30);
+      --glowB: 0 0 16px rgba(var(--ssHot), .28), 0 0 44px rgba(var(--ss), .20);
+      --glowY: 0 0 12px rgba(var(--ssHot), .30), 0 0 30px rgba(var(--ssHot), .18);
+    }
+
+    body.securosserv-mode .hudtitle{ color: rgba(var(--ssHot), .95); }
+    body.securosserv-mode .hudfoot{ color: rgba(var(--ssHot), .78); border-top-color: rgba(var(--ssHot), .35); }
+
+    body.securosserv-mode .topnav .tabs::before,
+    body.securosserv-mode .topnav .tabs::after{
+      border-bottom-color: rgba(var(--ssHot), .24);
+    }
+    body.securosserv-mode .topnav .tab{ color: rgba(var(--ssHot), .86); }
+    body.securosserv-mode .topnav .tab span{ border-bottom-color: rgba(var(--ssHot), .36); }
+    body.securosserv-mode .topnav .tab.on span{ border-bottom-color: rgba(var(--ss), 1); }
+    body.securosserv-mode .topnav .tab:hover{ color: rgba(var(--ssHot), .98); }
+    body.securosserv-mode .topnav .tab:hover span{ border-bottom-color: rgba(var(--ssHot), .70); }
+
+    body.securosserv-mode .sidemenu{ border-color: rgba(var(--ssHot), .26); box-shadow: var(--glowB); }
+    body.securosserv-mode .sidemenu::before{ border-color: rgba(var(--ssHot), .26); color: rgba(var(--ssHot), .78); }
+    body.securosserv-mode .sidemenu .tab,
+    body.securosserv-mode .sidemenu .arrow{ color: rgba(var(--ssHot), .86); }
+    body.securosserv-mode .sidemenu .tab span{ border-bottom-color: rgba(var(--ssHot), .36); }
+    body.securosserv-mode .sidemenu .tab.on span{
+      border-bottom-color: rgba(var(--ss), 1);
+      filter:
+        drop-shadow(0 0 10px rgba(var(--ssHot), .22))
+        drop-shadow(0 0 18px rgba(var(--ssHot), .14));
+    }
+    body.securosserv-mode .sidemenu .tab:hover:not(.on),
+    body.securosserv-mode .sidemenu .arrow:hover{ color: rgba(var(--ssHot), .98); }
+    body.securosserv-mode .sidemenu .tab:hover:not(.on) span,
+    body.securosserv-mode .sidemenu .arrow:hover span{
+      filter:
+        drop-shadow(0 0 10px rgba(var(--ssHot), .26))
+        drop-shadow(0 0 18px rgba(var(--ssHot), .16));
+    }
+    body.securosserv-mode .sidemenu .tab:hover:not(.on) span{ border-bottom-color: rgba(var(--ssHot), .70); }
+
+    body.securosserv-mode .tip{
+      border-color: rgba(var(--ss), 1);
+      box-shadow: 0 0 12px rgba(var(--ssHot), .24), 0 0 22px rgba(var(--ssHot), .14);
+      color: rgba(var(--ssHot), .95);
+      text-shadow: 0 0 7px rgba(var(--ssHot), .40), 0 0 14px rgba(var(--ssHot), .26);
+    }
+
+    body.securosserv-mode .term,
+    body.securosserv-mode .boot-lines{
+      color: rgba(var(--ssHot), .92);
+      border-color: rgba(var(--ssHot), .28);
+    }
+    body.securosserv-mode .boot-top,
+    body.securosserv-mode .boot-foot{ border-color: rgba(var(--ssHot), .30); }
+    body.securosserv-mode .boot-title{ color: rgba(var(--ssHot), .96); }
+    body.securosserv-mode .boot-sub{ color: rgba(var(--ssHot), .72); }
+    body.securosserv-mode .boot-line.dim{ color: rgba(var(--ssHot), .62); }
+    body.securosserv-mode .boot-meta{ color: rgba(var(--ssHot), .70); }
+    body.securosserv-mode .boot-foot{ color: rgba(var(--ssHot), .66); }
+    body.securosserv-mode .boot-inner::before{ border-color: rgba(var(--ssHot), .16); }
+    body.securosserv-mode .boot-bar{ border-color: rgba(var(--ssHot), .30); }
+    body.securosserv-mode .boot-bar-fill{ background: rgba(var(--ssHot), .92); }
+
+    #popupDetails.restricted{
+      animation: restrictedPanelPulse 4s ease-in-out infinite;
+    }
+    #popupDetails.restricted::before{
+      background: rgba(0,0,0,.95);
+      box-shadow:
+        0 0 0 4px rgba(0,0,0,1) inset,
+        0 0 32px rgba(var(--restrictedRGB), .85),
+        inset 0 0 26px rgba(0,0,0,.65);
+    }
+    #popupDetails.restricted .hudhead{
+      background: linear-gradient(120deg, rgba(var(--restrictedRGB), .18), rgba(6,10,22,.6));
+    }
+    #popupDetails.restricted .hudhead::before{
+      background: linear-gradient(120deg, rgba(var(--restrictedRGB), .45), rgba(6,10,22,.55));
+      border-color: rgba(var(--restrictedRGB), .8);
+    }
+    #popupDetails.restricted .hudhead::after{
+      background: rgba(var(--restrictedRGB), .14);
+      border-color: rgba(var(--restrictedRGB), .45);
+    }
+    #popupDetails.restricted .hudtitle{
+      color: rgba(var(--restrictedTextRGB), .95);
+      text-shadow: 0 0 8px rgba(var(--restrictedRGBHot), .55);
+      font-weight: 700;
+      letter-spacing: 3px;
+    }
+    #popupDetails.restricted .hudmeta{
+      color: rgba(var(--restrictedTextRGB), .95);
+      text-shadow: 0 0 8px rgba(var(--restrictedRGBHot), .55);
+      font-weight: 700;
+    }
+    #popupDetails.restricted .hudfoot{
+      border-top-color: rgba(var(--restrictedRGB), .6);
+      color: rgba(var(--restrictedTextRGB), .95);
+      text-shadow: 0 0 8px rgba(var(--restrictedRGBHot), .35);
+      font-weight: 600;
+    }
+    #popupDetails.restricted .hudbody,
+    #popupDetails.restricted .hudhead,
+    #popupDetails.restricted .hudfoot{
+      background: rgba(4,6,12,.75);
+      border-color: transparent;
+    }
+    #popupDetails.restricted::after{
+      content:"";
+      position:absolute;
+      inset: 2px;
+      pointer-events:none;
+      border-radius: inherit;
+      background:
+        linear-gradient(115deg, rgba(255,255,255,.08) 0 2px, transparent 2px 4px),
+        linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 6px);
+      mix-blend-mode: screen;
+      clip-path: inherit;
+      opacity: .45;
+      animation: restrictedGlitch 1.4s linear infinite;
+      background-size: 120% 120%;
+      animation-timing-function: steps(2, start);
+    }
+    @keyframes restrictedGlitch{
+      0%{ transform: translate(0,0); opacity:.45; }
+      20%{ transform: translate(-3px, 1px); }
+      40%{ transform: translate(2px, -1px); opacity:.6; }
+      60%{ transform: translate(-2px, 0); }
+      80%{ transform: translate(1px, -1px); opacity:.55; }
+      100%{ transform: translate(0,0); }
+    }
+    @keyframes restrictedPanelPulse{
+      0%,100%{ filter: drop-shadow(0 0 0 rgba(var(--restrictedRGB), 0.4)); }
+      40%{ filter:
+        drop-shadow(0 0 26px rgba(var(--restrictedRGB), .6))
+        drop-shadow(0 0 42px rgba(var(--restrictedRGBHot), .35)); }
+    }
+    #popupDetails.restricted .details .dRow{
+      border-color: rgba(var(--restrictedRGB), .35);
+    }
+    #popupDetails.restricted .details .dK{
+      color: rgba(var(--restrictedTextRGB), .95);
+      font-weight: 600;
+    }
+    #popupDetails.restricted .details .dV{
+      color: rgba(var(--restrictedTextRGB), .95);
+      font-weight: 600;
+    }
+    #popupDetails.restricted .details .dMedia{
+      border-color: rgba(var(--restrictedRGB), .95);
+      box-shadow: 0 0 24px rgba(var(--restrictedRGB), .45);
+      background: rgba(4,2,8,.85);
+    }
+    #popupDetails.restricted .dNoteText{
+      background: rgba(0,0,0,.8);
+      border-color: rgba(var(--restrictedRGB), .85);
+      color: rgba(var(--restrictedTextRGB), .95);
+      box-shadow: inset 0 0 24px rgba(var(--restrictedRGB), .3);
+    }
+
+    /* Terminal */
+    .term{
+      height: 210px;
+      overflow:auto;
+      font-family: inherit;
+      font-size: 12px;
+      line-height: 1.35;
+      color: rgba(var(--ylRGB), .85);
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.22)),
+        repeating-linear-gradient(0deg, rgba(96,143,255,.05), rgba(96,143,255,.05) 1px, transparent 1px, transparent 18px);
+      border: 1px solid rgba(96,143,255,.24);
+    }
+    .termline{ padding: 3px 0; opacity:.92; }
+
+    /* Bottom-left command feed (text-only) */
+    .cmdFeed{
+      position: fixed;
+      left: 14px;
+      bottom: 14px;
+      z-index: 60;
+      width: min(520px, calc(100vw - 28px));
+      max-height: 44vh;
+      overflow: hidden;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: inherit;
+      font-size: 12px;
+      line-height: 1.35;
+      color: rgba(var(--ylRGB), .86);
+      text-shadow: 0 0 12px rgba(var(--ylRGB), .10);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .cmdline{
+      opacity: .95;
+      transform: translateY(6px);
+      filter: drop-shadow(0 0 10px rgba(0,0,0,.55));
+      transition: opacity .55s ease, transform .55s ease;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .cmdline.on{ opacity: .95; transform: translateY(0); }
+    .cmdline.off{ opacity: 0; transform: translateY(-6px); }
+
+    /* Fake body scan */
+    .scanbox{
+      position:relative;
+      height: 320px;
+      border: 1px solid var(--line2);
+      background: linear-gradient(180deg, rgba(96,143,255,.10), rgba(6,10,22,.0));
+      overflow:hidden;
+    }
+    .scanfigure{
+      position:absolute; inset: 18px;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(96,143,255,.22), transparent 40%),
+        radial-gradient(circle at 50% 70%, rgba(96,143,255,.14), transparent 45%);
+      opacity:.8;
+    }
+    .scanmarks span{
+      position:absolute;
+      width: 10px; height: 10px;
+      border: 1px solid rgba(96,143,255,.55);
+      background: rgba(6,10,22,.35);
+    }
+    .scanmarks span:nth-child(1){ left: 26px; top: 90px; }
+    .scanmarks span:nth-child(2){ right: 44px; top: 130px; }
+    .scanmarks span:nth-child(3){ left: 60px; bottom: 82px; }
+    .scanmarks span:nth-child(4){ right: 80px; bottom: 110px; }
+    .scanline{
+      position:absolute; left:-10%;
+      top: 24px;
+      width: 120%; height: 2px;
+      background: rgba(var(--ylRGB), .55);
+      box-shadow: var(--glowY);
+      animation: scan 2.6s linear infinite;
+      opacity:.55;
+    }
+    @keyframes scan{ 0%{ transform: translateY(0);} 100%{ transform: translateY(280px);} }
+
+    /* Right visuals */
+    .wavebox{
+      height: 170px;
+      border: 1px solid var(--line2);
+      background: rgba(4,7,16,.35);
+      overflow:hidden;
+      position:relative;
+    }
+    .wave{
+      position:absolute; inset:0;
+      background:
+        linear-gradient(transparent 60%, rgba(96,143,255,.06) 60%),
+        repeating-linear-gradient(90deg, rgba(96,143,255,.06), rgba(96,143,255,.06) 1px, transparent 1px, transparent 18px);
+      opacity:.8;
+    }
+    .wave::after{
+      content:"";
+      position:absolute; inset:0;
+      background: linear-gradient(90deg, transparent, rgba(var(--ylRGB), .10), transparent);
+      animation: sweep 2.2s linear infinite;
+    }
+    @keyframes sweep{ 0%{ transform: translateX(-60%);} 100%{ transform: translateX(60%);} }
+
+    .gridbox{
+      height: 260px;
+      border: 1px solid var(--line2);
+      background:
+        repeating-linear-gradient(0deg, rgba(96,143,255,.08), rgba(96,143,255,.08) 1px, transparent 1px, transparent 18px),
+        repeating-linear-gradient(90deg, rgba(96,143,255,.08), rgba(96,143,255,.08) 1px, transparent 1px, transparent 18px);
+      position:relative;
+    }
+    .gridbox::after{
+      content:"";
+      position:absolute; inset: 22px;
+      background: radial-gradient(circle at 50% 50%, rgba(var(--ylRGB), .75) 1px, transparent 1.2px);
+      background-size: 22px 22px;
+      opacity:.35;
+    }
+
+    /* Center map */
