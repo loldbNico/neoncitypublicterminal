@@ -265,6 +265,23 @@
     }
 
     function updateRestrictedOverlayState(){
+      // Finale lore hack controls ordering/timing; don't let map selection re-enable SecuroServ chaos.
+      try{
+        const finaleActive = Boolean(document.body && (document.body.classList.contains('finale-hack') || document.body.classList.contains('finale-shake') || document.body.classList.contains('finale-blur')));
+        if(finaleActive){
+          // Finale drives ordering/timing. During power-off/reboot, SecuroServ needs to stay enabled.
+          const poweringOff = Boolean(document.body && document.body.classList.contains('powering-off'));
+          if(!poweringOff){
+            document.body?.classList?.remove?.('securosserv-mode');
+            try{ stopSecuroservChaos(); }catch{}
+            try{ stopSecuroservMidbarCountdown(); }catch{}
+            try{ stopSecuroservEscalation(); }catch{}
+            document.getElementById('securoservChaos')?.classList?.remove?.('on');
+          }
+          return;
+        }
+      }catch{}
+
       const activeRestricted = Boolean(selectedEl && selectedEl.classList.contains("restricted"));
 
       const normKey = activeRestricted
@@ -600,12 +617,11 @@
       if(!header) return;
 
       const mapStage = document.querySelector('main.mapstage');
-      const inventoryStage = document.getElementById('inventoryStage');
       const loreStage = document.getElementById('loreStage');
       const tabs = Array.from(header.querySelectorAll('button.tab[data-view]'));
       if(tabs.length === 0) return;
 
-      const DISABLED_VIEWS = new Set(['settings','augments','inventory']);
+      const DISABLED_VIEWS = new Set(['settings','augments']);
       let currentView = 'map';
 
       function runQuickLoad(opts = {}){
@@ -678,20 +694,18 @@
         }catch{}
 
         // Smooth the switch back to map with a quick blur only.
-        if((currentView === 'inventory' || currentView === 'lore') && next === 'map'){
+        if(currentView === 'lore' && next === 'map'){
           try{ runQuickLoad({ mode: 'blur' }); }catch{}
         }
 
         setActiveTab(next);
-        document.body.classList.toggle('view-inventory', next === 'inventory');
         document.body.classList.toggle('view-lore', next === 'lore');
 
         if(mapStage) mapStage.setAttribute('aria-hidden', (next !== 'map') ? 'true' : 'false');
-        if(inventoryStage) inventoryStage.setAttribute('aria-hidden', next === 'inventory' ? 'false' : 'true');
         if(loreStage) loreStage.setAttribute('aria-hidden', next === 'lore' ? 'false' : 'true');
 
         // Ensure we never carry the input blocker into non-map views.
-        if(next === 'inventory' || next === 'lore'){
+        if(next === 'lore'){
           try{ setSecuroservMouseBlock(false); }catch{}
         }
 

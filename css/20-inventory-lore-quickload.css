@@ -1,18 +1,4 @@
-    /* Inventory page (static UI, match reference layout) */
-    .inventorystage{
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: var(--topbar-h);
-      bottom: 0;
-      overflow: hidden;
-      background:
-        radial-gradient(900px 520px at 26% 0%, rgba(96,143,255,.18), rgba(0,0,0,0) 62%),
-        radial-gradient(820px 520px at 70% 0%, rgba(96,143,255,.10), rgba(0,0,0,0) 60%),
-        linear-gradient(180deg, rgba(10,6,16,.80) 0%, rgba(1,6,27,.62) 42%, rgba(0,0,0,.92) 100%);
-    }
-
-    /* Lore Terminal (desktop archive) */
+    /* Lore view: Data Shards (Cyberpunk-style) */
     .lorestage{
       position: absolute;
       left: 0;
@@ -23,10 +9,339 @@
       /* Keep below the global boot overlay (z-index:9999). */
       z-index: 90;
       background:
-        radial-gradient(900px 520px at 26% 0%, rgba(96,143,255,.18), rgba(0,0,0,0) 62%),
-        radial-gradient(820px 520px at 70% 0%, rgba(96,143,255,.10), rgba(0,0,0,0) 60%),
+        radial-gradient(900px 520px at 26% 0%, rgba(96,143,255,.10), rgba(0,0,0,0) 62%),
+        radial-gradient(820px 520px at 70% 0%, rgba(96,143,255,.06), rgba(0,0,0,0) 60%),
         linear-gradient(180deg, rgba(10,6,16,.82) 0%, rgba(1,6,27,.66) 42%, rgba(0,0,0,.92) 100%);
     }
+
+    .shardDesk{
+      position: absolute;
+      inset: 12px 14px 14px;
+      display: none;
+      grid-template-columns: 182px 1fr;
+      gap: 14px;
+      border: 1px solid rgba(96,143,255,.14);
+      background:
+        radial-gradient(900px 520px at 22% 0%, rgba(96,143,255,.06), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.60));
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.72) inset,
+        0 0 34px rgba(96,143,255,.06);
+      overflow: hidden;
+    }
+
+    .shardDesk.on{ display: grid; }
+
+    .shardTabs{
+      position: relative;
+      padding: 16px 14px;
+      overflow: auto;
+      scrollbar-color: rgba(255,220,64,.35) rgba(0,0,0,.30);
+    }
+
+    .shardTab{
+      position: relative;
+      width: 192px;
+      height: 44px;
+      margin: 10px auto;
+      border: 1px solid rgba(96,143,255,.22);
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.46), rgba(0,0,0,.22));
+      cursor: pointer;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.62) inset,
+        0 0 22px rgba(96,143,255,.08);
+      transition: transform .12s ease, border-color .12s ease, background .12s ease, opacity .12s ease, box-shadow .12s ease;
+
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+
+      padding: 0 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+      color: rgba(215,230,255,.78);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      /* Square-ish like map UI elements */
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    }
+
+    .shardTab::after{
+      content:"";
+      position:absolute;
+      inset: 4px;
+      border: 1px solid rgba(96,143,255,.14);
+      opacity: .9;
+      pointer-events: none;
+    }
+
+    .shardTab:hover{
+      border-color: rgba(96,143,255,.58);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.62) inset,
+        0 0 34px rgba(96,143,255,.18),
+        0 0 76px rgba(96,143,255,.08);
+    }
+
+    .shardTab:hover::after{
+      border-color: rgba(96,143,255,.28);
+    }
+
+    .shardTab.locked{
+      opacity: .22;
+      cursor: default;
+      filter: grayscale(.2);
+    }
+
+    /* Unread: bright pulse */
+    @keyframes shardPulse{
+      0%, 100%{
+        box-shadow:
+          0 0 0 1px rgba(0,0,0,.62) inset,
+          0 0 18px rgba(var(--ylRGB), .08);
+      }
+      55%{
+        box-shadow:
+          0 0 0 1px rgba(0,0,0,.62) inset,
+          0 0 26px rgba(var(--ylRGB), .14),
+          0 0 42px rgba(var(--ylRGB), .06);
+      }
+    }
+    .shardTab.unread{
+      border-color: rgba(var(--ylRGB), .34);
+      color: rgba(var(--ylRGB), .86);
+      text-shadow: 0 0 12px rgba(var(--ylRGB), .14);
+      animation: shardPulse 1.15s ease-in-out infinite;
+    }
+    .shardTab.unread::after{ border-color: rgba(var(--ylRGB), .20); }
+
+    /* Read: empty outline look */
+    .shardTab.read{
+      background: rgba(0,0,0,.16);
+      border-color: rgba(96,143,255,.16);
+      color: rgba(215,230,255,.48);
+      text-shadow: none;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+    }
+    .shardTab.read::after{ opacity: .55; }
+
+    /* Active (currently open): filled yellow + glow */
+    .shardTab.active{
+      transform: translateX(4px);
+      border-color: rgba(var(--ylRGB), .96);
+      background:
+        linear-gradient(180deg, rgba(var(--ylRGB), .92), rgba(var(--ylRGB), .78));
+      color: rgba(0,0,0,.90);
+      text-shadow: none;
+      animation: none;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.62) inset,
+        0 0 34px rgba(var(--ylRGB), .26),
+        0 0 92px rgba(var(--ylRGB), .14);
+    }
+    .shardTab.active::after{ opacity: .65; border-color: rgba(0,0,0,.42); }
+
+    .shardTab.active:hover{
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.62) inset,
+        0 0 42px rgba(var(--ylRGB), .30),
+        0 0 120px rgba(var(--ylRGB), .16);
+    }
+
+    /* Active tab: invert shard icon to black */
+    .shardTab.active .shardTabIcon{
+      mix-blend-mode: normal;
+      opacity: .98;
+      filter: brightness(0) contrast(1.1);
+    }
+
+    /* Unlock effect: glitchy reveal */
+    @keyframes shardUnlockFlicker{
+      0%{ opacity: 0; transform: translateX(-6px) skewX(-8deg); filter: blur(.6px) saturate(1.2); }
+      12%{ opacity: 1; transform: translateX(2px) skewX(10deg); }
+      20%{ opacity: .35; transform: translateX(-2px) skewX(-12deg); }
+      32%{ opacity: 1; transform: translateX(1px) skewX(6deg); }
+      45%{ opacity: .55; transform: translateX(-1px) skewX(-6deg); }
+      60%{ opacity: 1; transform: translateX(0) skewX(0); filter: none; }
+      100%{ opacity: 1; transform: translateX(0) skewX(0); filter: none; }
+    }
+
+    @keyframes shardUnlockScan{
+      0%{ transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+      25%{ opacity: .55; }
+      55%{ opacity: .22; }
+      100%{ transform: translateX(120%) skewX(-18deg); opacity: 0; }
+    }
+
+    .shardTab.unlocking{
+      animation: shardUnlockFlicker .62s steps(2, end) 1;
+    }
+
+    .shardTab.unlocking::before{
+      content: "";
+      position: absolute;
+      inset: -6px;
+      background:
+        linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent),
+        linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 6px);
+      mix-blend-mode: screen;
+      opacity: .0;
+      pointer-events: none;
+      animation: shardUnlockScan .58s ease-out 1;
+    }
+
+    .shardTab.unlocking::after{
+      animation: none;
+    }
+
+    .shardViewer{
+      position: relative;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+
+    .shardViewer.on{ display: flex; }
+
+    .shardFrame{
+      position: relative;
+      width: min(820px, calc(100% - 10px));
+      aspect-ratio: 16 / 9;
+      max-height: calc(100% - 10px);
+      border: 1px solid rgba(96,143,255,.18);
+      background:
+        radial-gradient(800px 420px at 20% 0%, rgba(96,143,255,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(0,0,0,.72), rgba(0,0,0,.90));
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.72) inset,
+        0 0 34px rgba(96,143,255,.08);
+      overflow: hidden;
+    }
+
+    .shardFrame::before{
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(96,143,255,.10), rgba(0,0,0,0) 60%),
+        repeating-linear-gradient(0deg, rgba(96,143,255,.05), rgba(96,143,255,.05) 1px, transparent 1px, transparent 12px);
+      opacity: .55;
+    }
+
+    /* mild corner cut like existing HUD panels */
+    .shardFrame{
+      clip-path: polygon(0 18px, 18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
+    }
+
+    /* Removed: shard image should not be used as a window background/frame. */
+
+    .shardContent{
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      padding: 28px 34px;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 10px;
+    }
+
+    .shardHead{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 12px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .shardHeadLeft{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .shardLogo{
+      display: none;
+    }
+
+    .shardTabIcon{
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      opacity: .68;
+      mix-blend-mode: screen;
+      filter: saturate(.9) contrast(1.05) brightness(.95);
+      flex: 0 0 auto;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .shardTabLabel{
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .shardTitle{
+      font-size: 16px;
+      color: rgba(96,143,255,.90);
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .shardClose{
+      width: 30px;
+      height: 24px;
+      border: 1px solid rgba(96,143,255,.24);
+      background: rgba(0,0,0,.36);
+      color: rgba(96,143,255,.86);
+      font-family: inherit;
+      font-size: 12px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .shardClose:hover{
+      border-color: rgba(96,143,255,.40);
+      color: rgba(96,143,255,.98);
+    }
+
+    .shardMeta{
+      font-size: 11px;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: rgba(96,143,255,.72);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .shardBody{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(96,143,255,.86);
+      white-space: pre-wrap;
+      overflow: auto;
+      scrollbar-color: rgba(96,143,255,.35) rgba(0,0,0,.30);
+      text-shadow: 0 0 18px rgba(96,143,255,.06);
+      padding-right: 6px;
+    }
+
+    /* ---- Legacy lore terminal styles below (unused for now) ---- */
 
     /* Desktop container */
     .loreDesktop{
@@ -161,6 +476,383 @@
     }
     .loreDeskDim.on{ opacity: 1; pointer-events: auto; }
 
+    /* Lore notices/warnings as popups */
+    .lorePopups{
+      position: fixed;
+      inset: 0;
+      /* Keep popups above the blocker, below the terminal/countdown. */
+      z-index: 2147483643;
+      pointer-events: none;
+    }
+
+    .lorePopup{
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      width: min(360px, calc(100vw - 44px));
+      border: 1px solid rgba(96,143,255,.22);
+      background:
+        radial-gradient(560px 220px at 50% 0%, rgba(96,143,255,.14), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(0,0,0,.72), rgba(0,0,0,.92));
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.72) inset,
+        0 0 28px rgba(96,143,255,.10);
+      padding: 10px 10px 12px;
+      pointer-events: auto;
+      backdrop-filter: blur(7px);
+      -webkit-backdrop-filter: blur(7px);
+    }
+
+    .lorePopupHead{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+      font-size: 11px;
+      color: rgba(96,143,255,.88);
+      font-weight: 400;
+    }
+
+    .lorePopupTitle{ min-width: 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    .lorePopupClose{
+      width: 26px;
+      height: 22px;
+      border: 1px solid rgba(96,143,255,.20);
+      background: rgba(0,0,0,.35);
+      color: rgba(96,143,255,.82);
+      font-family: inherit;
+      font-size: 12px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 0;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .lorePopupClose:hover{
+      border-color: rgba(96,143,255,.35);
+      color: rgba(96,143,255,.96);
+    }
+
+    .lorePopupBody{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12.5px;
+      line-height: 1.55;
+      letter-spacing: .1px;
+      font-weight: 400;
+      color: rgba(96,143,255,.84);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Popup theme overrides */
+    .lorePopup.theme-blue{
+      border-color: rgba(96,143,255,.22);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.72) inset,
+        0 0 28px rgba(96,143,255,.10);
+    }
+    .lorePopup.theme-blue .lorePopupHead{ color: rgba(96,143,255,.88); }
+    .lorePopup.theme-blue .lorePopupClose{ border-color: rgba(96,143,255,.20); color: rgba(96,143,255,.82); }
+    .lorePopup.theme-blue .lorePopupClose:hover{ border-color: rgba(96,143,255,.35); color: rgba(96,143,255,.96); }
+    .lorePopup.theme-blue .lorePopupBody{ color: rgba(96,143,255,.84); }
+
+    .lorePopup.theme-red{
+      border-color: rgba(var(--ssHot), .40);
+      background:
+        radial-gradient(560px 220px at 50% 0%, rgba(var(--ssHot), .16), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(0,0,0,.82), rgba(0,0,0,.95));
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.82) inset,
+        0 0 30px rgba(var(--ss), .28);
+    }
+    .lorePopup.theme-red .lorePopupHead{ color: rgba(var(--ssHot), .90); }
+    .lorePopup.theme-red .lorePopupClose{
+      border-color: rgba(var(--ssHot), .26);
+      color: rgba(var(--ssHot), .84);
+      background: rgba(0,0,0,.55);
+    }
+    .lorePopup.theme-red .lorePopupClose:hover{ border-color: rgba(var(--ssHot), .55); color: rgba(var(--ssHot), .98); }
+    .lorePopup.theme-red .lorePopupBody{ color: rgba(var(--ssHot), .86); }
+
+    /* Finale: shutdown countdown popup (must be above the corrupted entry panel). */
+    .shutdownPopup{
+      position: fixed;
+      left: 50%;
+      /* Lower on screen (keep out of warning stack). */
+      top: 22vh;
+      transform: translateX(-50%);
+      width: min(520px, calc(100vw - 44px));
+      border: 1px solid rgba(var(--ssHot), .52);
+      background:
+        radial-gradient(720px 260px at 50% 0%, rgba(var(--ssHot), .18), rgba(0,0,0,0) 62%),
+        linear-gradient(180deg, rgba(0,0,0,.86), rgba(0,0,0,.96));
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.86) inset,
+        0 0 46px rgba(var(--ss), .26);
+      padding: 12px 12px 12px;
+      pointer-events: none;
+      z-index: 2147483646;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .shutdownPopupBar{
+      height: 8px;
+      margin-top: 10px;
+      border: 1px solid rgba(var(--ssHot), .40);
+      background: rgba(0,0,0,.55);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.85) inset;
+      overflow: hidden;
+    }
+
+    .shutdownPopupBarFill{
+      height: 100%;
+      width: 0%;
+      background: rgba(var(--ssHot), .92);
+      box-shadow: 0 0 22px rgba(var(--ss), .22);
+      transition: width .06s linear;
+      will-change: width;
+    }
+    .shutdownPopupHead{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 11px;
+      color: rgba(var(--ssHot), .92);
+    }
+    .shutdownPopupTitle{ min-width: 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .shutdownPopupBody{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: rgba(var(--ssHot), .92);
+      text-shadow: 0 0 24px rgba(var(--ss), .18);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Finale: "COUNTERHACK" bait button (yellow, teleports on click).
+       Keep in its own layer so it stays clickable above the input blocker. */
+    .counterhackBaitLayer{
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      pointer-events: auto;
+      background: transparent;
+    }
+
+    .counterhackBait{
+      position: fixed;
+      left: 50%;
+      top: 72%;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      display: block;
+      opacity: 1;
+      visibility: visible;
+      filter: none;
+      isolation: isolate;
+    }
+
+    @keyframes counterhackBaitPulse{
+      0%, 100%{
+        transform: translate(-50%, -50%) scale(1);
+        filter: drop-shadow(0 0 10px rgba(var(--ylRGB), .22)) drop-shadow(0 0 32px rgba(var(--ylRGB), .14));
+      }
+      50%{
+        transform: translate(-50%, -50%) scale(1.03);
+        filter: drop-shadow(0 0 16px rgba(var(--ylRGB), .32)) drop-shadow(0 0 54px rgba(var(--ylRGB), .20));
+      }
+    }
+
+    .counterhackBait:not(.glitching){
+      animation: counterhackBaitPulse 1.05s ease-in-out infinite;
+      will-change: transform, filter;
+    }
+
+    .counterhackBaitBtn{
+      position: relative;
+      border: 2px solid rgba(var(--ylRGB), .98);
+      background: rgba(var(--ylRGB), .94);
+      color: rgba(0,0,0,.94);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.90) inset,
+        0 0 18px rgba(var(--ylRGB), .30),
+        0 0 62px rgba(var(--ylRGB), .18);
+      padding: 14px 18px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+
+      /* Two-corner cut (Area-Info style): top-left + bottom-right only */
+      clip-path: polygon(
+        0 12px,
+        12px 0,
+        100% 0,
+        100% calc(100% - 12px),
+        calc(100% - 12px) 100%,
+        0 100%
+      );
+    }
+
+    .counterhackBaitBtn::before{
+      content:"";
+      position:absolute;
+      inset: 2px;
+      border: 1px solid rgba(0,0,0,.42);
+      clip-path: inherit;
+      pointer-events: none;
+      opacity: .9;
+    }
+
+    .counterhackBaitBtn::after{
+      content:"";
+      position:absolute;
+      inset: -8px;
+      clip-path: inherit;
+      background:
+        repeating-linear-gradient(90deg, rgba(0,0,0,.0) 0 10px, rgba(0,0,0,.10) 10px 11px),
+        radial-gradient(circle at 20% 0%, rgba(255,255,255,.22), rgba(255,255,255,0) 44%);
+      mix-blend-mode: multiply;
+      opacity: .16;
+      pointer-events: none;
+    }
+
+    .counterhackBaitBtn:hover{
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.86) inset,
+        0 0 26px rgba(var(--ylRGB), .24),
+        0 0 84px rgba(var(--ylRGB), .18);
+    }
+
+    /* Harder glitch when pressed */
+    @keyframes counterhackBaitGlitchOut{
+      0%{ opacity: 1; transform: translate3d(0,0,0) skewX(0deg); filter: none; }
+      18%{ opacity: .55; transform: translate3d(-8px,2px,0) skewX(-18deg); filter: blur(1.2px) contrast(1.45); }
+      35%{ opacity: .35; transform: translate3d(12px,-4px,0) skewX(22deg); filter: blur(1.8px) contrast(1.55); }
+      55%{ opacity: .12; transform: translate3d(-14px,6px,0) skewX(-26deg); filter: blur(2.2px) contrast(1.7); }
+      100%{ opacity: 0; transform: translate3d(0,0,0) skewX(0deg); filter: none; }
+    }
+
+    @keyframes counterhackBaitBtnGlitch{
+      0%{ transform: translate3d(0,0,0) skewX(0deg); filter: none; }
+      22%{ transform: translate3d(2px,-1px,0) skewX(10deg); filter: brightness(1.07) contrast(1.25); }
+      46%{ transform: translate3d(-3px,2px,0) skewX(-14deg); filter: brightness(1.14) contrast(1.35); }
+      74%{ transform: translate3d(4px,-2px,0) skewX(12deg); filter: brightness(1.06) contrast(1.22); }
+      100%{ transform: translate3d(0,0,0) skewX(0deg); filter: none; }
+    }
+
+    .counterhackBait.glitching{
+      animation: counterhackBaitGlitchOut .30s steps(2, end) both;
+      will-change: transform, opacity, filter;
+    }
+
+    .counterhackBaitBtn.glitching{
+      animation: counterhackBaitBtnGlitch .30s steps(2, end) both;
+      will-change: transform, filter;
+    }
+
+    /* Finale palette compliance for the click moment: black + red */
+    .counterhackBaitBtn.is-hot{
+      border-color: rgba(var(--ssHot), .98);
+      background: rgba(0,0,0,.94);
+      color: rgba(var(--ssHot), .92);
+      text-shadow: 0 0 18px rgba(var(--ss), .18);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.92) inset,
+        0 0 18px rgba(var(--ss), .22),
+        0 0 62px rgba(var(--ss), .12);
+    }
+
+    .counterhackBaitBtn.is-hot::before{
+      border-color: rgba(var(--ssHot), .28);
+    }
+
+    .counterhackBaitBtn.is-hot::after{
+      opacity: .22;
+      background:
+        repeating-linear-gradient(90deg, rgba(var(--ssHot), .0) 0 10px, rgba(var(--ssHot), .12) 10px 11px),
+        radial-gradient(circle at 20% 0%, rgba(255,255,255,.12), rgba(255,255,255,0) 44%);
+      mix-blend-mode: screen;
+    }
+
+    /* Finale: big red message bar before shutdown. */
+    .finaleWelcomeBar{
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2147483646;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .finaleWelcomeBar.on{
+      opacity: 1;
+      animation: finaleWelcomeBarIn .32s steps(2, end) both;
+    }
+
+    .finaleWelcomeMsg{
+      width: 100%;
+      padding: 22px 16px;
+      border-top: 2px solid rgba(0,0,0,.95);
+      border-bottom: 2px solid rgba(0,0,0,.95);
+      /* Pure red fill + black text. */
+      background: rgba(var(--ssHot), .98);
+      color: rgba(0,0,0,.92);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: clamp(16px, 3.2vw, 34px);
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      text-align: center;
+      text-shadow: none;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.92) inset,
+        0 0 46px rgba(var(--ss), .18);
+    }
+
+    .finaleWelcomeBar.on{
+      opacity: 1;
+      animation:
+        finaleWelcomeBarIn .32s steps(2, end) both,
+        finaleWelcomeBarGlitch 1.05s steps(2, end) infinite;
+    }
+
+    @keyframes finaleWelcomeBarIn{
+      0%{ opacity: 0; transform: translateY(-50%) skewX(10deg); filter: blur(1.1px) contrast(1.2); }
+      40%{ opacity: 1; transform: translateY(-50%) skewX(-12deg); }
+      100%{ opacity: 1; transform: translateY(-50%) skewX(0deg); filter: none; }
+    }
+
+    @keyframes finaleWelcomeBarGlitch{
+      0%{ transform: translateY(-50%) translate3d(0,0,0) skewX(0deg); filter: none; opacity: 1; }
+      18%{ transform: translateY(-50%) translate3d(-3px,1px,0) skewX(-12deg); filter: contrast(1.15) saturate(1.2); opacity: .98; }
+      22%{ transform: translateY(-50%) translate3d(4px,-1px,0) skewX(12deg); filter: blur(.6px) contrast(1.3); opacity: .82; }
+      26%{ transform: translateY(-50%) translate3d(0,0,0) skewX(0deg); filter: none; opacity: 1; }
+      78%{ transform: translateY(-50%) translate3d(0,0,0) skewX(0deg); filter: none; opacity: 1; }
+      84%{ transform: translateY(-50%) translate3d(2px,0,0) skewX(16deg); filter: contrast(1.18); opacity: .88; }
+      100%{ transform: translateY(-50%) translate3d(0,0,0) skewX(0deg); filter: none; opacity: 1; }
+    }
+
+
     /* Tiny terminal window (reuses .terminal inner visuals) */
     .terminal{
       position: absolute;
@@ -182,8 +874,50 @@
       z-index: 60;
     }
 
-.loreWin{ display:none; z-index: 110; }
-.loreWin.on{ display:grid; }
+  .loreWin{ display:none; z-index: 2147483645; position: fixed; }
+  .loreWin.on{ display:grid; }
+
+  /* Finale: make the injected "terminal" match popup panel language (red + black only). */
+  .loreWin.corrupted-entry{
+    width: min(520px, calc(100vw - 44px));
+    height: auto;
+    max-height: min(520px, calc(100vh - 160px));
+    grid-template-rows: auto 1fr;
+    border-color: rgba(var(--ssHot), .40);
+    background:
+      radial-gradient(560px 220px at 50% 0%, rgba(var(--ssHot), .16), rgba(0,0,0,0) 60%),
+      linear-gradient(180deg, rgba(0,0,0,.82), rgba(0,0,0,.95));
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,.82) inset,
+      0 0 34px rgba(var(--ss), .22);
+  }
+
+  .loreWin.corrupted-entry .terminalHead{
+    border-bottom-color: rgba(var(--ssHot), .22);
+    background:
+      linear-gradient(90deg, rgba(var(--ssHot), .14), rgba(0,0,0,0) 66%),
+      rgba(0,0,0,.62);
+  }
+
+  .loreWin.corrupted-entry .terminalBrand{ gap: 10px; }
+  .loreWin.corrupted-entry .terminalDot{ display:none; }
+
+  .loreWin.corrupted-entry .terminalMeta{ display:none; }
+
+  /* Remove prompt/footer entirely: this is an "entry" panel, not a terminal. */
+  .loreWin.corrupted-entry .terminalFoot{ display:none; }
+
+  .loreWin.corrupted-entry .terminalBody{ padding: 12px 14px 16px; }
+
+  .loreWin.corrupted-entry .terminalBody::before{
+    background:
+      repeating-linear-gradient(0deg, rgba(var(--ssHot), .06) 0px, rgba(var(--ssHot), .06) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 26px),
+      radial-gradient(900px 520px at 16% 0%, rgba(var(--ssHot), .05), rgba(0,0,0,0) 62%);
+    opacity: .32;
+  }
+
+  .loreWin.corrupted-entry .terminalOutput{ color: rgba(var(--ssHot), .88); text-shadow: 0 0 18px rgba(var(--ss), .14); }
+
 
     .loreWinHeadRight{
       display:flex;
@@ -412,61 +1146,122 @@
       line-height: 1.55;
       letter-spacing: .1px;
       font-weight: 400;
-      color: rgba(215,230,255,.74);
-      text-shadow: 0 0 18px rgba(96,143,255,.05);
+      color: rgba(96,143,255,.86);
+      text-shadow: 0 0 18px rgba(96,143,255,.07);
       white-space: pre-wrap;
       word-break: break-word;
       font-variant-numeric: tabular-nums;
     }
 
-    .terminalOutput .tok-h1{ color: rgba(var(--ylRGB), .94); font-weight: 700; }
-    .terminalOutput .tok-meta{ color: rgba(215,230,255,.55); }
-    .terminalOutput .tok-sec{ color: rgba(96,143,255,.88); font-weight: 600; }
-    .terminalOutput .tok-tag{ color: rgba(var(--ylRGB), .86); font-weight: 600; }
-    .terminalOutput .tok-warn{ color: rgba(var(--ylRGB), .96); text-shadow: 0 0 18px rgba(var(--ylRGB), .10); }
-    .terminalOutput .tok-note{ color: rgba(96,143,255,.78); }
+    /* Uniform blue output + no bold. */
+    .terminalOutput .tok-h1,
+    .terminalOutput .tok-meta,
+    .terminalOutput .tok-sec,
+    .terminalOutput .tok-tag,
+    .terminalOutput .tok-warn,
+    .terminalOutput .tok-note,
+    .terminalOutput .tok-sep,
+    .terminalOutput .tok-glitch,
+    .terminalOutput .tok-center,
     .terminalOutput .tok-comment{
-      color: rgba(215,230,255,.18);
-      font-style: normal;
-      filter: saturate(.85);
+      color: inherit;
+      font-weight: inherit;
+      text-shadow: inherit;
+      filter: none;
     }
-    .terminalOutput .tok-sep{ color: rgba(96,143,255,.40); }
-    .terminalOutput .tok-glitch{ color: rgba(var(--ylRGB), .78); filter: contrast(1.12) saturate(1.08); }
+
     .terminalOutput .tok-center{ display:block; text-align:center; }
 
-    /* Injection / hack-in block */
-    .terminalOutput .tok-inject,
-    .terminalOutput .tok-injectTag,
-    .terminalOutput .tok-injectSig{
-      color: rgba(255,70,95,.90);
+    /* Injection / hack-in block stays red.
+       - Normal injected lines: subtle glow
+       - <tag> lines: stronger glow + centered + spaced
+       - Signature: handled below
+    */
+    .terminalOutput .tok-inject{
+      color: rgba(var(--ssHot), .90);
       text-shadow:
-        0 0 18px rgba(255,70,95,.14),
-        0 0 40px rgba(0,0,0,.60);
+        0 0 12px rgba(var(--ss), .12),
+        0 0 30px rgba(0,0,0,.72);
     }
-    .terminalOutput .tok-injectTag{ color: rgba(255,120,140,.92); font-weight: 700; }
-    .terminalOutput .tok-injectSig{ color: rgba(255,170,180,.88); font-weight: 700; }
+
+    .terminalOutput .tok-injectTag{
+      color: rgba(var(--ssHot), .96);
+      display: block;
+      text-align: center;
+      letter-spacing: 2.4px;
+      text-shadow:
+        0 0 16px rgba(var(--ss), .18),
+        0 0 36px rgba(var(--ss), .22),
+        0 0 46px rgba(0,0,0,.76);
+    }
+
+    .terminalOutput .tok-injectSig{ color: rgba(var(--ssHot), .86); font-weight: 400; }
+
+    /* Finale signature line: white + more "mysterious" glitch. */
+    .terminalOutput .tok-injectSig{
+      color: rgba(255,255,255,.92);
+      text-shadow:
+        0 0 10px rgba(255,255,255,.10),
+        0 0 26px rgba(var(--ss), .16);
+      filter: contrast(1.1);
+      display: inline-block;
+    }
+
+    @keyframes finaleSigGlitch{
+      0%{ transform: translate3d(0,0,0) skewX(0deg); opacity: 1; }
+      18%{ transform: translate3d(1px,0,0) skewX(-10deg); opacity: .85; }
+      22%{ transform: translate3d(-2px,1px,0) skewX(12deg); opacity: .55; }
+      26%{ transform: translate3d(0,0,0) skewX(0deg); opacity: 1; }
+      76%{ transform: translate3d(0,0,0) skewX(0deg); opacity: 1; }
+      82%{ transform: translate3d(2px,-1px,0) skewX(16deg); opacity: .65; }
+      86%{ transform: translate3d(0,0,0) skewX(0deg); opacity: 1; }
+      100%{ transform: translate3d(0,0,0) skewX(0deg); opacity: 1; }
+    }
+
+    .terminal.is-injecting .terminalOutput .tok-injectSig{
+      animation: finaleSigGlitch 1.15s steps(2, end) infinite;
+    }
 
     .terminal.is-injecting{
-      border-color: rgba(255,70,95,.26);
+      border-color: rgba(var(--ssHot), .42);
+      background:
+        radial-gradient(900px 520px at 22% 0%, rgba(var(--ssHot), .10), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,.86), rgba(0,0,0,.96));
       box-shadow:
-        0 0 0 1px rgba(0,0,0,.72) inset,
-        0 0 36px rgba(255,70,95,.10);
+        0 0 0 1px rgba(0,0,0,.82) inset,
+        0 0 34px rgba(var(--ss), .20);
     }
     .terminal.is-injecting .terminalHead{
-      border-bottom-color: rgba(255,70,95,.18);
+      border-bottom-color: rgba(var(--ssHot), .22);
       background:
-        linear-gradient(90deg, rgba(255,70,95,.10), rgba(0,0,0,.0) 66%),
-        rgba(0,0,0,.35);
-      color: rgba(255,180,190,.60);
+        linear-gradient(90deg, rgba(var(--ssHot), .14), rgba(0,0,0,.0) 66%),
+        rgba(0,0,0,.62);
+      color: rgba(var(--ssHot), .82);
     }
-    .terminal.is-injecting .terminalDot.blue{ background: rgba(255,70,95,.60); }
+
+    /* If we're using the popup-entry style, suppress "terminal" chrome. */
+    .terminal.is-injecting.corrupted-entry .terminalDot{ display:none; }
+    .terminal.is-injecting.corrupted-entry .terminalMeta{ display:none; }
+    .terminal.is-injecting.corrupted-entry .terminalFoot{ display:none; }
+
+    /* Only use red + black in injected terminal chrome */
+    .terminal.is-injecting .terminalDot.yl{ display:none; }
+    .terminal.is-injecting .terminalDot.blue{ display:none; }
+    .terminal.is-injecting .terminalDot.red{ background: rgba(var(--ssHot), .78); border-color: rgba(var(--ssHot), .26); }
+
+    .terminal.is-injecting .terminalTitle{ color: rgba(var(--ssHot), .92); }
+    .terminal.is-injecting .terminalMeta{ color: rgba(var(--ssHot), .70); }
 
     .terminal.is-injecting .terminalBody::before{
       background:
-        repeating-linear-gradient(0deg, rgba(255,70,95,.05) 0px, rgba(255,70,95,.05) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 26px),
-        radial-gradient(900px 520px at 16% 0%, rgba(255,70,95,.05), rgba(0,0,0,0) 62%);
+        repeating-linear-gradient(0deg, rgba(var(--ssHot), .06) 0px, rgba(var(--ssHot), .06) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 26px),
+        radial-gradient(900px 520px at 16% 0%, rgba(var(--ssHot), .05), rgba(0,0,0,0) 62%);
       opacity: .34;
     }
+
+    .terminal.is-injecting .terminalOutput{ color: rgba(var(--ssHot), .88); text-shadow: 0 0 18px rgba(var(--ss), .14); }
+    .terminal.is-injecting .terminalFoot{ border-top-color: rgba(var(--ssHot), .22); color: rgba(var(--ssHot), .72); }
+    .terminal.is-injecting .terminalPrompt{ color: rgba(var(--ssHot), .82); }
 
     @keyframes termJitter{
       0%, 100%{ transform: translateX(0); }
@@ -484,10 +1279,12 @@
     .terminal.is-injecting .terminalOutput{
       animation: termFlicker 3.2s infinite;
     }
-    .terminal.is-injecting .terminalOutput .tok-inject,
-    .terminal.is-injecting .terminalOutput .tok-injectTag,
-    .terminal.is-injecting .terminalOutput .tok-injectSig{
+    .terminal.is-injecting .terminalOutput .tok-inject{
       animation: termJitter 1.8s infinite;
+    }
+    .terminal.is-injecting .terminalOutput .tok-injectTag{
+      /* Keep tags legible and centered; only slight jitter. */
+      animation: termJitter 2.2s infinite;
     }
 
     .terminalFoot{
@@ -567,7 +1364,7 @@
 
     .terminal.is-waiting .cursor{ opacity: 0; animation: none; }
 
-    /* Quick transition overlay (used when switching INVENTORY -> MAP) */
+    /* Quick transition overlay (used when switching views) */
     .quickload{
       position: fixed;
       inset: 0;
@@ -623,321 +1420,24 @@
       box-shadow: 0 0 18px rgba(var(--ylRGB), .18);
       transition: width .22s ease;
     }
-    .invInner{
-      height: 100%;
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 44px;
-      padding: 58px 62px 34px;
-    }
-    .invH{
-      color: rgba(96,143,255,.88);
-      font-size: 12px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      font-weight: 800;
-      margin-bottom: 12px;
-    }
-    .invBlock{ margin-bottom: 52px; }
-    .invCard{
-      border: 1px solid rgba(96,143,255,.26);
-      background:
-        linear-gradient(180deg, rgba(10,6,16,.74), rgba(0,0,0,.68)),
-        repeating-linear-gradient(90deg, rgba(96,143,255,.06) 0px, rgba(96,143,255,.06) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 10px);
-      box-shadow: 0 0 34px rgba(96,143,255,.08);
-      position: relative;
-      overflow: hidden;
-    }
-    .invCard::after{
-      content:"";
-      position:absolute;
-      inset: 0;
-      background:
-        radial-gradient(60px 36px at 22px 18px, rgba(96,143,255,.18), rgba(0,0,0,0) 62%),
-        radial-gradient(90px 70px at 88% 78%, rgba(96,143,255,.10), rgba(0,0,0,0) 70%);
-      opacity: .75;
-      pointer-events:none;
-    }
-    .invStack{ display:flex; flex-direction:column; gap: 14px; }
-    .invCard.tall{ height: 78px; }
-    .invRow{ display:flex; gap: 14px; }
-    .invCard.small{ width: 78px; height: 56px; }
 
-    .invRightTop{ display:flex; align-items:flex-start; justify-content: space-between; margin-bottom: 12px; }
-    .invSortBtns{ display:flex; gap: 10px; margin-top: 8px; }
-    .invSortBtn{
-      width: 30px;
-      height: 22px;
-      border: 1px solid rgba(96,143,255,.26);
-      background: rgba(0,0,0,.40);
-      color: rgba(96,143,255,.85);
-      font-family: inherit;
-      font-size: 12px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      padding: 0;
+    /* Finale override: make the loading bar match the red hack palette. */
+    .quickload.hack-red{
+      background: rgba(0,0,0,.82);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
-    .invSortBtn:hover{ color: rgba(var(--ylRGB), .95); border-color: rgba(var(--ylRGB), .35); }
-
-    .invAmountBox{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      height: 22px;
-      padding: 0 8px;
-      border: 1px solid rgba(96,143,255,.26);
-      background: rgba(0,0,0,.40);
+    .quickload.hack-red .inner{
+      border-color: rgba(var(--ssHot), .30);
+      background: rgba(0,0,0,.62);
+      box-shadow: 0 0 22px rgba(var(--ss), .18);
     }
-    .invAmountBtn{
-      width: 16px;
-      height: 16px;
-      border: none;
-      background: transparent;
-      color: rgba(96,143,255,.85);
-      padding: 0;
-      cursor: pointer;
-      line-height: 1;
+    .quickload.hack-red .label{ color: rgba(var(--ssHot), .92); }
+    .quickload.hack-red .bar{ border-color: rgba(var(--ssHot), .28); }
+    .quickload.hack-red .fill{
+      background: rgba(var(--ssHot), .92);
+      box-shadow: 0 0 18px rgba(var(--ss), .18);
     }
-    .invAmountBtn:hover{ color: rgba(var(--ylRGB), .95); }
-    .invAmountVal{ min-width: 36px; text-align:center; color: rgba(96,143,255,.75); font-size: 12px; }
-    .invAmountDots{ width: 14px; height: 14px; border-radius: 99px; border: 1px solid rgba(96,143,255,.22); opacity: .55; }
-
-    .invGridBlock{ margin-top: 12px; }
-    .invGrid{
-      height: 220px;
-      border: 1px solid rgba(96,143,255,.16);
-      background:
-        radial-gradient(540px 220px at 0% 0%, rgba(96,143,255,.08), rgba(0,0,0,0) 62%),
-        repeating-linear-gradient(0deg, rgba(96,143,255,.08) 0px, rgba(96,143,255,.08) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 40px),
-        repeating-linear-gradient(90deg, rgba(96,143,255,.06) 0px, rgba(96,143,255,.06) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 40px),
-        rgba(0,0,0,.46);
-      box-shadow: 0 0 34px rgba(96,143,255,.06);
-      position: relative;
-      overflow: hidden;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-    }
-
-     /* House Stash: game-like slots (empty or occupied)
-       3 fixed rows; JS sets --slot and --cols so the box is fully filled with empty slots. */
-     .stashGrid{
-      --stashH: 220px;
-      --stashPad: 12px;
-      --stashGap: 10px;
-      --slot: 58px;
-      --cols: 6;
-
-      height: var(--stashH);
-      border: 1px solid rgba(96,143,255,.16);
-      background:
-        radial-gradient(540px 220px at 0% 0%, rgba(96,143,255,.08), rgba(0,0,0,0) 62%),
-        repeating-linear-gradient(0deg, rgba(96,143,255,.08) 0px, rgba(96,143,255,.08) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 40px),
-        repeating-linear-gradient(90deg, rgba(96,143,255,.06) 0px, rgba(96,143,255,.06) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 40px),
-        rgba(0,0,0,.46);
-      box-shadow: 0 0 34px rgba(96,143,255,.06);
-      position: relative;
-      overflow: hidden;
-
-      display: grid;
-      grid-template-rows: repeat(3, var(--slot));
-      grid-template-columns: repeat(var(--cols), var(--slot));
-      row-gap: var(--stashGap);
-      column-gap: var(--stashGap);
-      padding: var(--stashPad);
-      justify-content: center;
-      align-content: start;
-    }
-    .stashGrid::after{
-      content:"";
-      position:absolute;
-      inset: 0;
-      background:
-        radial-gradient(1px 1px at 14px 18px, rgba(96,143,255,.32), rgba(0,0,0,0) 2px),
-        radial-gradient(1px 1px at 70px 52px, rgba(96,143,255,.22), rgba(0,0,0,0) 2px),
-        radial-gradient(1px 1px at 120px 98px, rgba(96,143,255,.22), rgba(0,0,0,0) 2px),
-        radial-gradient(1px 1px at 310px 60px, rgba(96,143,255,.18), rgba(0,0,0,0) 2px);
-      opacity: .65;
-      pointer-events:none;
-    }
-
-    .stashSlot{
-      position: relative;
-      width: var(--slot);
-      height: var(--slot);
-      aspect-ratio: 1 / 1;
-      border: 1px solid rgba(96,143,255,.22);
-      background:
-        linear-gradient(180deg, rgba(0,0,0,.46), rgba(0,0,0,.26)),
-        repeating-linear-gradient(90deg, rgba(96,143,255,.06) 0px, rgba(96,143,255,.06) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 10px);
-      box-shadow:
-        0 0 18px rgba(96,143,255,.06),
-        0 0 0 1px rgba(0,0,0,.55) inset;
-      overflow: hidden;
-      display:flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1;
-    }
-    .stashSlot.empty{
-      opacity: .65;
-    }
-    .stashSlot.empty::after{
-      content:"";
-      position:absolute;
-      inset: 0;
-      background:
-        linear-gradient(135deg, transparent 0 44%, rgba(96,143,255,.12) 44% 46%, transparent 46% 100%);
-      opacity: .35;
-      pointer-events:none;
-    }
-
-    .stashSlot .invItem{
-      position: static;
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: transparent;
-      box-shadow: none;
-      padding: 8px;
-    }
-
-    /* Vehicles: wide slots (3x1) laid out side-by-side; JS sets --slot and --vehCols */
-    .vehicleGrid{
-      --vehH: 180px;
-      --slot: 58px;
-      --vehCols: 3;
-      --vehW: calc((var(--slot) * 3) + (var(--stashGap, 10px) * 2));
-
-      height: var(--vehH);
-      border: 1px solid rgba(96,143,255,.16);
-      background:
-        radial-gradient(540px 220px at 0% 0%, rgba(96,143,255,.08), rgba(0,0,0,0) 62%),
-        repeating-linear-gradient(0deg, rgba(96,143,255,.08) 0px, rgba(96,143,255,.08) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 40px),
-        repeating-linear-gradient(90deg, rgba(96,143,255,.06) 0px, rgba(96,143,255,.06) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 40px),
-        rgba(0,0,0,.46);
-      box-shadow: 0 0 34px rgba(96,143,255,.06);
-      position: relative;
-      overflow: hidden;
-
-      display: grid;
-      grid-template-rows: var(--slot);
-      grid-template-columns: repeat(var(--vehCols), var(--vehW));
-      row-gap: 10px;
-      column-gap: 10px;
-      padding: 12px;
-      justify-content: center;
-      align-content: start;
-    }
-
-    .vehicleSlot{
-      position: relative;
-      height: var(--slot);
-      width: var(--vehW);
-      border: 1px solid rgba(96,143,255,.22);
-      background:
-        linear-gradient(180deg, rgba(0,0,0,.46), rgba(0,0,0,.26)),
-        repeating-linear-gradient(90deg, rgba(96,143,255,.06) 0px, rgba(96,143,255,.06) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 10px);
-      box-shadow:
-        0 0 18px rgba(96,143,255,.06),
-        0 0 0 1px rgba(0,0,0,.55) inset;
-      overflow: hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .vehicleSlot.empty{ opacity: .65; }
-    .vehicleSlot.empty::after{
-      content:"";
-      position:absolute;
-      inset: 0;
-      background: linear-gradient(135deg, transparent 0 44%, rgba(96,143,255,.12) 44% 46%, transparent 46% 100%);
-      opacity: .35;
-      pointer-events:none;
-    }
-
-    .vehicleSlot .invItem{
-      position: static;
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: transparent;
-      box-shadow: none;
-      padding: 10px;
-    }
-
-    /* Main vehicle: same slot treatment, single slot centered */
-    .vehicleGrid.mainVehicle{
-      height: calc(var(--slot) + 24px);
-      grid-template-columns: var(--vehW);
-      justify-content: center;
-    }
-    .invGrid::after{
-      content:"";
-      position:absolute;
-      inset: 0;
-      background:
-        radial-gradient(1px 1px at 14px 18px, rgba(96,143,255,.32), rgba(0,0,0,0) 2px),
-        radial-gradient(1px 1px at 70px 52px, rgba(96,143,255,.22), rgba(0,0,0,0) 2px),
-        radial-gradient(1px 1px at 120px 98px, rgba(96,143,255,.22), rgba(0,0,0,0) 2px),
-        radial-gradient(1px 1px at 310px 60px, rgba(96,143,255,.18), rgba(0,0,0,0) 2px);
-      opacity: .75;
-      pointer-events:none;
-    }
-    .invItem{
-      position: absolute;
-      width: 72px;
-      height: 72px;
-      border: 1px solid rgba(96,143,255,.26);
-      background: rgba(0,0,0,.55);
-      box-shadow: 0 0 18px rgba(96,143,255,.10);
-      display:flex;
-      align-items:flex-end;
-      justify-content:flex-start;
-      padding: 6px;
-      color: rgba(var(--ylRGB), .92);
-      font-size: 12px;
-      letter-spacing: 1px;
-    }
-
-    /* Inventory uses grid slots; items should flow left→right (not absolute). */
-    .inventorystage .invGrid .invItem{
-      position: relative;
-      left: auto;
-      top: auto;
-      transform: none;
-      justify-self: start;
-      align-self: start;
-    }
-
-    .inventorystage .invGridVehicles{
-      height: 110px;
-      grid-template-rows: 1fr;
-    }
-
-    .inventorystage .invGridVehicles .invVehicle{
-      width: 148px;
-      height: 78px;
-    }
-    .invItem.money{ border-color: rgba(70,255,180,.0); }
-    .invItem .badge{
-      position:absolute;
-      left: 6px;
-      bottom: 6px;
-      font-weight: 700;
-      color: rgba(var(--ylRGB), .92);
-    }
-    .invItem.money{ outline: 2px solid rgba(80,255,180,.0); }
-    .invItem.money::before{
-      content:"";
-      position:absolute;
-      inset: 0;
-      border-left: 4px solid rgba(120,255,190,.0);
-    }
-    .invItem.phone{ border-color: rgba(96,143,255,.22); }
-    .invGround{ margin-top: 34px; }
-    .hudcol{ display:flex; flex-direction:column; gap: 14px; min-width:0; }
-
     /* Old HUD filter buttons are deprecated (replaced by left-side menu) */
     #hudFilters{ display:none !important; }
 

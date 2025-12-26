@@ -72,7 +72,6 @@
       pointer-events: none;
     }
     .topnav .topmeta.right{ justify-content: flex-end; }
-    body.view-inventory .topnav .topmeta{ opacity: 1; }
     .topnav .metaGroup{ display:flex; align-items:center; gap: 8px; }
     .topnav .metaDot{
       width: 10px;

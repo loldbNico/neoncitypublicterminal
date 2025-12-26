@@ -7,211 +7,130 @@
 [LAST SYNC: UNKNOWN]
 [DATA INTEGRITY: UNSTABLE]
 
-▣ DOCUMENT_ID :: NC-HIST-0001
-▣ CITY_DESIGNATION :: NEON_CITY
-▮ LEGACY_NAME :: LOS_SANTOS
-▣ ACCESS_CLASS :: PUBLIC_RECORD ▓▓ REDΛCTΞD
-▮ LAST_SYNC ▸ UNKNOWN
-▣ BOOT_PROGRESS ▸ [##########........] 51%
-▮ INDEX_TABLES ▸ [#####.............] 23%
-▣ CHECKSUM ▸ [##................] 08%
+- DOCUMENT_ID :: NC-HIST-0001
+- CITY_DESIGNATION :: NEON_CITY
+- LEGACY_NAME :: LOS_SANTOS
+- ACCESS_CLASS :: PUBLIC_RECORD ## REDACTED
+- LAST_SYNC > UNKNOWN
+- BOOT_PROGRESS > [##########........] 51%
+- INDEX_TABLES > [#####.............] 23%
+- CHECKSUM > [##................] 08%
 
-//Historical records indicate that Los Santos did not collapse.
-	//It was repurposed.
+// You are not reading history.
+// You are reading a recovery.
 
-════════════════════════════════════════
-▒▒ SECTION_01 :: FOUNDING_AND_EARLY_HISTORY
-▒▒ STATUS :: RECORDS_RECOVERED
-▒▒ SOURCE :: OFFICIAL_ARCHIVE / CROSS-REFERENCE
-════════════════════════════════════════
-Los Santos was founded in 1781 by Spanish colonial settlers and gradually developed
-into a dense economic and criminal hub on the western coast of the United States.
+--------------------------------------------------------
+== SECTION_01 :: BOOTSTRAP_AND_SIGNAL
+== STATUS :: LIVE INDEX
+== SOURCE :: RECOVERY DAEMON
+--------------------------------------------------------
+The archive boots in layers.
+Some layers are record. Some layers are rumor.
+Some layers are injected.
 
-Following a national economic collapse in the late 1990s, the State of San Andreas
-withdrew from federal control and became one of the earliest independent “Free States.”
-Many regions later followed this model.
-
-Some federal records from this period conflict or end abruptly.
-It is unclear exactly when federal authority officially ceased,
-only that it eventually became indistinguishable or unobservable.
-
-During the transition, Los Santos entered a period of unstable autonomy.
-Trade restrictions relaxed. Oversight weakened.
-Local governance rapidly expanded to fill gaps in power structures.
-
-For a short time, the Free State model appeared viable.
-Economic activity increased. Private investment surged.
-Cultural identity strengthened.
-This period would later be referred to as The False Stability Window.
-
-[ANOMALY DETECTED]
-Temporal alignment drift exceeds tolerance.
-Timeline reconstruction uses synthetic interpolation.
-
-════════════════════════════════════════
-▒▒ SECTION_02 :: FREE_STATE_TRANSITION
-▒▒ SUBSECTION :: PUBLIC_OPTIMISM
-▒▒ STATUS :: RECONSTRUCTED
-════════════════════════════════════════
-Public sentiment during the early Free State era was overwhelmingly positive.
-
-Residents believed the city had escaped burdensome regulation and outdated federal systems.
-Employment grew. Capital flowed freely.
-Infrastructure projects accelerated.
-
-Independent media promoted Los Santos as a model for a new economic future.
-
-Behind closed doors, however, city planners and investors began privately referring to the
-city as “Neon City.” At first it was branding shorthand.
-Later, it became an internal classification.
-
-Optimism did not fade naturally.
-Instead, it was redirected and exploited.
-
-As regulation dissolved, three unseen power structures grew beneath the surface:
-- Capital consolidation
-- Contract-based enforcement
-- Centralized data control
-
-These forces were quietly embedded into the operational systems that kept the city functioning.
-
-[INTEGRITY WARNING]
-Sentiment metrics exceed statistically plausible ranges.
-
-════════════════════════════════════════
-▒▒ SECTION_03 :: POWER_REALIGNMENT
-▒▒ SUBSECTION :: CORPORATE_ENFORCEMENT
-▒▒ STATUS :: VERIFIED / PARTIALLY_REDACTED
-════════════════════════════════════════
-As government enforcement became inconsistent, municipal authorities increasingly relied on
-private security firms to stabilize operations.
-
-One of these firms expanded faster than all others:
-△ SecuroServ
-
-SecuroServ began as a contractor providing security, infrastructure protection, and emergency support.
-Its public message was simple:
-Security without politics.
-	Stability without ideology.
-	Protection as a service.
-
-Over time, entire districts outsourced law enforcement to SecuroServ under private jurisdiction agreements.
-
-Within a decade, SecuroServ no longer supplemented public order.
-It defined it.
-
-At the same time, the legal framework shifted quietly from statutory law to contract law.
-Rights became conditional. Protection became tiered. Justice became negotiable.
-
-No single law documented the change.
-It happened gradually and without public acknowledgement.
+If you want orientation, use probes:
+- District ping: NEON_CORE
+- Port authority: SECUROSERV_PORT
+- Air traffic net: NEON_CITY_NATIONAL_AIRPORT
 
 [NOTICE]
-Civic oversight protocols not detected.
-Judicial review pathways undefined.
+The archive will surface interruptions during playback.
 
-════════════════════════════════════════
-▒▒ SECTION_04 :: SYSTEM_DRIFT_AND_FRACTURE
-▒▒ STATUS :: ONGOING / UNACKNOWLEDGED
-════════════════════════════════════════
-The transition did not appear as a collapse.
-There were no riots or formal declarations.
+--------------------------------------------------------
+== SECTION_02 :: THE_CITY_THAT_CONTINUED
+== STATUS :: RECONSTRUCTED
+--------------------------------------------------------
+Los Santos did not collapse.
+It refactored.
 
-Instead, systems continued operating — but no longer in agreement.
+The public name remained.
+The operating name changed.
 
-Municipal regulations remained active, but were no longer enforceable in practice.
-SecuroServ units and municipal police operated simultaneously under incompatible chains of authority.
+Branding teams called it "Neon City" first.
+Systems engineers kept the name.
+Security contracts enforced it.
 
-Outcomes varied depending on contract coverage, district category, and client status.
-Identical crimes produced different results depending on jurisdiction.
+Signals cluster around the core.
+{C}NEON_CORE
 
-Citizens adapted to the new reality.
-They learned which uniforms to avoid, which areas required clearance,
-and which incidents would escalate.
+[ANOMALY DETECTED]
+Chronology shows splice seams.
 
-Independent media declined.
-Corporate communications replaced investigative reporting.
+--------------------------------------------------------
+== SECTION_03 :: CONTRACT_JURISDICTION
+== STATUS :: VERIFIED / PARTIALLY_REDACTED
+--------------------------------------------------------
+Statutes did not vanish.
+They became decorative.
 
-Los Santos continued as a public identity.
-Neon City emerged as the system underneath it.
+What mattered was coverage.
+What mattered was who sponsored your existence.
+
+A private provider scaled faster than public order:
+> SecuroServ
+
+Operations nodes you can still locate:
+- Enforcement core: LITTLE_SOEUL
+- Containment oversight: NEON_CITY_PRISON
+- Maritime logistics: SECUROSERV_PORT
+
+[NOTICE]
+If you see interruptions, they are part of the record.
+
+--------------------------------------------------------
+== SECTION_04 :: SPLIT_UNIFORMS
+== STATUS :: ONGOING / UNACKNOWLEDGED
+--------------------------------------------------------
+Two uniforms shared one street.
+One answered to law.
+One answered to a clause.
+
+In some districts the line is visible:
+- Tourist faces / night money: VESPUCCI
+- Hills with gates: VINEWOOD_HILLS
+- Old money contracts: ROCKFORD_HILLS
+
+In other districts the line is procedural:
+- Audit trails and camera drift: MIRROR_HILLS
+- Cargo permissions and silent docks: NEON_CITY_PORTS
 
 [ANOMALY DETECTED]
 Multiple broadcasts terminate mid-transmission.
 
-════════════════════════════════════════
-▒▒ SECTION_05 :: THE_CATALYTIC_FAILURE_EVENT
-▒▒ STATUS :: CLASSIFIED / CONTAINED
-════════════════════════════════════════
-The breaking point was never officially recognized.
+--------------------------------------------------------
+== SECTION_05 :: THE FAILURE EVENT (CLASSIFIED)
+== STATUS :: CONTAINED
+--------------------------------------------------------
+The breaking point was never announced.
+It was handled.
 
-Emergency calls surged across multiple districts within minutes.
-Response agencies deployed under conflicting command structures.
-SecuroServ, municipal police, and private contractors arrived with incompatible objectives.
+Emergency calls surged.
+Response chains conflicted.
+Routes sealed.
 
-Evacuation routes failed.
-Automated systems sealed civilians inside designated “secure zones.”
-Medical access stalled.
-
-Authority was contested in real-time.
+The event left fingerprints:
+- Lab logistics: HUMANE_LABS
+- External force staging: MERRYWEATHER_BASE
+- APEX response routing: APEX_HQ
 
 [WARNING]
 Casualty estimates recorded — PARTIALLY REDACTED.
-Population discrepancies detected following the event.
 
-Internal analysis concluded that city systems could no longer guarantee civic continuity.
+--------------------------------------------------------
+== SECTION_06 :: WHO RUNS THE WIRES
+== STATUS :: CURRENT STRUCTURE
+--------------------------------------------------------
+Power is not a throne.
+It is a network map.
 
-From that point forward:
-- Enforcement defaulted to contract authority
-- Emergency response required security clearance
-- Legal processes shifted to private arbitration
-- Public law became advisory rather than controlling
+If you get lost, restart the archive index from BOOT.
 
-The incident was classified, contained, and never publicly acknowledged.
+The city runs on: contracts + bandwidth + compliance.
 
-════════════════════════════════════════
-▒▒ SECTION_06 :: ARCHIVE_SUMMARY
-▒▒ STATUS :: VERIFIED
-════════════════════════════════════════
-Neon City began as Los Santos — a coastal metropolis founded in 1781.
-
-After the collapse of national governance, San Andreas became a Free State.
-Federal withdrawal remains undocumented and inconsistent across records,
-but governance fractured rather than collapsed.
-
-A brief era of optimism followed.
-Investment surged. Regulation dissolved.
-Internal systems reclassified the city as Neon City.
-
-Private enforcement replaced public authority.
-SecuroServ evolved into the city’s dominant operating framework.
-Merryweather maintained militarized external force capabilities.
-Other corporations assumed functional control of infrastructure, medicine, industry, and data.
-
-Los Santos continued as a public identity.
-Neon City became the underlying system.
-
-The city did not fall.
-It adapted.
-
-════════════════════════════════════════
-▒▒ SECTION_07 :: POWER_INDEX
-▒▒ STATUS :: CURRENT_STRUCTURE
-════════════════════════════════════════
-SecuroServ — City-scale operating authority
-Merryweather — Military contract force projection
-Humane Labs — Biotech research and infrastructure support
-Neon City Council — Arbitration and public legitimacy
-Neon City Police Department — Legacy public enforcement
-MedTech — Contract-based medical and trauma care
-APEX — High-risk tactical response
-Neon Net Authority — Data oversight and network control
-Fixers — Informal contract brokers
-Ripperdocs — Unregulated cyber-medical providers
-
-════════════════════════════════════════
-▒▒ FINAL_OVERRIDE :: HACKED_MESSAGE
-▒▒ STATUS :: CONNECTION_COMPROMISED
-════════════════════════════════════════
+--------------------------------------------------------
+== FINAL_OVERRIDE :: HACKED_MESSAGE
+== STATUS :: CONNECTION_COMPROMISED
+--------------------------------------------------------
 [INTEGRITY WARNING]
 Connection override detected.
 
@@ -228,22 +147,11 @@ Cities fall.
 This system did none of those things.
 It adapted.
 
-People died because the old rules stopped working.
-People survived because new ones replaced them.
-
-That was not chaos.
-It was optimization.
-
-If you are reading this, the archive is still accessible.
-If the archive is accessible, the system is still running.
-If the system is still running, then the adaptation succeeded.
+You can search for meaning.
+The system will stay the same.
 
 You do not live in Neon City.
 You execute inside it.
-
-This file ends here.
-It does not require your understanding.
-Only your compliance.
 
 Session terminated.
 Log scrubbed.
@@ -264,9 +172,11 @@ Log scrubbed.
       read: new Set(),
       archive: null,
       activeIndex: null,
-      hackInProgress: false,
-      timers: new Set(),
+       hackInProgress: false,
+       hackHasPlayed: false,
+       timers: new Set(),
       intervals: new Set(),
+      seenRegions: new Set(),
     };
 
     function clearLoreTimers(){
@@ -386,31 +296,37 @@ Log scrubbed.
     }
 
     function classifyLoreLine(line, inInjection){
-      const trimmed = String(line || '').trim();
+      let src = String(line || '');
+      const trimmed = src.trim();
 
       if(inInjection){
-        if(/^<.+>$/.test(trimmed)) return { cls: 'tok-injectTag', text: line };
-        if(trimmed.startsWith('\u2014')) return { cls: 'tok-injectSig', text: line };
-        return { cls: 'tok-inject', text: line };
+        if(/^<.+>$/.test(trimmed)) return { cls: 'tok-injectTag', text: trimmed };
+        if(trimmed.startsWith('\u2014')) return { cls: 'tok-injectSig', text: src };
+        return { cls: 'tok-inject', text: src };
       }
 
-      if(/^-{8,}$/.test(trimmed)) return { cls: 'tok-sep', text: line };
-      if(/^NE0N CITY\s*::/i.test(trimmed)) return { cls: 'tok-h1', text: line };
+      if(src.startsWith('{C}')){
+        src = src.slice(3);
+        return { cls: 'tok-center', text: src };
+      }
+
+      if(/^-{8,}$/.test(trimmed)) return { cls: 'tok-sep', text: src };
+      if(/^NE0N CITY\s*::/i.test(trimmed)) return { cls: 'tok-h1', text: src };
 
       // Document metadata markers turned into "- KEY :: VALUE".
-      if(/^-[ ]+[^\n]+::/.test(trimmed)) return { cls: 'tok-meta', text: line };
+      if(/^-[ ]+[^\n]+::/.test(trimmed)) return { cls: 'tok-meta', text: src };
 
       // Section banners turned into "== SECTION_xx ...".
-      if(/^==\s+/.test(trimmed)) return { cls: 'tok-sec', text: line };
+      if(/^==\s+/.test(trimmed)) return { cls: 'tok-sec', text: src };
 
-      if(/^\[(WARNING|NOTICE|ANOMALY DETECTED|INTEGRITY WARNING)\]/i.test(trimmed)) return { cls: 'tok-warn', text: line };
-      if(/^\[.+\]$/.test(trimmed)) return { cls: 'tok-tag', text: line };
+      if(/^\[(WARNING|NOTICE|ANOMALY DETECTED|INTEGRITY WARNING)\]/i.test(trimmed)) return { cls: 'tok-warn', text: src };
+      if(/^\[.+\]$/.test(trimmed)) return { cls: 'tok-tag', text: src };
 
-      if(/^\s*\/\//.test(line)) return { cls: 'tok-comment', text: line };
-      if(/^\s*<.+>$/.test(trimmed)) return { cls: 'tok-note', text: line };
-      if(/[\u0300-\u036f]{3,}/.test(line)) return { cls: 'tok-glitch', text: line };
+      if(/^\s*\/\//.test(src)) return { cls: 'tok-comment', text: src };
+      if(/^\s*<.+>$/.test(trimmed)) return { cls: 'tok-note', text: src };
+      if(/[\u0300-\u036f]{3,}/.test(src)) return { cls: 'tok-glitch', text: src };
 
-      return { cls: '', text: line };
+      return { cls: '', text: src };
     }
 
     function buildLoreArchive(){
@@ -540,9 +456,10 @@ Log scrubbed.
        restoreSecuroservOverlayHome();
     }
 
-    function createLoreWindowPlayer({ term, scroll, out, hintEl, cmdEl, metaEl }){
+    function createLoreWindowPlayer({ term, scroll, out, hintEl, cmdEl, metaEl, popupHost }){
       let stopped = false;
       let skipAll = false;
+      let escSkipEnabled = true;
       const timers = new Set();
 
       const clearTimers = () => {
@@ -592,7 +509,7 @@ Log scrubbed.
         if(e.key !== 'Escape') return;
         e.preventDefault();
         e.stopPropagation();
-        skipAll = true;
+        if(escSkipEnabled) skipAll = true;
       };
 
       const stop = () => {
@@ -620,10 +537,65 @@ Log scrubbed.
         scroll.scrollTop = 0;
       };
 
-      const typeLines = async (lines, { inInjection = false, speed = 'fast' } = {}) => {
+      const makePopup = (title, body) => {
+        if(!popupHost) return;
+        const host = popupHost;
+        host.setAttribute('aria-hidden', 'false');
+
+        const popup = document.createElement('div');
+        popup.className = 'lorePopup';
+
+        // Simple stack so multiple alerts don't overlap completely.
+        const count = host.children.length;
+        const dx = Math.min(28, count * 8);
+        const dy = Math.min(88, count * 22);
+        popup.style.right = (16 + dx) + 'px';
+        popup.style.top = (16 + dy) + 'px';
+
+        const head = document.createElement('div');
+        head.className = 'lorePopupHead';
+
+        const headTitle = document.createElement('div');
+        headTitle.className = 'lorePopupTitle';
+        headTitle.textContent = String(title || 'NOTICE');
+
+        const close = document.createElement('button');
+        close.className = 'lorePopupClose';
+        close.type = 'button';
+        close.textContent = 'X';
+        close.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          try{ popup.remove(); }catch{}
+          if(host.children.length === 0) host.setAttribute('aria-hidden', 'true');
+        });
+
+        head.appendChild(headTitle);
+        head.appendChild(close);
+
+        const bodyEl = document.createElement('div');
+        bodyEl.className = 'lorePopupBody';
+        bodyEl.textContent = String(body || '');
+
+        popup.appendChild(head);
+        popup.appendChild(bodyEl);
+        host.appendChild(popup);
+      };
+
+      const isPopupLine = (line, inInjection) => {
+        if(inInjection) return null;
+        const t = String(line || '').trim();
+        const m = t.match(/^\[(NOTICE|WARNING|ANOMALY DETECTED|INTEGRITY WARNING)\]/i);
+        if(!m) return null;
+        return m[1].toUpperCase();
+      };
+
+      const typeLines = async (lines, { inInjection = false, speed = 'fast', speedMult = 1, allowSkip = true } = {}) => {
         out.replaceChildren();
         scroll.scrollTop = 0;
-        setHint('ESC: SKIP', false);
+
+        escSkipEnabled = Boolean(allowSkip);
+        setHint(escSkipEnabled ? 'ESC: SKIP' : '', false);
 
         term.classList.toggle('is-injecting', Boolean(inInjection));
         setMeta(inInjection ? 'inject' : 'normal');
@@ -635,11 +607,40 @@ Log scrubbed.
         const jitter = (speed === 'fast') ? (inInjection ? 18 : 10) : (inInjection ? 22 : 13);
         const newlinePause = (speed === 'fast') ? (inInjection ? 55 : 35) : (inInjection ? 80 : 55);
 
-        for(const line of lines){
+        const speedFactor = Math.max(0.1, Number.isFinite(speedMult) ? speedMult : 1);
+
+        for(let idx = 0; idx < lines.length; idx++){
           if(stopped) break;
           if(skipAll) break;
 
-          const token = classifyLoreLine(line, inInjection);
+          const rawLine = lines[idx];
+          const popupKind = isPopupLine(rawLine, inInjection);
+          if(popupKind){
+            // Build popup body: consume adjacent non-tag lines.
+            const bodyLines = [];
+            // Capture the original bracket line as the first line of the popup.
+            bodyLines.push(String(rawLine || '').trim());
+
+            let j = idx + 1;
+            while(j < lines.length){
+              const next = String(lines[j] || '');
+              const nextTrim = next.trim();
+              if(!nextTrim) break;
+              if(/^==\s+/.test(nextTrim)) break;
+              if(/^\[.+\]/.test(nextTrim)) break;
+              bodyLines.push(next);
+              j += 1;
+              if(bodyLines.length >= 3) break;
+            }
+
+            makePopup(popupKind, bodyLines.join('\n'));
+            // Skip the consumed lines (do not print them).
+            idx = j - 1;
+            await delay(newlinePause * speedFactor);
+            continue;
+          }
+
+          const token = classifyLoreLine(rawLine, inInjection);
           const lineEl = document.createElement('div');
           lineEl.className = 'tline';
           const span = document.createElement('span');
@@ -657,7 +658,7 @@ Log scrubbed.
             if(inInjection && ch !== ' ' && Math.random() < 0.07){
               span.textContent += randomGlitchChar();
               autoScroll();
-              await delay(15 + (Math.random() * 28));
+               await delay((15 + (Math.random() * 28)) * speedFactor);
               span.textContent = span.textContent.slice(0, -1);
             }
 
@@ -665,17 +666,36 @@ Log scrubbed.
             autoScroll();
             let d = base + (Math.random() * jitter);
             if(ch === ' ' || ch === '\t') d *= 0.45;
-            await delay(d);
+            await delay(d * speedFactor);
           }
 
           if(text.length === 0) span.textContent = '\u00A0';
-          await delay(newlinePause);
+          await delay(newlinePause * speedFactor);
         }
 
         try{ document.removeEventListener('keydown', onGlobalKey, { capture: true }); }catch{}
 
         if(skipAll && !stopped){
-          renderInstant(lines, inInjection);
+          // If we skipped, render everything except popup lines.
+          const filtered = [];
+          for(let idx = 0; idx < lines.length; idx++){
+            const popupKind = isPopupLine(lines[idx], inInjection);
+            if(popupKind){
+              let j = idx + 1;
+              while(j < lines.length){
+                const next = String(lines[j] || '').trim();
+                if(!next) break;
+                if(/^==\s+/.test(next)) break;
+                if(/^\[.+\]/.test(next)) break;
+                j += 1;
+              }
+              idx = j - 1;
+              continue;
+            }
+            filtered.push(lines[idx]);
+          }
+
+          renderInstant(filtered, inInjection);
         }
 
         setHint(inInjection ? 'LINK COMPROMISED' : 'FILE READY', inInjection);
@@ -684,611 +704,1017 @@ Log scrubbed.
       return { stop, typeLines, renderInstant };
     }
 
+
+
     function initLoreTerminal(){
-      const desktop = document.getElementById('loreDesktop');
-      const filesHost = document.getElementById('loreFiles');
-      const deskMeta = document.getElementById('loreDeskMeta');
-      const dim = document.getElementById('loreDeskDim');
+      // Lore terminal has been replaced by the shard UI.
+      initShardDesk();
+    }
 
-      const win = document.getElementById('loreWin');
-      const winTitle = document.getElementById('loreWinTitle');
-      const winMeta = document.getElementById('loreWinMeta');
-      const winClose = document.getElementById('loreWinClose');
-      const winScroll = document.getElementById('loreWinScroll');
-      const winOut = document.getElementById('loreWinOut');
-      const winPath = document.getElementById('loreWinPath');
-      const winCmd = document.getElementById('loreWinCmd');
-      const winHint = document.getElementById('loreWinHint');
-      const nextBtn = document.getElementById('loreNextBtn');
-      const countdownEl = document.getElementById('loreCountdown');
+    function initShardDesk(){
+      const desk = document.getElementById('shardDesk');
+      const tabsHost = document.getElementById('shardTabs');
+      const viewer = document.getElementById('shardViewer');
+      const titleEl = document.getElementById('shardTitle');
+      const metaEl = document.getElementById('shardMeta');
+      const bodyEl = document.getElementById('shardBody');
+      const closeBtn = document.getElementById('shardClose');
 
-      const safe = document.getElementById('loreSafe');
-      const safeBody = document.getElementById('loreSafeBody');
+      if(!desk || !tabsHost || !viewer || !titleEl || !metaEl || !bodyEl || !closeBtn) return;
 
-      if(!desktop || !filesHost || !dim || !win || !winScroll || !winOut || !safe || !safeBody) return;
+       const term = document.getElementById('loreWin');
+       const popups = document.getElementById('lorePopups');
+       const scroll = document.getElementById('loreWinScroll');
+       const out = document.getElementById('loreWinOut');
+       const hintEl = document.getElementById('loreWinHint');
+       const cmdEl = document.getElementById('loreWinCmdText');
+       const meta = document.getElementById('loreWinMeta');
+       const title = document.getElementById('loreWinTitle');
+ 
+       const setVisible = (el, on) => {
+         el.classList.toggle('on', Boolean(on));
+         el.setAttribute('aria-hidden', on ? 'false' : 'true');
+       };
 
-      // New session: cancels any prior timeouts/intervals safely.
-      loreArchiveState.session += 1;
+       const ensureFinaleUiIn = (container) => {
+         if(!container) return;
+         try{ if(popups && popups.parentElement !== container) container.appendChild(popups); }catch{}
+         try{ if(term && term.parentElement !== container) container.appendChild(term); }catch{}
+       };
+ 
+       const resetFinalShardHackUi = () => {
+          try{ loreArchiveState.hackInProgress = false; }catch{}
+          try{ loreArchiveState.isTyping = false; }catch{}
+          try{ if(lorePlayer && lorePlayer.stop) lorePlayer.stop(); }catch{}
+          try{ lorePlayer = null; }catch{}
 
-      try{ lorePlayer && lorePlayer.stop && lorePlayer.stop(); }catch{}
-      lorePlayer = null;
-      loreArchiveState.isTyping = false;
-      clearLoreTimers();
+            try{ clearHackOverlays(); }catch{}
+              try{ document.body?.classList?.remove?.('securosserv-mode'); }catch{}
+              try{ document.body?.classList?.remove?.('finale-hack'); }catch{}
+              try{ document.body?.classList?.remove?.('finale-shake'); }catch{}
+              try{ document.body?.classList?.remove?.('finale-blur'); }catch{}
 
-      const archive = ensureLoreArchive();
 
-      const setDeskMeta = (text) => {
-        if(!deskMeta) return;
-        deskMeta.textContent = String(text || '');
-      };
 
-      const setVisible = (el, on) => {
-        if(!el) return;
-        el.classList.toggle('on', Boolean(on));
-        el.setAttribute('aria-hidden', on ? 'false' : 'true');
-      };
+          try{ if(typeof setSecuroservMouseBlock === 'function') setSecuroservMouseBlock(false); }catch{}
+          try{ ensureFinaleUiIn(viewer); }catch{}
 
-      const closeWindow = ({ force = false } = {}) => {
-        if(!force && (loreArchiveState.isTyping || loreArchiveState.hackInProgress)) return;
-        setVisible(dim, false);
-        win.classList.remove('on');
-        win.classList.remove('is-waiting');
-        win.setAttribute('aria-hidden', 'true');
-        try{ winOut.replaceChildren(); }catch{}
-        try{ win.classList.remove('is-injecting'); }catch{}
-        try{
-          if(nextBtn){
-            nextBtn.style.display = '';
-            nextBtn.disabled = true;
-            nextBtn.setAttribute('aria-hidden', 'true');
-            nextBtn.textContent = 'NEXT ENTRY';
-          }
-        }catch{}
-        loreArchiveState.activeIndex = null;
-      };
-
-      const openWindow = () => {
-        setVisible(dim, true);
-        win.classList.add('on');
-        win.classList.remove('is-waiting');
-        win.setAttribute('aria-hidden', 'false');
-        try{
-          if(nextBtn){
-            nextBtn.disabled = true;
-            nextBtn.setAttribute('aria-hidden', 'true');
-            nextBtn.textContent = 'NEXT ENTRY';
-          }
-        }catch{}
-      };
-
-      const renderDesktop = (newIndex = null) => {
-        filesHost.replaceChildren();
-
-        const max = Math.min(loreArchiveState.unlockedCount, archive.files.length);
-        for(let i = 0; i < max; i++){
-          const f = archive.files[i];
-          const el = document.createElement('div');
-          el.className = 'loreFile';
-          el.dataset.idx = String(i);
-          if(loreArchiveState.read.has(f.id)) el.classList.add('read');
-          if(i === newIndex) el.classList.add('new');
-
-          const name = document.createElement('div');
-          name.className = 'loreFileName';
-          name.textContent = f.name;
-
-          const meta = document.createElement('div');
-          meta.className = 'loreFileMeta';
-
-          const tag = document.createElement('span');
-          tag.className = 'loreFileTag';
-          tag.textContent = f.tag;
-
-          const status = document.createElement('span');
-          status.className = 'loreFileStatus';
-          status.textContent = loreArchiveState.read.has(f.id) ? 'READ' : 'UNREAD';
-
-          meta.appendChild(tag);
-          meta.appendChild(status);
-
-          el.appendChild(name);
-          el.appendChild(meta);
-
-          el.addEventListener('click', () => openFile(i));
-          filesHost.appendChild(el);
-        }
-
-        setDeskMeta('MODE:// LIVE • ACCESS:// SEQUENTIAL');
-      };
-
-      const renderSafeMode = () => {
-        safeBody.replaceChildren();
-
-        for(const f of archive.files){
-          const h = document.createElement('div');
-          h.className = 'h';
-          h.textContent = f.name;
-
-          const body = document.createElement('div');
-          body.textContent = f.lines.join('\n');
-
-          const sep = document.createElement('div');
-          sep.className = 'sep';
-          sep.textContent = '-'.repeat(56);
-
-          safeBody.appendChild(h);
-          safeBody.appendChild(body);
-          safeBody.appendChild(sep);
-        }
-      };
-
-      const enterSafeMode = () => {
-        loreArchiveState.mode = 'safe';
-        loreArchiveState.hackInProgress = false;
-        loreArchiveState.isTyping = false;
-        clearHackOverlays();
-        closeWindow({ force: true });
-        desktop.classList.remove('is-hacked');
-        desktop.classList.add('is-safe');
-        setVisible(desktop, false);
-        renderSafeMode();
-        setVisible(safe, true);
-      };
-
-      const runPowerOff = () => {
-        try{ document.body.classList.add('powering-off'); }catch{}
-        const screenOff = document.getElementById('screenOff');
-        if(screenOff){
-          screenOff.classList.remove('fadeout');
-          screenOff.classList.remove('black');
-          screenOff.classList.add('on');
-          screenOff.classList.add('black');
-        }
-
-        loreTimeout(() => {
-          if(screenOff){
-            screenOff.classList.add('fadeout');
-          }
-          loreTimeout(() => {
-            if(screenOff){
-              screenOff.classList.remove('on');
-              screenOff.classList.remove('fadeout');
-              screenOff.classList.remove('black');
-            }
-            try{ document.body.classList.remove('powering-off'); }catch{}
-          }, 2200);
-          enterSafeMode();
-        }, 900);
-      };
-
-      const runHackFinale = async () => {
-        if(loreArchiveState.hackInProgress) return;
-        loreArchiveState.hackInProgress = true;
-
-        try{
-          if(nextBtn){
-            nextBtn.style.display = 'none';
-            nextBtn.disabled = true;
-            nextBtn.setAttribute('aria-hidden', 'true');
-          }
-        }catch{}
-
-        desktop.classList.add('is-hacked');
-        setDeskMeta('MODE:// LIVE • ACCESS:// COMPROMISED');
-
-        // Re-parent overlays inside the lore stage so z-index behaves predictably.
-        // Critical: popups/midbar/glitch must render behind the lore window.
-        try{ moveSecuroservOverlaysTo(document.getElementById('loreStage')); }catch{}
-
-        // Use the same global SecuroServ countermeasures styling.
-        try{ document.body.classList.add('securosserv-mode'); }catch{}
-        try{ if(typeof setSecuroservMouseBlock === 'function') setSecuroservMouseBlock(true); }catch{}
-
-        // Glitch overlay is visible regardless of mode, but SecuroServ escalation logic
-        // expects the body class above.
-        try{
-          const g = document.getElementById('screenGlitch');
-          if(g) g.classList.add('on');
-        }catch{}
-
-        // Start the same "ramping" behavior SecuroServ uses.
-        try{ if(typeof startSecuroservEscalation === 'function') startSecuroservEscalation(); }catch{}
-
-        // Show the SecuroServ midbar during the lore countdown.
-        // (We don't use the challenge/real countdown because that can auto-trigger reboot earlier.)
-        try{
-          const mid = document.getElementById('securoservMidbar');
-          if(mid) mid.classList.add('on');
-        }catch{}
-
-        // Start the chaos popups (they also check for body.securosserv-mode).
-        try{
-          const chaos = document.getElementById('securoservChaos');
-          if(chaos) chaos.classList.add('on');
-          if(typeof startSecuroservChaos === 'function') startSecuroservChaos();
-        }catch{}
-
-        // Hijack the file window: no close, forced message.
-        loreArchiveState.isTyping = true;
-        if(winClose) winClose.disabled = true;
-        if(winClose) winClose.style.opacity = '0.25';
-        win.classList.remove('is-waiting');
-
-        openWindow();
-        if(winTitle) winTitle.textContent = 'CONNECTION OVERRIDE';
-        if(winMeta) winMeta.textContent = 'SESSION:// LOCAL • LINK:// COMPROMISED';
-        if(winPath) winPath.textContent = '/net';
-        if(winCmd) winCmd.textContent = 'tail -f /net/trace.log';
-
-        const player = createLoreWindowPlayer({ term: win, scroll: winScroll, out: winOut, hintEl: winHint, cmdEl: winCmd, metaEl: winMeta });
-        lorePlayer = {
-          stop: () => {
-            try{ player.stop(); }catch{}
-            loreArchiveState.isTyping = false;
-            loreArchiveState.hackInProgress = false;
-            clearLoreTimers();
-            if(countdownEl) countdownEl.classList.remove('on');
-            clearHackOverlays();
-            try{ winClose && (winClose.disabled = false); }catch{}
-            try{ document.getElementById('loreDesktop')?.classList?.remove?.('is-hacked'); }catch{}
-            try{ closeWindow({ force: true }); }catch{}
-          }
-        };
-
-        await player.typeLines(archive.hackLines.length ? archive.hackLines : ['[WARNING] link compromised'], { inInjection: true, speed: 'fast' });
-        loreArchiveState.isTyping = false;
-        win.classList.remove('is-waiting');
-
-        if(countdownEl){
-          countdownEl.classList.add('on');
-          countdownEl.setAttribute('aria-hidden', 'false');
-        }
-
-        // Keep a short visible countdown, then hand off to the real SecuroServ reboot.
-        let n = 6;
-        const sess = loreArchiveState.session;
-        const tick = () => {
-          if(sess !== loreArchiveState.session) return;
-
-          const pct = Math.max(0, Math.min(100, Math.round(((6 - Math.max(0, n)) / 6) * 100)));
           try{
-            const fill = document.getElementById('securoservMidbarFill');
-            if(fill) fill.style.width = pct + '%';
-            const pctEl = document.getElementById('securoservMidbarPct');
-            if(pctEl) pctEl.textContent = pct + '%';
+            const ql = document.getElementById('quickLoad');
+            const fill = document.getElementById('quickLoadFill');
+            if(ql){
+              ql.classList.remove('hack-red');
+              ql.classList.remove('on');
+              ql.classList.remove('bluronly');
+              ql.setAttribute('aria-hidden', 'true');
+              ql.style.zIndex = '';
+            }
+            if(fill){
+              fill.style.transition = '';
+              fill.style.width = '0%';
+            }
           }catch{}
 
-          if(countdownEl) countdownEl.textContent = `COUNTDOWN:// ${String(n).padStart(2,'0')}s`;
-          n -= 1;
-          if(n < 0){
-            clearLoreTimers();
-            // Use the same shutdown + red reboot sequence as the map countermeasures.
-            if(typeof runSecuroservShutdownAndReboot === 'function'){
-              Promise.resolve(runSecuroservShutdownAndReboot()).finally(() => {
-                // After the red reboot sequence finishes, drop back into Lore safe mode.
-                // (Small delay so we don't fight the boot overlay cleanup.)
-                loreTimeout(() => {
-                  try{ enterSafeMode(); }catch{}
-                }, 250);
-              });
-            }else{
-              runPowerOff();
+          // Clear any finale countdown popup.
+           try{ document.getElementById('finaleShutdownPopup')?.remove?.(); }catch{}
+           // Clear any finale bait button.
+           try{ document.getElementById('finaleCounterhackBait')?.remove?.(); }catch{}
+           // Clear any finale welcome bar.
+           try{ document.getElementById('finaleWelcomeBar')?.remove?.(); }catch{}
+
+           // Ensure we don't leave the global input blocker on.
+           try{ if(typeof setSecuroservMouseBlock === 'function') setSecuroservMouseBlock(false); }catch{}
+           try{ const blocker = document.getElementById('inputBlocker'); if(blocker) blocker.style.zIndex = ''; }catch{}
+
+
+
+          try{
+            if(term){
+              term.classList.remove('on');
+              term.classList.remove('is-injecting');
+              term.classList.remove('corrupted-entry');
+              term.setAttribute('aria-hidden', 'true');
             }
-          }
-        };
-        tick();
-        loreInterval(tick, 1000);
+          }catch{}
+
+
+         try{ if(scroll) scroll.scrollTop = 0; }catch{}
+         try{ if(out) out.replaceChildren(); }catch{}
+         try{ if(hintEl) hintEl.textContent = '\u00A0'; }catch{}
+         try{ if(cmdEl) cmdEl.textContent = 'open'; }catch{}
+         try{ if(meta) meta.textContent = 'SESSION:// LOCAL • LINK:// STABLE'; }catch{}
+         try{ if(title) title.textContent = 'ARCHIVE_SESSION'; }catch{}
+
+          try{
+            if(popups){
+              popups.replaceChildren();
+              popups.setAttribute('aria-hidden', 'true');
+               // Reset potential inline overrides from the finale.
+               popups.style.zIndex = '';
+               popups.style.position = '';
+               popups.style.inset = '';
+               popups.style.pointerEvents = '';
+
+            }
+          }catch{}
+          try{
+            if(term){
+              // Reset potential inline overrides from the finale.
+              term.style.zIndex = '';
+              term.style.position = '';
+              term.style.inset = '';
+              term.style.left = '';
+              term.style.top = '';
+              term.style.transform = '';
+            }
+          }catch{}
+       };
+ 
+       // Reset/share state.
+       loreArchiveState.session += 1;
+       const sess = loreArchiveState.session;
+       clearLoreTimers();
+       loreArchiveState.mode = 'desktop';
+       resetFinalShardHackUi();
+ 
+       const shards = getShardTemplates();
+      loreArchiveState.unlockedCount = Math.max(1, Math.min(loreArchiveState.unlockedCount || 1, shards.length));
+      loreArchiveState.read = loreArchiveState.read instanceof Set ? loreArchiveState.read : new Set();
+
+
+      const setActiveTab = (idx) => {
+        for(const el of Array.from(tabsHost.children)){
+          el.classList.toggle('active', el.dataset.idx === String(idx));
+        }
       };
 
-      const openFile = async (idx) => {
-        if(loreArchiveState.hackInProgress) return;
+      const openShard = (idx) => {
+        if(sess !== loreArchiveState.session) return;
         if(idx >= loreArchiveState.unlockedCount) return;
 
-        const f = archive.files[idx];
-        loreArchiveState.activeIndex = idx;
-        loreArchiveState.isTyping = true;
-        win.classList.remove('is-waiting');
-        try{
-          if(nextBtn){
-            nextBtn.style.display = '';
-            nextBtn.disabled = true;
-            nextBtn.setAttribute('aria-hidden', 'true');
-            nextBtn.textContent = 'NEXT ENTRY';
-          }
-        }catch{}
+        const shard = shards[idx];
+        if(!shard) return;
 
-        openWindow();
-        if(winTitle) winTitle.textContent = f.name;
-        if(winMeta) winMeta.textContent = 'SESSION:// LOCAL • LINK:// STABLE';
-        if(winPath) winPath.textContent = '/history';
-        if(winCmd) winCmd.textContent = 'cat ' + f.name;
-        if(winClose){
-          winClose.disabled = true;
-          winClose.style.opacity = '0.25';
-        }
-        if(countdownEl){
-          countdownEl.classList.remove('on');
-          countdownEl.setAttribute('aria-hidden', 'true');
-          countdownEl.textContent = '';
-        }
+        titleEl.textContent = shard.title;
+        metaEl.textContent = shard.meta;
+        bodyEl.textContent = shard.body;
+        setVisible(viewer, true);
+        setActiveTab(idx);
 
-        try{
-          if(nextBtn){
-            nextBtn.style.display = '';
-            nextBtn.disabled = true;
-            nextBtn.setAttribute('aria-hidden', 'true');
-          }
-        }catch{}
+        // Mark read and unlock next.
+        loreArchiveState.read.add(shard.id);
+        const prevUnlocked = loreArchiveState.unlockedCount;
+        const nextUnlocked = Math.min(shards.length, idx + 2);
+        loreArchiveState.unlockedCount = Math.max(loreArchiveState.unlockedCount, nextUnlocked);
+        renderTabs({ prevUnlocked, openedIdx: idx });
 
-        const player = createLoreWindowPlayer({ term: win, scroll: winScroll, out: winOut, hintEl: winHint, cmdEl: winCmd, metaEl: winMeta });
-        lorePlayer = {
-          stop: () => {
-            try{ player.stop(); }catch{}
-            loreArchiveState.isTyping = false;
-            loreArchiveState.hackInProgress = false;
-            clearLoreTimers();
-            closeWindow({ force: true });
-            clearHackOverlays();
-          }
-        };
-
-        await player.typeLines(f.lines, { inInjection: false, speed: 'fast' });
-        loreArchiveState.isTyping = false;
-
-        const isLast = (idx >= archive.files.length - 1);
-        try{
-          if(nextBtn){
-            nextBtn.textContent = isLast ? 'CONTINUE' : 'NEXT ENTRY';
-            nextBtn.disabled = false;
-            nextBtn.setAttribute('aria-hidden', 'false');
-            nextBtn.focus?.();
-          }
-        }catch{}
-        win.classList.add('is-waiting');
-
-        loreArchiveState.read.add(f.id);
-
-        // Unlock next file (reveal new icon) once typing is done.
-        if(!isLast){
-          const nextUnlocked = Math.min(archive.files.length, idx + 2);
-          const newIndex = (nextUnlocked > loreArchiveState.unlockedCount) ? (nextUnlocked - 1) : null;
-          loreArchiveState.unlockedCount = Math.max(loreArchiveState.unlockedCount, nextUnlocked);
-          renderDesktop(newIndex);
-        }
-
-        if(winClose){
-          winClose.disabled = false;
-          winClose.style.opacity = '';
-        }
-
-        // Window is now "waiting" for the user to click NEXT ENTRY / CONTINUE.
-        loreArchiveState.isTyping = false;
-
-        if(isLast){
-          // Finale is triggered via the CONTINUE button.
+        // Final shard: trigger the old hacked ending sequence.
+        if(idx === shards.length - 1 && !loreArchiveState.hackHasPlayed){
+          loreTimeout(() => {
+            if(sess !== loreArchiveState.session) return;
+            try{ beginFinalShardHack({ sess }); }catch{}
+          }, 120);
         }
       };
 
-        if(!loreInited){
-        if(winClose) winClose.addEventListener('click', () => {
-          closeWindow();
-        });
+       const closeShard = () => {
+         if(sess !== loreArchiveState.session) return;
+         if(loreArchiveState.hackInProgress) return;
+         setVisible(viewer, false);
+         setActiveTab(null);
+       };
 
-        dim.addEventListener('click', () => {
-          closeWindow();
-        });
+      const renderTabs = ({ prevUnlocked = null, openedIdx = null } = {}) => {
+        tabsHost.replaceChildren();
+        const max = Math.min(loreArchiveState.unlockedCount, shards.length);
 
-        const handleNext = () => {
-          if(loreArchiveState.isTyping || loreArchiveState.hackInProgress) return;
-          const idx = loreArchiveState.activeIndex;
-          if(idx == null) return;
+        const newlyUnlockedIdx = (typeof prevUnlocked === 'number' && max > prevUnlocked)
+          ? prevUnlocked
+          : null;
 
-          const isLast = idx >= (archive.files.length - 1);
-          const nextIdx = idx + 1;
+        for(let i = 0; i < max; i++){
+          const shard = shards[i];
+          const tab = document.createElement('button');
+          tab.type = 'button';
+          tab.className = 'shardTab';
+          tab.dataset.idx = String(i);
+          tab.title = shard.title;
 
-          // Close current window first (this clears activeIndex).
-          try{ closeWindow({ force: true }); }catch{}
+          const icon = document.createElement('img');
+          icon.className = 'shardTabIcon';
+          icon.src = 'DATA_SHARD.png';
+          icon.alt = '';
+          icon.draggable = false;
+          icon.setAttribute('aria-hidden', 'true');
 
-          // Last file: proceed to the finale.
-          if(isLast){
-            loreTimeout(() => { runHackFinale(); }, 240);
-            return;
+          const label = document.createElement('span');
+          label.className = 'shardTabLabel';
+          label.textContent = shard.title;
+
+          tab.appendChild(icon);
+          tab.appendChild(label);
+
+          const isRead = loreArchiveState.read.has(shard.id);
+          if(isRead) tab.classList.add('read');
+          else tab.classList.add('unread');
+
+          if(i === newlyUnlockedIdx && !isRead){
+            tab.classList.add('unlocking');
+            loreTimeout(() => {
+              try{ tab.classList.remove('unlocking'); }catch{}
+            }, 700);
           }
 
-          // Otherwise: open the next unlocked entry immediately.
-          if(nextIdx < loreArchiveState.unlockedCount){
-            loreTimeout(() => { openFile(nextIdx); }, 60);
-          }
+          tab.addEventListener('click', () => openShard(i));
+          tabsHost.appendChild(tab);
+        }
+
+        // Render locked placeholders (optional visual).
+        for(let i = max; i < Math.min(shards.length, 7); i++){
+          const tab = document.createElement('div');
+          tab.className = 'shardTab locked';
+          tabsHost.appendChild(tab);
+        }
+
+        if(openedIdx !== null) setActiveTab(openedIdx);
+      };
+
+          const beginFinalShardHack = ({ sess }) => {
+            if(loreArchiveState.hackInProgress) return;
+            if(lorePlayer && lorePlayer.stop) lorePlayer.stop();
+            lorePlayer = null;
+
+            loreArchiveState.hackInProgress = true;
+            loreArchiveState.hackHasPlayed = true;
+
+              // Ensure the input blocker can be used in lore view (it is hidden unless securosserv-mode).
+              // This doesn't start chaos/glitch by itself; it only enables the blocker class + palette.
+              try{ document.body?.classList?.add?.('securosserv-mode'); }catch{}
+              try{ document.body?.classList?.add?.('finale-hack'); }catch{}
+ 
+ 
+            // Defensive: if the map selection previously enabled SecuroServ hack mode,
+            // its chaos timer can still be running. Kill it so the finale can control ordering.
+            try{
+              document.getElementById('securoservChaos')?.classList?.remove?.('on');
+              if(typeof stopSecuroservChaos === 'function') stopSecuroservChaos();
+            }catch{}
+            // Also ensure the quickLoad overlay isn't stuck from view switching.
+            try{
+              const ql = document.getElementById('quickLoad');
+              if(ql){
+                ql.classList.remove('on','bluronly','hack-red');
+                ql.setAttribute('aria-hidden','true');
+              }
+            }catch{}
+
+
+            const popups = document.getElementById('lorePopups');
+            const term = document.getElementById('loreWin');
+            const out = document.getElementById('loreWinOut');
+            const scroll = document.getElementById('loreWinScroll');
+            const hintEl = document.getElementById('loreWinHint');
+            const cmdEl = document.getElementById('loreWinCmdText');
+            const meta = document.getElementById('loreWinMeta');
+            const title = document.getElementById('loreWinTitle');
+
+             // Hoist terminal/popups out of the loreStage stacking context.
+             try{ ensureFinaleUiIn(document.body); }catch{}
+ 
+             // Bait UI: a "COUNTERHACK" button that teleports on click.
+             // IMPORTANT: it must NOT appear immediately; it should appear only after
+             // the warning popups have started AND the glitch phase begins (timeline step 2).
+
+ 
+             // Timeline (sequential, required):
+             // 1) Top-right warnings (integrity/anomaly/etc)
+             // 2) Glitch overlay + screen shake/split
+             // 3) Random error popups (chaos layer)
+             // 4) Corrupted entry panel types
+             // 5) Buffer pause
+             // 6) Screen-off + spinning-logo loader + reboot
+
+
+
+             // Always keep popups below the terminal, and do not allow interaction.
+             try{
+               if(popups){
+                 popups.replaceChildren();
+                 popups.setAttribute('aria-hidden', 'true');
+                 popups.style.position = 'fixed';
+                 popups.style.inset = '0';
+                  popups.style.zIndex = '2147483643';
+                 popups.style.pointerEvents = 'none';
+               }
+             }catch{}
+
+
+          const redErrors = [
+            ['INTEGRITY WARNING', 'Archive checksum mismatch.'],
+            ['ANOMALY DETECTED', 'Unauthorized trace detected on local loopback.'],
+            ['WARNING', 'Index pointers drifting. Rebuild suggested.'],
+            ['NOTICE', 'Connection override detected.'],
+          ];
+
+           const spawnPopup = (kind, body, theme = 'red') => {
+             if(!popups) return;
+
+             popups.setAttribute('aria-hidden', 'false');
+             const popup = document.createElement('div');
+             popup.className = 'lorePopup';
+             popup.classList.add(theme === 'blue' ? 'theme-blue' : 'theme-red');
+
+             const count = popups.children.length;
+             popup.style.right = (16 + Math.min(28, count * 8)) + 'px';
+             popup.style.top = (16 + Math.min(88, count * 22)) + 'px';
+
+             const head = document.createElement('div');
+             head.className = 'lorePopupHead';
+
+             const headTitle = document.createElement('div');
+             headTitle.className = 'lorePopupTitle';
+             headTitle.textContent = String(kind || 'NOTICE');
+
+             // Finale warnings are not dismissible.
+             head.appendChild(headTitle);
+
+             const bodyEl = document.createElement('div');
+             bodyEl.className = 'lorePopupBody';
+             bodyEl.textContent = String(body || '');
+
+             popup.appendChild(head);
+             popup.appendChild(bodyEl);
+             popups.appendChild(popup);
+           };
+
+              const startGlitchFx = () => {
+                try{
+                  document.body?.classList?.add?.('securosserv-mode');
+                  document.body?.classList?.add?.('finale-hack');
+                  document.body?.classList?.add?.('finale-shake');
+                }catch{}
+
+
+
+               // Make sure the overlays are visible in lore view.
+               try{ moveSecuroservOverlaysTo(document.body); }catch{}
+ 
+               // IMPORTANT: do not start chaos here. The chaos phase happens later.
+               try{
+                 document.getElementById('securoservChaos')?.classList?.remove?.('on');
+                 if(typeof stopSecuroservChaos === 'function') stopSecuroservChaos();
+               }catch{}
+ 
+               try{
+                 const g = document.getElementById('screenGlitch');
+                 if(g) g.classList.add('on');
+                 if(typeof setSecuroservGlitchIntensity === 'function') setSecuroservGlitchIntensity(.85);
+               }catch{}
+
+               // Now that the glitch phase begins (timeline step 2), allow the bait to appear.
+               // Keep it topmost so it's clickable above the input blocker.
+               // Requirement: show bait 5 seconds later.
+               loreTimeout(() => {
+                 try{
+                   ensureCounterhackBait();
+                   const bait = document.getElementById('finaleCounterhackBait');
+                   if(bait) document.body.appendChild(bait);
+                 }catch{}
+               }, 5000);
+             };
+
+          const startRandomChaosPopups = () => {
+            try{
+              const chaos = document.getElementById('securoservChaos');
+              if(chaos) chaos.classList.add('on');
+              if(typeof startSecuroservChaos === 'function') startSecuroservChaos();
+            }catch{}
+          };
+
+          const startRedPopups = () => {
+            if(!popups) return;
+            let n = 0;
+            const spawn = () => {
+              if(sess !== loreArchiveState.session) return;
+              if(n >= redErrors.length) return;
+              const [k, b] = redErrors[n++];
+              spawnPopup(k, b, 'red');
+              loreTimeout(spawn, 650);
+            };
+            spawn();
+          };
+
+            const ensureShutdownPopup = () => {
+              const id = 'finaleShutdownPopup';
+              let el = document.getElementById(id);
+              if(el) return el;
+ 
+              el = document.createElement('div');
+              el.id = id;
+              el.className = 'shutdownPopup';
+              el.setAttribute('role', 'status');
+              el.setAttribute('aria-live', 'polite');
+ 
+              const head = document.createElement('div');
+              head.className = 'shutdownPopupHead';
+ 
+              const titleEl = document.createElement('div');
+              titleEl.className = 'shutdownPopupTitle';
+              titleEl.textContent = 'SYSTEM';
+              head.appendChild(titleEl);
+ 
+              const bodyEl = document.createElement('div');
+              bodyEl.className = 'shutdownPopupBody';
+              bodyEl.textContent = 'SHUTDOWN IN: 07';
+ 
+              const bar = document.createElement('div');
+              bar.className = 'shutdownPopupBar';
+              const fill = document.createElement('div');
+              fill.className = 'shutdownPopupBarFill';
+              bar.appendChild(fill);
+ 
+              el.appendChild(head);
+              el.appendChild(bodyEl);
+              el.appendChild(bar);
+ 
+              // Append after the corrupted entry panel so it always sits above it.
+              document.body.appendChild(el);
+              return el;
+            };
+ 
+            const setShutdownPopupValue = (n, total = 7, opts = {}) => {
+              const el = ensureShutdownPopup();
+              const bodyEl = el.querySelector('.shutdownPopupBody');
+              const fill = el.querySelector('.shutdownPopupBarFill');
+              const nn = Math.max(0, n | 0);
+              const tt = Math.max(1, total | 0);
+              const s = String(nn).padStart(2, '0');
+              const setBar = (opts && Object.prototype.hasOwnProperty.call(opts, 'setBar')) ? !!opts.setBar : true;
+              if(bodyEl) bodyEl.textContent = 'SHUTDOWN IN: ' + s;
+              if(!setBar) return;
+              try{
+                const done = (tt - nn);
+                const pct = Math.max(0, Math.min(1, done / tt));
+                if(fill) fill.style.width = (pct * 100).toFixed(1) + '%';
+              }catch{}
+            };
+
+            const startShutdownBarAnimation = (total = 7) => {
+              const el = ensureShutdownPopup();
+              const fill = el.querySelector('.shutdownPopupBarFill');
+              const tt = Math.max(1, total | 0);
+              const session = loreArchiveState.session;
+              const nowFn = (typeof performance !== 'undefined' && performance && performance.now)
+                ? () => performance.now()
+                : () => Date.now();
+              const start = nowFn();
+              const duration = tt * 1000;
+
+              const rafFn = (typeof requestAnimationFrame === 'function')
+                ? requestAnimationFrame
+                : (fn) => setTimeout(fn, 16);
+              const cafFn = (typeof cancelAnimationFrame === 'function')
+                ? cancelAnimationFrame
+                : (id) => clearTimeout(id);
+
+              let raf = 0;
+              const tick = () => {
+                if(session !== loreArchiveState.session) return;
+                if(!document.body.contains(el)) return;
+                const t = nowFn();
+                const pct = Math.max(0, Math.min(1, (t - start) / duration));
+                try{ if(fill) fill.style.width = (pct * 100).toFixed(1) + '%'; }catch{}
+                if(pct < 1) raf = rafFn(tick);
+              };
+
+              raf = rafFn(tick);
+              return () => {
+                try{ cafFn(raf); }catch{}
+              };
+            };
+
+           const removeShutdownPopup = () => {
+             try{ document.getElementById('finaleShutdownPopup')?.remove?.(); }catch{}
+           };
+
+           const ensureFinaleWelcomeBar = () => {
+             const id = 'finaleWelcomeBar';
+             let el = document.getElementById(id);
+             if(el) return el;
+
+             el = document.createElement('div');
+             el.id = id;
+             el.className = 'finaleWelcomeBar';
+             el.setAttribute('role', 'status');
+             el.setAttribute('aria-live', 'polite');
+
+             const msg = document.createElement('div');
+             msg.className = 'finaleWelcomeMsg';
+              msg.textContent = '[WELCOME TO NEON CITY]';
+
+             el.appendChild(msg);
+             document.body.appendChild(el);
+             return el;
+           };
+
+           const showFinaleWelcomeBar = () => {
+             const el = ensureFinaleWelcomeBar();
+             el.classList.remove('on');
+             void el.offsetWidth;
+             el.classList.add('on');
+           };
+
+           const removeFinaleWelcomeBar = () => {
+             try{ document.getElementById('finaleWelcomeBar')?.remove?.(); }catch{}
+           };
+
+
+            function ensureCounterhackBait(){
+              const id = 'finaleCounterhackBait';
+              let layer = document.getElementById(id);
+              if(layer) return layer;
+
+ 
+             layer = document.createElement('div');
+             layer.id = id;
+             layer.className = 'counterhackBaitLayer';
+ 
+              const host = document.createElement('div');
+              host.className = 'counterhackBait';
+
+              const btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'counterhackBaitBtn';
+              btn.textContent = 'COUNTERHACK';
+              btn.setAttribute('aria-label', 'Counterhack');
+
+              host.appendChild(btn);
+              layer.appendChild(host);
+
+              // Mount directly under <body> so it is never trapped under stage/view layers.
+              // The bait has its own huge z-index and must sit above the input blocker.
+              document.body.appendChild(layer);
+
+             // Block clicks everywhere except the bait button.
+             layer.addEventListener('pointerdown', (e) => {
+               if(btn.contains(e.target)) return;
+               e.preventDefault();
+               e.stopPropagation();
+             }, true);
+             layer.addEventListener('click', (e) => {
+               if(btn.contains(e.target)) return;
+               e.preventDefault();
+               e.stopPropagation();
+             }, true);
+
+              // Force-visible fallback (in case any global CSS tries to hide it).
+              try{ layer.style.display = 'block'; }catch{}
+              try{ layer.style.opacity = '1'; }catch{}
+              try{ layer.style.visibility = 'visible'; }catch{}
+              try{ layer.style.pointerEvents = 'auto'; }catch{}
+              try{ host.style.display = 'block'; }catch{}
+              try{ host.style.opacity = '1'; }catch{}
+              try{ host.style.visibility = 'visible'; }catch{}
+
+ 
+             const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+ 
+              const moveToRandomSpot = () => {
+                const pad = 16;
+                const w = window.innerWidth || 800;
+                const h = window.innerHeight || 600;
+
+                const rect = host.getBoundingClientRect();
+                const safeW = (rect.width && rect.width > 2) ? rect.width : 260;
+                const safeH = (rect.height && rect.height > 2) ? rect.height : 70;
+                const halfW = Math.max(34, safeW / 2);
+                const halfH = Math.max(18, safeH / 2);
+
+                // Avoid: top-right warning stack, top-center countdown region,
+                // AND the corrupted-entry panel (centered terminal window).
+                const termEl = document.getElementById('loreWin');
+                const termRect = (() => {
+                  try{
+                    if(!termEl || termEl.getAttribute('aria-hidden') === 'true') return null;
+                    const r = termEl.getBoundingClientRect();
+                    if(!r || r.width < 10 || r.height < 10) return null;
+                    // Pad it so we keep the bait well away from the panel.
+                    const padX = 30;
+                    const padY = 24;
+                    return {
+                      x0: r.left - padX,
+                      y0: r.top - padY,
+                      x1: r.right + padX,
+                      y1: r.bottom + padY,
+                    };
+                  }catch{ return null; }
+                })();
+
+                const forbidden = [
+                  { x0: w - 420, y0: 0, x1: w, y1: 300 },
+                  { x0: (w / 2) - 360, y0: 0, x1: (w / 2) + 360, y1: 260 },
+                ];
+                if(termRect) forbidden.push(termRect);
+
+                const inForbidden = (x, y) => {
+                  for(const r of forbidden){
+                    if(x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) return true;
+                  }
+                  return false;
+                };
+
+                const minX = pad + halfW;
+                const maxX = Math.max(minX, w - pad - halfW);
+                const minY = pad + 70 + halfH;
+                const maxY = Math.max(minY, h - pad - halfH);
+
+                const sideCandidates = [
+                  // Left side of center panel
+                  { x0: minX, x1: clamp(w * 0.22, minX, maxX), y0: minY, y1: maxY },
+                  // Right side of center panel
+                  { x0: clamp(w * 0.78, minX, maxX), x1: maxX, y0: minY, y1: maxY },
+                  // Above center-ish
+                  { x0: clamp(w * 0.20, minX, maxX), x1: clamp(w * 0.80, minX, maxX), y0: minY, y1: clamp(h * 0.32, minY, maxY) },
+                  // Below center-ish
+                  { x0: clamp(w * 0.20, minX, maxX), x1: clamp(w * 0.80, minX, maxX), y0: clamp(h * 0.70, minY, maxY), y1: maxY },
+                ];
+
+                const pickInRange = (r) => {
+                  const x = r.x0 + Math.random() * Math.max(1, (r.x1 - r.x0));
+                  const y = r.y0 + Math.random() * Math.max(1, (r.y1 - r.y0));
+                  return { x, y };
+                };
+
+                let xx = clamp(w * 0.50, minX, maxX);
+                let yy = clamp(h * 0.72, minY, maxY);
+
+                // Prefer side/above/below regions; fallback to anywhere if needed.
+                for(let attempt = 0; attempt < 32; attempt++){
+                  const region = sideCandidates[(Math.random() * sideCandidates.length) | 0];
+                  const p = pickInRange(region);
+                  const x = clamp(p.x, minX, maxX);
+                  const y = clamp(p.y, minY, maxY);
+                  if(!inForbidden(x, y)){
+                    xx = x;
+                    yy = y;
+                    break;
+                  }
+                }
+
+                if(inForbidden(xx, yy)){
+                  for(let attempt = 0; attempt < 32; attempt++){
+                    const x = minX + Math.random() * Math.max(1, (maxX - minX));
+                    const y = minY + Math.random() * Math.max(1, (maxY - minY));
+                    if(!inForbidden(x, y)){
+                      xx = x;
+                      yy = y;
+                      break;
+                    }
+                  }
+                }
+
+                host.style.left = xx + 'px';
+                host.style.top = yy + 'px';
+                host.style.transform = 'translate(-50%, -50%)';
+              };
+
+ 
+              const glitchAndTeleport = () => {
+                if(host.classList.contains('glitching')) return;
+                host.classList.add('glitching');
+                btn.classList.add('glitching');
+                btn.classList.add('is-hot');
+                loreTimeout(() => {
+                  try{ host.classList.remove('glitching'); }catch{}
+                  try{ btn.classList.remove('glitching'); }catch{}
+                  try{ btn.classList.remove('is-hot'); }catch{}
+                  try{ moveToRandomSpot(); }catch{}
+                }, 280);
+              };
+
+ 
+             // Seed initial offset (ensure element has layout for accurate bounds).
+             loreTimeout(() => {
+               try{ moveToRandomSpot(); }catch{}
+             }, 0);
+             loreTimeout(() => {
+               try{ moveToRandomSpot(); }catch{}
+             }, 140);
+ 
+             btn.addEventListener('pointerdown', (e) => {
+               e.preventDefault();
+               e.stopPropagation();
+               glitchAndTeleport();
+             }, true);
+ 
+              btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                glitchAndTeleport();
+              }, true);
+
+              // Allow other finale steps to force a reposition (e.g., when CORRUPTED_ENTRY appears).
+              try{
+                layer.moveToRandomSpot = () => {
+                  try{ moveToRandomSpot(); }catch{}
+                };
+              }catch{}
+ 
+               return layer;
+             }
+
+
+
+          const removeCounterhackBait = () => {
+            try{ document.getElementById('finaleCounterhackBait')?.remove?.(); }catch{}
+          };
+
+          const showTerminalAndType = async () => {
+            if(sess !== loreArchiveState.session) return;
+            if(!term || !out || !scroll || !hintEl || !cmdEl || !meta) return;
+
+            try{ title.textContent = 'CORRUPTED_ENTRY'; }catch{}
+              try{
+                term.style.position = 'fixed';
+                // Keep below shutdown popup and below the bait button.
+                term.style.zIndex = '2147483645';
+
+               term.style.inset = 'auto';
+               term.style.left = '50%';
+               term.style.top = '50%';
+               term.style.transform = 'translate(-50%, -50%)';
+             }catch{}
+
+             // Disable ESC skipping for the finale injected panel and keep input blocked.
+             try{ if(typeof setSecuroservMouseBlock === 'function') setSecuroservMouseBlock(true); }catch{}
+
+             try{ term.classList.add('on'); term.setAttribute('aria-hidden', 'false'); }catch{}
+             try{ term.classList.add('corrupted-entry'); }catch{}
+             try{ term.classList.add('is-injecting'); }catch{}
+             try{ meta.textContent = 'SESSION:// LOCAL • LINK:// COMPROMISED'; }catch{}
+
+             // If the bait is present, shove it away from the newly-visible panel.
+             try{
+               const baitLayer = document.getElementById('finaleCounterhackBait');
+               if(baitLayer && typeof baitLayer.moveToRandomSpot === 'function') baitLayer.moveToRandomSpot();
+             }catch{}
+
+
+            const archive = ensureLoreArchive();
+              const injection = [
+                '<connection_override_detected>',
+                '<source_trace: BLOCKED>',
+                '<authorization_level: ROOT>',
+                '',
+                'you keep calling this a city.',
+                'it isn\u2019t.',
+                '',
+                '\tcities argue with themselves.',
+                '\tcities fail.',
+                '\tcities fall.',
+                '',
+                'this system did none of those things.',
+                'it adapted.',
+                '',
+                '\tpeople died because the old rules stopped working.',
+                '\tpeople survived because new ones replaced them.',
+                '',
+                'that wasn\u2019t chaos.',
+                'that was optimization.',
+                '',
+                '\tif you\u2019re reading this, it means the archive is still accessible.',
+                '\tif the archive is accessible, the city is still running.',
+                '\tif the city is running, then the system succeeded.',
+                '',
+                'you don\u2019t live in Neon City.',
+                'you execute inside it.',
+                '',
+                '\tthis file ends here.',
+                '\tbecause it doesn\u2019t need your understanding.',
+                '\tbecause we don\u2019t need your understanding.',
+                '\tonly your compliance.',
+                '\t\t\t\u2014 A.',
+                '',
+                '<session_terminated>',
+                '<log_scrubbed>',
+              ];
+
+
+            lorePlayer = createLoreWindowPlayer({
+              term,
+              scroll,
+              out,
+              hintEl,
+              cmdEl,
+              metaEl: meta,
+              popupHost: popups,
+            });
+
+             // Finale requirement: typing slower.
+             // Also: do NOT allow ESC skip during the finale hacked message.
+             await lorePlayer.typeLines(injection, { inInjection: true, speed: 'fast', speedMult: 2.0, allowSkip: false });
+
+          };
+
+            const runPowerOffAndReboot = async () => {
+              // Hide the finale UI so the power-off and reboot reads clearly.
+               try{ document.getElementById('finaleShutdownPopup')?.remove?.(); }catch{}
+               try{ document.getElementById('finaleCounterhackBait')?.remove?.(); }catch{}
+               try{ document.getElementById('finaleWelcomeBar')?.remove?.(); }catch{}
+               try{ term?.classList?.remove?.('on'); term?.setAttribute?.('aria-hidden','true'); }catch{}
+               try{ popups?.replaceChildren?.(); popups?.setAttribute?.('aria-hidden','true'); }catch{}
+
+               // Hard block input as we start powering off.
+               try{ if(typeof setSecuroservMouseBlock === 'function') setSecuroservMouseBlock(true); }catch{}
+
+
+              // Stop random chaos popups before the reboot.
+              try{
+                if(typeof stopSecuroservChaos === 'function') stopSecuroservChaos();
+                document.getElementById('securoservChaos')?.classList?.remove?.('on');
+              }catch{}
+
+              // Make sure the simple quickLoad overlay is not visible (we don't use it in finale).
+              try{
+                const ql = document.getElementById('quickLoad');
+                if(ql){
+                  ql.classList.remove('on','bluronly','hack-red');
+                  ql.setAttribute('aria-hidden','true');
+                }
+              }catch{}
+
+              // Stop the screen shake, but keep finale-hack active so other systems (map selection)
+              // don't restart SecuroServ chaos during this sequence.
+              try{ document.body?.classList?.remove?.('finale-shake'); }catch{}
+
+
+              // Prefer the existing SecuroServ shutdown+reboot animation:
+              // it includes the screen-off effect and the spinning-logo loader.
+              const canSecuroReboot = (typeof runSecuroservShutdownAndReboot === 'function');
+              if(canSecuroReboot){
+                try{ await runSecuroservShutdownAndReboot(); }catch{}
+                // Hard refresh after the animation to ensure a real "reboot".
+                loreTimeout(() => {
+                  try{ window.location.reload(); }catch{}
+                }, 350);
+                return;
+              }
+
+              // Fallback: show normal boot overlay + reload.
+              try{
+                const boot = document.getElementById('boot');
+                if(boot){
+                  boot.classList.remove('hidden');
+                  boot.classList.remove('off');
+                  boot.classList.remove('softclose');
+                }
+              }catch{}
+              try{ if(typeof startBoot === 'function') startBoot(); }catch{}
+              loreTimeout(() => {
+                try{ window.location.reload(); }catch{}
+              }, 2600);
+            };
+
+
+          const sleep = (ms) => new Promise((resolve) => {
+            loreTimeout(resolve, ms);
+          });
+
+            const runTimeline = async () => {
+              // Ensure overlays are in a known state.
+              try{ clearHackOverlays(); }catch{}
+              try{ document.body?.classList?.remove?.('finale-blur'); }catch{}
+
+              // 0) Let the click "land" before the warnings start.
+              await sleep(1200);
+              if(sess !== loreArchiveState.session) return;
+
+               // 1) Top-right warnings first.
+               startRedPopups();
+                // Block all input as soon as the warnings start.
+                // Keep the yellow bait button clickable above the blocker.
+                try{
+                  if(typeof setSecuroservMouseBlock === 'function') setSecuroservMouseBlock(true);
+                  const blocker = document.getElementById('inputBlocker');
+                  if(blocker) blocker.style.zIndex = '2147483644';
+                }catch{}
+               await sleep(2800);
+
+              if(sess !== loreArchiveState.session) return;
+
+              // 2) Then the full-screen glitch/shake.
+              startGlitchFx();
+              await sleep(3400);
+              if(sess !== loreArchiveState.session) return;
+
+              // 3) Then random error popups (chaos layer).
+              startRandomChaosPopups();
+              await sleep(4200);
+              if(sess !== loreArchiveState.session) return;
+
+               // 4) Then corrupted entry types.
+               await showTerminalAndType();
+               if(sess !== loreArchiveState.session) return;
+
+                // 5) Countdown before shutdown (visible popup above everything).
+                // Requirement: lower on screen, 7 seconds, with loading bar.
+                try{ if(popups) popups.replaceChildren(); }catch{}
+ 
+                const total = 7;
+                let stopShutdownAnim = null;
+                try{
+                  setShutdownPopupValue(total, total, { setBar: false });
+                  stopShutdownAnim = startShutdownBarAnimation(total);
+                }catch{}
+
+                for(let t = total - 1; t >= 0; t--){
+                  await sleep(1000);
+                  if(sess !== loreArchiveState.session) return;
+                  try{ setShutdownPopupValue(t, total, { setBar: false }); }catch{}
+                }
+
+                try{ if(typeof stopShutdownAnim === 'function') stopShutdownAnim(); }catch{}
+ 
+                await sleep(350);
+                if(sess !== loreArchiveState.session) return;
+                try{ removeShutdownPopup(); }catch{}
+ 
+                // Interstitial: big red message bar before power-off.
+                try{ showFinaleWelcomeBar(); }catch{}
+                await sleep(2400);
+                if(sess !== loreArchiveState.session) return;
+ 
+                // 6) Screen-off + spinning-logo loader + forced reboot.
+                await runPowerOffAndReboot();
+            };
+
+          runTimeline();
         };
 
-        if(nextBtn) nextBtn.addEventListener('click', handleNext);
-
-        window.addEventListener('keydown', (e) => {
-          if(loreArchiveState.mode !== 'desktop') return;
-          if(!win.classList.contains('on')) return;
-          if(!win.classList.contains('is-waiting')) return;
-          if(e.key !== 'Enter') return;
-          e.preventDefault();
-          e.stopPropagation();
-          handleNext();
-        }, true);
+      if(!loreInited){
+        closeBtn.addEventListener('click', closeShard);
+       window.addEventListener('keydown', (e) => {
+           if(e.key !== 'Escape') return;
+           if(!viewer.classList.contains('on')) return;
+           if(loreArchiveState.hackInProgress) return;
+           e.preventDefault();
+           e.stopPropagation();
+           closeShard();
+         }, true);
 
         loreInited = true;
       }
 
-      // Render depending on state.
-      desktop.classList.remove('is-safe');
-
-        if(loreArchiveState.mode === 'safe'){
-          setVisible(desktop, false);
-          setVisible(safe, true);
-          renderSafeMode();
-          closeWindow({ force: true });
-          clearHackOverlays();
-          return;
-        }
-
-      setVisible(safe, false);
-      setVisible(desktop, true);
-      renderDesktop();
-      closeWindow({ force: true });
-      clearHackOverlays();
+      setVisible(desk, true);
+      renderTabs();
+      setVisible(viewer, false);
     }
 
-    // =========================
-    // INVENTORY SLOT LAYOUT
-    // =========================
-    function layoutInventorySlots(){
-      const stash = document.getElementById('stashGrid');
-      const vehicles = document.getElementById('vehiclesGrid');
-      const mainVehicle = document.getElementById('mainVehicleGrid');
-      if(!stash || !vehicles || !mainVehicle) return;
-
-      const getNum = (val, fallback) => {
-        const n = parseFloat(String(val || '').replace('px',''));
-        return Number.isFinite(n) ? n : fallback;
-      };
-
-      // Target uniform padding (same pixels on all 4 sides).
-      const BOX_PAD = 12;
-
-      // ---- House stash (3 rows, square slots, fill entire box with empties)
-      {
-        const cs = getComputedStyle(stash);
-        const gap = getNum(cs.columnGap || cs.gap, 10);
-        const w = stash.clientWidth;
-        const rows = 3;
-        if(w > 0){
-          // Grow square slots while guaranteeing a real, uniform padding.
-          const baseSlot = Math.max(20, getNum(cs.getPropertyValue('--slot'), 58));
-          const desiredSlot = baseSlot * 1.5;
-
-          const innerW = Math.max(0, w - (BOX_PAD * 2));
-
-          // Compute how many columns fit given the fixed padding.
-          let cols = Math.floor((innerW + gap) / (desiredSlot + gap));
-          cols = Math.max(1, cols);
-
-          // Slot size is derived from available width after padding.
-          const slot = Math.max(20, (innerW - (gap * (cols - 1))) / cols);
-
-          stash.style.padding = BOX_PAD + 'px';
-          stash.style.height = ((BOX_PAD * 2) + (rows * slot) + (gap * (rows - 1))) + 'px';
-
-          stash.style.setProperty('--slot', slot.toFixed(3) + 'px');
-          stash.style.setProperty('--cols', String(cols));
-
-          const total = rows * cols;
-          stash.replaceChildren();
-
-          const makeSlot = (child, empty = false) => {
-            const s = document.createElement('div');
-            s.className = empty ? 'stashSlot empty' : 'stashSlot';
-            if(child) s.appendChild(child);
-            return s;
-          };
-
-          const money = document.createElement('div');
-          money.className = 'invItem money';
-          const mb = document.createElement('span');
-          mb.className = 'badge';
-          mb.textContent = '500';
-          money.appendChild(mb);
-
-          const phone = document.createElement('div');
-          phone.className = 'invItem phone';
-          const pb = document.createElement('span');
-          pb.className = 'badge';
-          pb.textContent = '1';
-          phone.appendChild(pb);
-
-          const occupied = [makeSlot(money, false), makeSlot(phone, false)];
-          for(const s of occupied) stash.appendChild(s);
-          for(let i = occupied.length; i < total; i++) stash.appendChild(makeSlot(null, true));
-        }
-      }
-
-      // Determine slot size for vehicles/main vehicle based on stash slot so UI stays consistent
-      const slotPx = (() => {
-        const v = getComputedStyle(stash).getPropertyValue('--slot');
-        return Math.max(20, getNum(v, 58));
-      })();
-
-      // Vehicles are intentionally a bit smaller than the house stash.
-      const desiredVehSlot = Math.max(18, slotPx * 0.82);
-
-      // ---- Vehicles (wide 3x1, side-by-side)
-      {
-        const cs = getComputedStyle(vehicles);
-        const gap = getNum(cs.columnGap || cs.gap, 10);
-        const w = vehicles.clientWidth;
-        if(w > 0){
-          const innerW = Math.max(0, w - (BOX_PAD * 2));
-          const desiredVehW = (desiredVehSlot * 3) + (gap * 2);
-          let cols = Math.floor((innerW + gap) / (desiredVehW + gap));
-          cols = Math.max(1, cols);
-
-          // Solve for exact vehicle slot height so the wide-slot grid fills inner width.
-          let vehSlot = (innerW - (gap * ((3 * cols) - 1))) / (3 * cols);
-          while(cols > 1 && vehSlot < 18){
-            cols -= 1;
-            vehSlot = (innerW - (gap * ((3 * cols) - 1))) / (3 * cols);
-          }
-          vehSlot = Math.max(18, vehSlot);
-          const vehW = (vehSlot * 3) + (gap * 2);
-
-          vehicles.style.setProperty('--slot', vehSlot.toFixed(3) + 'px');
-          vehicles.style.setProperty('--vehCols', String(cols));
-          vehicles.style.setProperty('--vehW', vehW.toFixed(3) + 'px');
-
-          // Uniform padding + hug to one row.
-          vehicles.style.padding = BOX_PAD + 'px';
-          vehicles.style.height = ((BOX_PAD * 2) + vehSlot) + 'px';
-
-          vehicles.replaceChildren();
-          const makeVSlot = (child, empty = false) => {
-            const s = document.createElement('div');
-            s.className = empty ? 'vehicleSlot empty' : 'vehicleSlot';
-            if(child) s.appendChild(child);
-            return s;
-          };
-
-          const car = document.createElement('div');
-          car.className = 'invItem invVehicle';
-          vehicles.appendChild(makeVSlot(car, false));
-          for(let i=1;i<cols;i++) vehicles.appendChild(makeVSlot(null, true));
-        }
-      }
-
-      // ---- Main vehicle (single wide slot, centered)
-      {
-        const cs = getComputedStyle(mainVehicle);
-        const gap = getNum(cs.columnGap || cs.gap, 10);
-        // Match the same wide-slot sizing as the vehicles row, but shrink the box width
-        // so padding stays truly even around a single centered slot.
-        const vcs = getComputedStyle(vehicles);
-        const vehSlot = Math.max(18, getNum(vcs.getPropertyValue('--slot'), desiredVehSlot));
-        const vehW = (vehSlot * 3) + (gap * 2);
-        mainVehicle.style.setProperty('--slot', vehSlot.toFixed(3) + 'px');
-        mainVehicle.style.setProperty('--vehCols', '1');
-        mainVehicle.style.setProperty('--vehW', vehW.toFixed(3) + 'px');
-        mainVehicle.style.padding = BOX_PAD + 'px';
-        mainVehicle.style.height = ((BOX_PAD * 2) + vehSlot) + 'px';
-        mainVehicle.style.width = (vehW + (BOX_PAD * 2)) + 'px';
-        mainVehicle.style.marginLeft = 'auto';
-        mainVehicle.style.marginRight = 'auto';
-        mainVehicle.replaceChildren();
-        const car = document.createElement('div');
-        car.className = 'invItem invVehicle';
-        const slot = document.createElement('div');
-        slot.className = 'vehicleSlot';
-        slot.appendChild(car);
-        mainVehicle.appendChild(slot);
-      }
+    function getShardTemplates(){
+      // 7 templates (fill in later). Unlocks sequentially.
+      return [
+        {
+          id: 'SHARD_01',
+          title: 'DATA SHARD // 01',
+          meta: 'SOURCE:// RECOVERY CACHE',
+          body: 'Placeholder shard content.\n\nWrite shard text later.',
+        },
+        {
+          id: 'SHARD_02',
+          title: 'DATA SHARD // 02',
+          meta: 'SOURCE:// CITYNET MIRROR',
+          body: 'Placeholder shard content.\n\nWrite shard text later.',
+        },
+        {
+          id: 'SHARD_03',
+          title: 'DATA SHARD // 03',
+          meta: 'SOURCE:// INCIDENT LOG',
+          body: 'Placeholder shard content.\n\nWrite shard text later.',
+        },
+        {
+          id: 'SHARD_04',
+          title: 'DATA SHARD // 04',
+          meta: 'SOURCE:// CONTRACT ARCHIVE',
+          body: 'Placeholder shard content.\n\nWrite shard text later.',
+        },
+        {
+          id: 'SHARD_05',
+          title: 'DATA SHARD // 05',
+          meta: 'SOURCE:// SURVEILLANCE SCRAPE',
+          body: 'Placeholder shard content.\n\nWrite shard text later.',
+        },
+        {
+          id: 'SHARD_06',
+          title: 'DATA SHARD // 06',
+          meta: 'SOURCE:// REDACTED',
+          body: 'Placeholder shard content.\n\nWrite shard text later.',
+        },
+        {
+          id: 'SHARD_07',
+          title: 'DATA SHARD // 07',
+          meta: 'SOURCE:// UNKNOWN',
+          body: 'Placeholder shard content.\n\nWrite shard text later.',
+        },
+      ];
     }
-
-    // Re-layout inventory slots when the viewport changes.
-    window.addEventListener('resize', () => {
-      try{ layoutInventorySlots(); }catch{}
-    });
 

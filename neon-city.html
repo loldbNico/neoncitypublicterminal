@@ -25,7 +25,6 @@
     <div class="tabs" role="tablist" aria-label="Menu">
       <button class="tab disabled" data-view="settings" type="button" role="tab" aria-selected="false" tabindex="-1" aria-disabled="true"><span>SETTINGS</span></button>
       <button class="tab on" data-view="map" type="button" role="tab" aria-selected="true"><span>MAP</span></button>
-      <button class="tab disabled" data-view="inventory" type="button" role="tab" aria-selected="false" tabindex="-1" aria-disabled="true"><span>INVENTORY</span></button>
       <button class="tab disabled" data-view="augments" type="button" role="tab" aria-selected="false" tabindex="-1" aria-disabled="true"><span>AUGMENTS</span></button>
       <button class="tab tab-lore" data-view="lore" type="button" role="tab" aria-selected="false" tabindex="-1"><span>LORE TERMINAL</span></button>
     </div>
@@ -80,17 +79,49 @@
       </div>
     </main>
 
-    <main class="inventorystage" id="inventoryStage" aria-hidden="true"></main>
-
     <main class="lorestage" id="loreStage" aria-hidden="true">
-      <div class="loreInner" id="loreInner" aria-label="Neon City history archive">
-        <div class="loreHead">
-          <div class="loreTitle">NE0N CITY :: HIST0RY ARCHIVE</div>
-          <div class="loreSub">[RECOVERED_DATASET // PARTIAL_INTEGRITY]</div>
-        </div>
-        <div class="loreScroll" id="loreScroll" aria-label="Lore log">
-          <pre class="loreCode" id="loreCode" aria-label="Archive data"></pre>
-        </div>
+      <div class="shardDesk" id="shardDesk" aria-hidden="true">
+        <div class="shardTabs" id="shardTabs" aria-label="Data shards"></div>
+
+        <section class="shardViewer" id="shardViewer" aria-hidden="true">
+          <div class="shardFrame" aria-label="Data shard">
+            <div class="shardContent">
+              <div class="shardHead">
+                <div class="shardHeadLeft">
+                  <div class="shardTitle" id="shardTitle">DATA SHARD</div>
+                </div>
+                <button class="shardClose" id="shardClose" type="button" title="Close">X</button>
+              </div>
+              <div class="shardMeta" id="shardMeta">SOURCE:// LOCAL</div>
+              <div class="shardBody" id="shardBody"></div>
+            </div>
+          </div>
+
+          <!-- Final shard hack sequence: popups + red injected terminal -->
+          <div class="lorePopups" id="lorePopups" aria-hidden="true"></div>
+          <div class="terminal loreWin" id="loreWin" aria-hidden="true">
+            <div class="terminalHead">
+              <div class="terminalBrand">
+                <span class="terminalDot red" aria-hidden="true"></span>
+                <span class="terminalDot yl" aria-hidden="true"></span>
+                <span class="terminalDot blue" aria-hidden="true"></span>
+                <div class="terminalTitle" id="loreWinTitle">ARCHIVE_SESSION</div>
+              </div>
+              <div class="terminalMeta" id="loreWinMeta">SESSION:// LOCAL • LINK:// STABLE</div>
+            </div>
+            <div class="terminalBody" id="loreWinScroll">
+              <div class="terminalContinue" aria-hidden="true"><div class="msg">PROCESSING…</div></div>
+              <div class="terminalOutput" id="loreWinOut"></div>
+            </div>
+            <div class="terminalFoot">
+              <div class="terminalHint" id="loreWinHint">&nbsp;</div>
+              <div class="terminalPrompt" id="loreWinCmd">
+                <span class="promptUser">root</span><span class="promptSep">@</span><span class="promptPath">neoncity</span><span class="promptSep">:</span><span class="promptPath">~</span><span class="promptSep">$</span>
+                <span id="loreWinCmdText">open</span><span class="cursor" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
 

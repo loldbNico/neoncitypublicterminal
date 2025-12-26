@@ -531,7 +531,9 @@ body.view-lore #inputBlocker{ z-index: 70; }
       opacity: 0;
       transition: opacity .45s ease;
     }
-    .screen-glitch.on{ opacity: calc(0.18 + (var(--g, 0) * 0.82)); }
+    .screen-glitch.on{
+      opacity: calc(0.18 + (var(--g, 0) * 0.82));
+    }
     .screen-glitch::before{
       content:"";
       position:absolute;
@@ -597,6 +599,30 @@ body.view-lore #inputBlocker{ z-index: 70; }
       78%{ transform: translate3d(3px,0,0); clip-path: inset(52% 0 26% 0); }
       100%{ transform: translate3d(0,0,0); clip-path: inset(0 0 0 0); }
     }
+
+    /* Finale lore hack-only effects (red/black). */
+    @keyframes finaleHackShake{
+      0%{ transform: translate3d(0,0,0) rotate(0deg) skewX(0deg); }
+      12%{ transform: translate3d(-1px, 1px,0) rotate(.08deg) skewX(.18deg); }
+      24%{ transform: translate3d(2px, -1px,0) rotate(-.10deg) skewX(-.25deg); }
+      38%{ transform: translate3d(-2px, 0px,0) rotate(.06deg) skewX(.30deg); }
+      52%{ transform: translate3d(1px, 2px,0) rotate(-.08deg) skewX(-.18deg); }
+      66%{ transform: translate3d(-1px, -2px,0) rotate(.10deg) skewX(.22deg); }
+      82%{ transform: translate3d(2px, 1px,0) rotate(-.06deg) skewX(-.30deg); }
+      100%{ transform: translate3d(0,0,0) rotate(0deg) skewX(0deg); }
+    }
+
+    body.finale-shake .stage{
+      animation: finaleHackShake .12s steps(2, end) infinite;
+      will-change: transform;
+    }
+
+    body.finale-blur .mapstage,
+    body.finale-blur .lorestage{
+      filter: blur(10px) saturate(0.95) contrast(0.95) brightness(0.85);
+      transform: translateZ(0);
+    }
+
     .securoserv-chaos .chaos-pop{
       position: absolute;
       min-width: 220px;
@@ -674,11 +700,12 @@ body.view-lore #inputBlocker{ z-index: 70; }
   position: fixed;
   left: 0;
   right: 0;
-  top: calc(var(--topbar-h) + 10px);
+  top: 50%;
   z-index: 95;
   pointer-events: none;
   opacity: 0;
-  transform: translate3d(0,-10px,0);
+  /* Always center, with a small "pop in" offset. */
+  transform: translate3d(0, calc(-50% - 10px), 0);
   transition: opacity .25s ease, transform .25s ease;
   display: flex;
   justify-content: center;
@@ -687,7 +714,7 @@ body.view-lore #inputBlocker{ z-index: 70; }
 
 /* In lore view, keep it behind the lore terminal window. */
 body.view-lore .securoserv-midbar{ z-index: 85; }
-    .securoserv-midbar.on{ opacity: 1; transform: translate3d(0,0,0); }
+    .securoserv-midbar.on{ opacity: 1; transform: translate3d(0, -50%, 0); }
     .securoserv-midbar .frame{
       width: min(920px, 88vw);
       margin: 0 auto;
