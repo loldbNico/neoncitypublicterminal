@@ -1228,6 +1228,19 @@ body.view-lore .securoserv-midbar{ z-index: 85; }
       transform: translate3d(0,0,0);
     }
 
+    /* MDT loading: same reboot UI, but blue */
+    .boot.mdt-reboot .boot-ss{
+      display: block;
+      border-top: 1px solid rgba(96,143,255,.22);
+      opacity: 0;
+      transform: translate3d(0,10px,0);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .boot.mdt-reboot.mdt-showbar .boot-ss{
+      opacity: 1;
+      transform: translate3d(0,0,0);
+    }
+
     /* Background "code" writer layer (used during SecuroServ reboot) */
     .boot-bgcode{
       position: absolute;
@@ -1245,6 +1258,11 @@ body.view-lore .securoserv-midbar{ z-index: 85; }
       filter: blur(.15px);
     }
     .boot.securosserv-reboot .boot-bgcode{ opacity: .9; }
+    .boot.mdt-reboot .boot-bgcode{
+      opacity: .9;
+      color: rgba(96,143,255,.42);
+      text-shadow: 0 0 10px rgba(96,143,255,.10);
+    }
 
     /* Simplify SecuroServ reboot view: only logo+bar+bg code */
     .boot.securosserv-reboot{
@@ -1263,6 +1281,23 @@ body.view-lore .securoserv-midbar{ z-index: 85; }
     .boot.securosserv-reboot .boot-meta{ display: none; }
     .boot.securosserv-reboot .boot-mid{ padding-top: 10px; }
 
+    /* Simplify MDT loading view: only logo+bar+bg code */
+    .boot.mdt-reboot{
+      --bootBlack: 1;
+      border: none !important;
+    }
+    .boot.mdt-reboot .boot-inner{
+      background: transparent;
+      border-color: rgba(96,143,255,.22);
+      box-shadow: none;
+    }
+    .boot.mdt-reboot .boot-top,
+    .boot.mdt-reboot .boot-foot,
+    .boot.mdt-reboot .boot-lines,
+    .boot.mdt-reboot .boot-bar,
+    .boot.mdt-reboot .boot-meta{ display: none; }
+    .boot.mdt-reboot .boot-mid{ padding-top: 10px; }
+
     /* Opaque blackout phase (prevents seeing anything underneath)
        Implemented as a black overlay that can fade back to dark-blue. */
     .boot.blackout{
@@ -1279,6 +1314,9 @@ body.view-lore .securoserv-midbar{ z-index: 85; }
       animation: bootSpin 1.58s linear infinite;
       opacity: .92;
     }
+    .boot.mdt-reboot .boot-ssLogo{
+      filter: drop-shadow(0 0 16px rgba(96,143,255,.22));
+    }
     @keyframes bootSpin{ to{ transform: rotate(360deg); } }
     .boot-ssBar{
       height: 18px;
@@ -1293,6 +1331,14 @@ body.view-lore .securoserv-midbar{ z-index: 85; }
       background: linear-gradient(90deg, rgba(var(--ss), .95), rgba(var(--ssHot), .95));
       box-shadow: 0 0 18px rgba(var(--ssHot), .22);
       transition: width .10s linear;
+    }
+
+    .boot.mdt-reboot .boot-ssBar{
+      border-color: rgba(96,143,255,.46);
+    }
+    .boot.mdt-reboot .boot-ssFill{
+      background: linear-gradient(90deg, rgba(96,143,255,.85), rgba(96,143,255,.95));
+      box-shadow: 0 0 18px rgba(96,143,255,.18);
     }
     .boot-ssBar::after{
       content:"";
@@ -1313,6 +1359,9 @@ body.view-lore .securoserv-midbar{ z-index: 85; }
       text-transform: uppercase;
       letter-spacing: 1.2px;
       color: rgba(var(--ssHot), .70);
+    }
+    .boot.mdt-reboot .boot-ssMeta{
+      color: rgba(96,143,255,.70);
     }
 
     /* Header bar option */

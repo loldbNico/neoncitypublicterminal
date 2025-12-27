@@ -10,22 +10,32 @@
 
     /* View switching (Top Tabs) */
     .mapstage,
+    #mdtStage,
     #loreStage{
       transition: opacity .22s ease, filter .28s ease;
       will-change: opacity, filter;
     }
+    #mdtStage,
     #loreStage{
       opacity: 0;
       pointer-events: none;
       filter: blur(8px);
     }
 
-    body.view-lore .mapstage{
+    body.view-lore .mapstage,
+    body.view-mdt .mapstage{
       opacity: 0;
       pointer-events: none;
       filter: blur(8px);
     }
+
     body.view-lore #loreStage{
+      opacity: 1;
+      pointer-events: auto;
+      filter: none;
+    }
+
+    body.view-mdt #mdtStage{
       opacity: 1;
       pointer-events: auto;
       filter: none;
@@ -38,7 +48,15 @@ body.view-lore #hackPrompt,
 body.view-lore #cmdFeed,
 body.view-lore #restrictedOverlay,
 body.view-lore #securoservWall,
-body.view-lore #counterhackFx{
+body.view-lore #counterhackFx,
+body.view-mdt .sidemenu,
+body.view-mdt .layerToggles,
+body.view-mdt #popupDetails,
+body.view-mdt #hackPrompt,
+body.view-mdt #cmdFeed,
+body.view-mdt #restrictedOverlay,
+body.view-mdt #securoservWall,
+body.view-mdt #counterhackFx{
   display:none !important;
 }
 

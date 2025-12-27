@@ -1,3 +1,1116 @@
+    /* MDT view: empty workspace */
+    .mdtstage{
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: var(--topbar-h);
+      bottom: 0;
+      overflow: hidden;
+      z-index: 90;
+      background:
+        radial-gradient(900px 520px at 26% 0%, var(--mdt-accent-fade-1, rgba(96,143,255,.08)), rgba(0,0,0,0) 62%),
+        radial-gradient(820px 520px at 70% 0%, var(--mdt-accent-fade-2, rgba(96,143,255,.05)), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(1,6,27,.66) 0%, rgba(0,0,0,.90) 100%);
+    }
+
+    .mdt{
+      position: absolute;
+      inset: 12px 14px 14px;
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 12px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.14));
+      background: rgba(0,0,0,.12);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.72) inset,
+        0 0 34px var(--mdt-glow, rgba(96,143,255,.06));
+      overflow: hidden;
+    }
+
+    .mdtSide{
+      border-right: 1px solid var(--mdt-border, rgba(96,143,255,.14));
+      background:
+        radial-gradient(820px 420px at 30% 0%, var(--mdt-accent-fade-3, rgba(96,143,255,.08)), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.60));
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .mdtSideHead{
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--mdt-border, rgba(96,143,255,.14));
+      font-weight: 900;
+      letter-spacing: 2.6px;
+      text-transform: uppercase;
+      color: var(--mdt-accent-text, rgba(96,143,255,.92));
+    }
+
+    .mdtCats{
+      padding: 10px 10px 12px;
+      overflow: auto;
+      scrollbar-color: var(--mdt-scrollbar, rgba(96,143,255,.35)) rgba(0,0,0,.28);
+    }
+
+    .mdtCat{
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 10px;
+      margin: 6px 0;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.18));
+      background: rgba(0,0,0,.18);
+      color: rgba(215,230,255,.78);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      cursor: pointer;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+      transition: border-color .12s ease, color .12s ease, transform .12s ease, box-shadow .12s ease;
+    }
+
+    .mdtCat:hover{
+      border-color: var(--mdt-border-strong, rgba(96,143,255,.55));
+      color: var(--mdt-accent-strong-text, rgba(96,143,255,.96));
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 24px var(--mdt-glow-strong, rgba(96,143,255,.12));
+    }
+
+    .mdtCatAdd{
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.25));
+      background: rgba(0,0,0,.25);
+      color: var(--mdt-accent-text, rgba(96,143,255,.75));
+      cursor: pointer;
+      line-height: 1;
+      font-weight: 900;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+    }
+
+    .mdtCatAdd:hover{
+      border-color: var(--mdt-border-strong, rgba(96,143,255,.60));
+      color: var(--mdt-accent-strong-text, rgba(96,143,255,.98));
+    }
+
+    .mdtMain{
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      overflow: hidden;
+    }
+
+.mdtTop{
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 10px 0;
+      border-bottom: 1px solid var(--mdt-border, rgba(96,143,255,.14));
+      background: rgba(0,0,0,.10);
+      position: relative;
+    }
+ 
+    .mdtTabstrip{
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      overflow: auto;
+      padding-bottom: 8px;
+      scrollbar-color: var(--mdt-scrollbar, rgba(96,143,255,.35)) rgba(0,0,0,.28);
+      color: var(--mdt-accent-text, rgba(215,230,255,.72));
+    }
+
+
+
+    .mdtModeToggle{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin: 0 0 10px 10px;
+    }
+
+    .mdtModeBtn{
+      height: 28px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.22));
+      background: rgba(0,0,0,.24);
+      color: var(--mdt-accent-text, rgba(215,230,255,.72));
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-size: 11px;
+      cursor: pointer;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+      transition: border-color .12s ease, color .12s ease, background .12s ease, box-shadow .12s ease;
+    }
+
+    .mdtModeBtn:hover{
+      border-color: var(--mdt-border-strong, rgba(96,143,255,.55));
+      color: var(--mdt-accent-strong-text, rgba(215,230,255,.94));
+      box-shadow: 0 0 12px var(--mdt-glow-strong, rgba(96,143,255,.18));
+    }
+
+    .mdtModeBtn.on{
+      border-color: var(--mdt-border-strong, rgba(96,143,255,.85));
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.40));
+      color: var(--mdt-accent-strong-text, rgba(238,244,255,.98));
+      font-weight: 800;
+      box-shadow: 0 0 18px var(--mdt-glow-strong, rgba(96,143,255,.22));
+    }
+
+    .mdtSideHead + .mdtModeToggle{
+      margin-top: 10px;
+    }
+
+    .mdtSide .mdtModeToggle{
+      padding: 0 10px;
+    }
+
+    .mdtTabstrip{
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      overflow: auto;
+      padding-bottom: 8px;
+      scrollbar-color: rgba(96,143,255,.35) rgba(0,0,0,.28);
+    }
+
+    .mdtTab{
+      appearance: none;
+      border: none;
+      padding: 0 4px 4px;
+      margin: 0;
+      background: rgba(0,0,0,.18);
+      cursor: grab;
+      color: var(--mdt-accent-text, rgba(215,230,255,.68));
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-size: 12px;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.18));
+      border-bottom-width: 2px;
+      transition: color .12s ease, border-color .12s ease, transform .12s ease, box-shadow .12s ease;
+      white-space: nowrap;
+      position: relative;
+      user-select: none;
+      touch-action: pan-y;
+    }
+
+    .mdtTab::after{
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border: 1px solid transparent;
+      transition: border-color .12s ease;
+    }
+
+    .mdtTabClose{
+      width: 22px;
+      height: 22px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.20));
+      background: rgba(0,0,0,.22);
+      color: var(--mdt-accent-text, rgba(215,230,255,.75));
+      cursor: pointer;
+      line-height: 1;
+      font-weight: 900;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+      padding: 0;
+      pointer-events: auto;
+      flex-shrink: 0;
+    }
+
+    .mdtTabClose:hover{
+      border-color: var(--mdt-border-strong, rgba(96,143,255,.75));
+      color: var(--mdt-accent-strong-text, rgba(96,143,255,.98));
+    }
+
+    .mdtTab:hover{ color: var(--mdt-accent-strong-text, rgba(96,143,255,.95)); box-shadow: 0 8px 16px rgba(0,0,0,.24); transform: translateY(-2px); }
+
+    .mdtTab.on{
+      color: var(--mdt-accent-strong-text, rgba(96,143,255,.98));
+      border-color: var(--mdt-border-strong, rgba(96,143,255,.75));
+      border-bottom-color: var(--mdt-border-strong, rgba(96,143,255,.85));
+      font-weight: 800;
+      box-shadow: 0 10px 26px rgba(0,0,0,.35), 0 0 24px var(--mdt-glow-strong, rgba(96,143,255,.18));
+      transform: translateY(-2px);
+      pointer-events: auto;
+    }
+
+    .mdtTabAdd{
+      width: 30px;
+      height: 30px;
+      border: 1px solid rgba(96,143,255,.25);
+      background: rgba(0,0,0,.25);
+      color: rgba(96,143,255,.80);
+      cursor: pointer;
+      font-weight: 900;
+      line-height: 1;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+      margin-bottom: 8px;
+    }
+
+    .mdtTabAdd:hover{
+      border-color: rgba(96,143,255,.60);
+      color: rgba(96,143,255,.98);
+    }
+
+    .mdtNav{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+    }
+ 
+    .mdtBack,
+    .mdtFwd,
+    .mdtRestore{
+      width: 34px;
+      height: 30px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.25));
+      background: rgba(0,0,0,.25);
+      color: var(--mdt-accent-text, rgba(96,143,255,.80));
+      cursor: pointer;
+      font-weight: 900;
+      line-height: 1;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+    }
+ 
+    .mdtBack:disabled,
+    .mdtFwd:disabled,
+    .mdtRestore:disabled{
+      opacity: .35;
+      cursor: default;
+    }
+
+
+    .mdtView{
+      position: relative;
+      overflow: auto;
+      padding: 14px;
+      border-top: 1px solid rgba(96,143,255,.10);
+    }
+
+    .mdtPanel{
+      border: 1px solid rgba(96,143,255,.14);
+      background: rgba(0,0,0,.18);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset;
+      padding: 14px;
+      min-height: 120px;
+    }
+
+    .mdtH{
+      font-weight: 900;
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+      color: var(--mdt-accent-strong-text, rgba(96,143,255,.92));
+      margin-bottom: 10px;
+    }
+
+    .mdtLinkish{ cursor: pointer; text-decoration: underline; text-decoration-color: var(--mdt-accent-1, rgba(96,143,255,.72)); }
+
+    .mdtP{
+      color: rgba(215,230,255,.70);
+      letter-spacing: .6px;
+      line-height: 1.4;
+    }
+
+    .mdtSubH{
+      font-weight: 700;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: var(--mdt-accent-text, rgba(96,143,255,.78));
+      margin: 18px 0 10px;
+      font-size: 12px;
+    }
+
+    /* Tab drag-to-reorder */
+    .mdtTab.dragging{
+      opacity: .85;
+      transform: translateY(-4px) scale(1.04);
+      box-shadow: 0 14px 30px rgba(0,0,0,.38), 0 0 30px var(--mdt-glow-strong, rgba(96,143,255,.22));
+      cursor: grabbing;
+    }
+    .mdtTab.drag-over{
+      border-left: 2px solid var(--mdt-border-strong, rgba(96,143,255,.9));
+      box-shadow: inset 0 0 0 1px var(--mdt-border-strong, rgba(96,143,255,.9));
+    }
+    .mdtTabLabel{
+      pointer-events: none;
+    }
+
+    /* Dashboard grid */
+    .mdtDashGrid{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .mdtDashRecent .mdtP{ color: var(--mdt-accent-text, rgba(215,230,255,.70)); }
+    .mdtStat{
+      border: 1px solid rgba(96,143,255,.22);
+      background: rgba(0,0,0,.28);
+      padding: 16px 14px;
+      text-align: center;
+    }
+    .mdtStatNum{
+      font-size: 28px;
+      font-weight: 900;
+      color: rgba(96,143,255,.95);
+      letter-spacing: 1px;
+    }
+    .mdtStatLabel{
+      font-size: 11px;
+      letter-spacing: 1.4px;
+      color: rgba(215,230,255,.55);
+      margin-top: 6px;
+    }
+.mdtStat.mdtStatWarn .mdtStatNum{ color: rgba(255,200,64,.92); }
+.mdtStat.mdtStatAlert .mdtStatNum{ color: rgba(255,80,80,.92); }
+.mdtStat.mdtStatInfo .mdtStatNum{ color: var(--mdt-accent-1, rgba(96,143,255,.85)); }
+
+
+    /* Search page */
+    .mdtFilters{
+      display: flex;
+      gap: 8px;
+      margin: 0 0 10px;
+      flex-wrap: wrap;
+    }
+    .mdtFilterBtn{
+      padding: 6px 10px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.28));
+      background: rgba(0,0,0,.26);
+      color: var(--mdt-accent-text, rgba(215,230,255,.78));
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: border-color .12s ease, color .12s ease, background .12s ease, box-shadow .12s ease;
+    }
+    .mdtFilterBtn.on{
+      border-color: var(--mdt-border-strong, rgba(96,143,255,.85));
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.35));
+      color: var(--mdt-accent-strong-text, rgba(230,245,245,.98));
+      box-shadow: 0 0 18px var(--mdt-glow-strong, rgba(96,143,255,.22));
+    }
+
+.mdtSearchBar{
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+
+    .mdtInput{
+      width: 100%;
+      background: rgba(0,0,0,.38);
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.28));
+      color: var(--mdt-accent-strong-text, rgba(215,230,255,.92));
+      padding: 10px 14px;
+      font-size: 14px;
+      letter-spacing: .6px;
+      outline: none;
+    }
+
+    .mdtInput{
+      flex: 1;
+      background: rgba(0,0,0,.38);
+      border: 1px solid rgba(96,143,255,.28);
+      color: rgba(215,230,255,.92);
+      padding: 10px 14px;
+      font-size: 14px;
+      letter-spacing: .6px;
+      outline: none;
+    }
+    .mdtInput:focus{
+      border-color: rgba(96,143,255,.65);
+      box-shadow: 0 0 8px rgba(96,143,255,.18);
+    }
+    .mdtInput::placeholder{
+      color: rgba(215,230,255,.35);
+    }
+    .mdtBtn{
+      background: rgba(96,143,255,.18);
+      border: 1px solid rgba(96,143,255,.45);
+      color: rgba(96,143,255,.95);
+      padding: 10px 20px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      cursor: pointer;
+      transition: background .12s, border-color .12s;
+    }
+    .mdtBtn:hover{
+      background: rgba(96,143,255,.32);
+      border-color: rgba(96,143,255,.72);
+    }
+
+    .mdtCreateBar{
+      display: flex;
+      justify-content: flex-end;
+      margin: 8px 0 0;
+    }
+
+    .mdtCreateBtn{
+      min-width: 86px;
+    }
+
+    /* Create forms */
+    .mdtCreate .mdtFormGrid{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .mdtCreate .mdtFormRow{
+      display: grid;
+      gap: 6px;
+    }
+
+    .mdtCreate .mdtFormRow .k{
+      font-size: 11px;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: var(--mdt-accent-text, rgba(215,230,255,.70));
+    }
+
+    .mdtCreate .mdtFormRow textarea{
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .mdtCreate .mdtFormRowFull{
+      grid-column: 1 / -1;
+    }
+
+    .mdtCreate .mdtFormActions{
+       display: flex;
+       justify-content: flex-end;
+       gap: 10px;
+     }
+
+     /* Picker / chips */
+     .mdtPicker{
+       position: relative;
+       display: grid;
+       gap: 8px;
+     }
+
+     .mdtPickerRow{
+       display: grid;
+       grid-template-columns: 1fr auto;
+       gap: 10px;
+       align-items: center;
+     }
+
+     .mdtPickerResults{
+       position: absolute;
+       left: 0;
+       right: 0;
+       top: calc(100% + 2px);
+       background: rgba(0,0,0,.92);
+       border: 1px solid var(--mdt-border, rgba(96,143,255,.30));
+       box-shadow: 0 12px 26px rgba(0,0,0,.55);
+       z-index: 5;
+       max-height: 180px;
+       overflow: auto;
+     }
+
+     .mdtPickerItem{
+       padding: 10px 12px;
+       cursor: pointer;
+       color: rgba(215,230,255,.85);
+       border-bottom: 1px solid rgba(96,143,255,.12);
+     }
+
+     .mdtPickerItem:hover{
+       background: rgba(96,143,255,.18);
+     }
+
+     .mdtChips{
+       display: flex;
+       flex-wrap: wrap;
+       gap: 8px;
+     }
+
+     .mdtChip{
+       display: inline-flex;
+       align-items: center;
+       gap: 8px;
+       padding: 6px 10px;
+       border: 1px solid rgba(96,143,255,.28);
+       background: rgba(0,0,0,.28);
+       color: rgba(215,230,255,.82);
+       font-size: 12px;
+       letter-spacing: .5px;
+     }
+
+     .mdtChipX{
+       width: 18px;
+       height: 18px;
+       border: 1px solid rgba(96,143,255,.25);
+       background: rgba(0,0,0,.22);
+       color: rgba(215,230,255,.78);
+       cursor: pointer;
+       line-height: 1;
+       padding: 0;
+       font-weight: 900;
+     }
+
+     .mdtChipX:hover{
+       border-color: rgba(96,143,255,.60);
+       color: rgba(96,143,255,.98);
+     }
+
+
+    /* Notes editor */
+    .mdtDetailNotesHead{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .mdtDetailNotesActions{
+      display: flex;
+      gap: 8px;
+    }
+
+    .mdtNotesArea{
+      min-height: 110px;
+      margin-top: 10px;
+      resize: vertical;
+    }
+
+    /* Results list */
+    .mdtResults{
+      max-height: 520px;
+      overflow-y: auto;
+      scrollbar-color: var(--mdt-scrollbar, rgba(96,143,255,.35)) rgba(0,0,0,.28);
+      display: grid;
+      gap: 8px;
+    }
+
+    .mdtCardGrid{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .mdtVehicleGrid{
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .mdtMedicalGrid{
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .mdtWeaponGrid{
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .mdtHeroCard{
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.18));
+      background: rgba(0,0,0,.22);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+      overflow: hidden;
+      position: relative;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      min-height: 210px;
+    }
+
+    .mdtHeroMedia{
+      position: relative;
+      min-height: 170px;
+      background:
+        radial-gradient(900px 420px at 20% 0%, rgba(96,143,255,.14), rgba(0,0,0,0) 60%),
+        linear-gradient(145deg, rgba(255,255,255,.06), rgba(0,0,0,.65));
+      background-size: cover;
+      background-position: center;
+    }
+
+    .mdtHeroMedia--placeholder{
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.55);
+    }
+
+    .mdtHeroMedia--placeholder::before{
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: .9;
+      background:
+        radial-gradient(520px 260px at 22% 18%, var(--mdt-accent-fade-1, rgba(96,143,255,.10)), rgba(0,0,0,0) 62%),
+        linear-gradient(135deg, rgba(255,255,255,.06), rgba(0,0,0,.68));
+    }
+
+    .mdtHeroMedia--placeholder::after{
+      position: absolute;
+      left: 12px;
+      top: 10px;
+      padding: 6px 10px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.25));
+      background: rgba(0,0,0,.55);
+      color: var(--mdt-accent-text, rgba(215,230,255,.75));
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    .mdtHeroMedia--vehicle::after{ content: 'VEHICLE'; }
+    .mdtHeroMedia--person::after{ content: 'PROFILE'; }
+    .mdtHeroMedia--weapon::after{ content: 'WEAPON'; }
+
+    .mdtHeroOverlay{
+      position: absolute;
+      inset: 0;
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      align-content: end;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.30) 40%, rgba(0,0,0,.76) 100%);
+    }
+
+    .mdtHeroTitle{
+      font-weight: 900;
+      letter-spacing: 1.4px;
+      color: rgba(240,248,255,.96);
+      text-transform: uppercase;
+      text-shadow: 0 2px 12px rgba(0,0,0,.8);
+    }
+
+    .mdtHeroTop{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .mdtHeroBadges{
+      display: inline-flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .mdtHeroMeta{
+      display: grid;
+      gap: 4px;
+      color: rgba(215,230,255,.80);
+      font-size: 12px;
+      letter-spacing: .5px;
+      text-shadow: 0 2px 12px rgba(0,0,0,.8);
+    }
+
+    .mdtHeroLine{
+      display: inline-block;
+    }
+
+    .mdtHeroLine .mdtLinkish{
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .mdtHeroActions{
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--mdt-border, rgba(96,143,255,.18));
+      background: rgba(0,0,0,.26);
+      align-items: center;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .mdtOrgHead{
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .mdtOrgLogo{
+      width: 74px;
+      height: 74px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.18));
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+      background: rgba(0,0,0,.25);
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+    }
+
+    .mdtOrgLogoImg{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(1.1) contrast(1.05);
+    }
+
+    .mdtOrgLogoFallback{
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: var(--mdt-accent-strong-text, rgba(96,143,255,.95));
+    }
+
+    .mdtOrgHeadText{ display: grid; gap: 4px; }
+
+    .mdtCard{
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.18));
+      background: rgba(0,0,0,.22);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+      position: relative;
+    }
+    .mdtCardHead{ display: flex; align-items: center; gap: 10px; }
+    .mdtCardImg{
+      width: 56px;
+      height: 56px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.22));
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      color: var(--mdt-accent-text, rgba(215,230,255,.78));
+    }
+    .mdtCardTitle{ color: var(--mdt-accent-strong-text, rgba(215,230,255,.95)); font-weight: 800; letter-spacing: .6px; }
+    .mdtCardSub{ color: var(--mdt-accent-text, rgba(215,230,255,.72)); font-size: 12px; letter-spacing: .4px; }
+    .mdtCardMeta{ color: var(--mdt-accent-text, rgba(215,230,255,.70)); font-size: 12px; display: grid; gap: 4px; }
+    .mdtCardActions{ display: flex; gap: 8px; flex-wrap: wrap; }
+    .mdtCardBtn{
+      padding: 6px 10px;
+      background: rgba(0,0,0,.24);
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.45));
+      color: var(--mdt-accent-text, rgba(96,143,255,.95));
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 1px;
+      transition: border-color .12s ease, color .12s ease, background .12s ease;
+    }
+    .mdtCardBtn:hover{ border-color: var(--mdt-border-strong, rgba(96,143,255,.72)); color: var(--mdt-accent-strong-text, rgba(96,143,255,.98)); background: rgba(0,0,0,.32); }
+    .mdtNoResults{
+      color: rgba(215,230,255,.45);
+      padding: 20px;
+      text-align: center;
+      letter-spacing: .8px;
+    }
+.mdtResultItem{
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 10px 10px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.18));
+      background: rgba(0,0,0,.20);
+      margin: 6px 0;
+      align-items: center;
+    }
+    .mdtResultPrimary{ color: var(--mdt-accent-strong-text, rgba(215,230,255,.92)); font-weight: 700; letter-spacing: .6px; }
+    .mdtResultSecondary{ color: var(--mdt-accent-text, rgba(215,230,255,.62)); font-size: 12px; letter-spacing: .4px; }
+    .mdtResultActions{ display: flex; gap: 6px; }
+    .mdtResultView,
+    .mdtCopy{
+      padding: 6px 10px;
+      background: rgba(0,0,0,.24);
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.45));
+      color: var(--mdt-accent-text, rgba(96,143,255,.95));
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 1px;
+      transition: border-color .12s ease, color .12s ease, background .12s ease;
+    }
+    .mdtResultView:hover,
+    .mdtCopy:hover{
+      border-color: var(--mdt-border-strong, rgba(96,143,255,.72));
+      color: var(--mdt-accent-strong-text, rgba(96,143,255,.98));
+      background: rgba(0,0,0,.32);
+    }
+    .mdtCopy.copied{ color: var(--mdt-accent-1, rgba(96,143,255,.90)); border-color: var(--mdt-border-strong, rgba(96,143,255,.85)); }
+
+    .mdtResultItem:hover{
+      background: rgba(96,143,255,.08);
+    }
+    .mdtResultPrimary{
+      font-weight: 700;
+      color: rgba(215,230,255,.88);
+      letter-spacing: .6px;
+    }
+    .mdtResultSecondary{
+      grid-column: 1;
+      font-size: 12px;
+      color: rgba(215,230,255,.52);
+      letter-spacing: .4px;
+    }
+    .mdtResultView{
+      grid-row: 1 / 3;
+      grid-column: 2;
+      align-self: center;
+      background: rgba(96,143,255,.12);
+      border: 1px solid rgba(96,143,255,.35);
+      color: rgba(96,143,255,.88);
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: background .1s, border-color .1s;
+    }
+    .mdtResultView:hover{
+      background: rgba(96,143,255,.25);
+      border-color: rgba(96,143,255,.65);
+    }
+
+    /* List items (dashboard) */
+    .mdtList{}
+    .mdtListItem{
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(96,143,255,.10);
+    }
+    .mdtListPrimary{
+      color: rgba(215,230,255,.82);
+      font-weight: 600;
+      letter-spacing: .5px;
+    }
+    .mdtListSecondary{
+      color: rgba(215,230,255,.48);
+      font-size: 12px;
+    }
+
+    /* Modal */
+    .mdtModal{
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mdtModalBackdrop{
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.72);
+    }
+    .mdtModalContent{
+      position: relative;
+      width: 90%;
+      max-width: 560px;
+      max-height: 80vh;
+      background: linear-gradient(180deg, rgba(12,18,32,.98), rgba(6,10,22,.98));
+      border: 1px solid rgba(96,143,255,.35);
+      box-shadow: 0 0 40px rgba(96,143,255,.18), 0 0 0 1px rgba(0,0,0,.82) inset;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .mdtModalHead{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(96,143,255,.22);
+      background: rgba(0,0,0,.28);
+    }
+    .mdtModalTitle{
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: rgba(96,143,255,.95);
+    }
+    .mdtModalClose{
+      background: transparent;
+      border: 1px solid rgba(96,143,255,.28);
+      color: rgba(215,230,255,.65);
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-weight: 900;
+      transition: border-color .1s, color .1s;
+    }
+    .mdtModalClose:hover{
+      border-color: rgba(255,80,80,.65);
+      color: rgba(255,80,80,.95);
+    }
+    .mdtModalBody{
+      padding: 18px;
+      overflow-y: auto;
+      flex: 1;
+      scrollbar-color: rgba(96,143,255,.35) rgba(0,0,0,.28);
+    }
+    .mdtModalRow{
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(96,143,255,.08);
+    }
+    .mdtModalKey{
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: rgba(96,143,255,.72);
+    }
+    .mdtModalVal{
+      color: rgba(215,230,255,.82);
+      letter-spacing: .4px;
+      word-break: break-word;
+    }
+
+    /* Full Detail Pages */
+    .mdtDetail{
+      padding: 0;
+    }
+    .mdtDetailHead{
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px 20px;
+      padding: 20px;
+      background: linear-gradient(180deg, rgba(96,143,255,.08), rgba(0,0,0,.18));
+      border-bottom: 1px solid rgba(96,143,255,.18);
+      margin-bottom: 20px;
+    }
+    .mdtDetailTitle{
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(96,143,255,.95);
+      flex: 1 1 100%;
+    }
+    .mdtDetailSubtitle{
+      font-size: 13px;
+      letter-spacing: 1.2px;
+      color: rgba(215,230,255,.55);
+      flex: 1 1 auto;
+    }
+    .mdtDetailBadge{
+      display: inline-block;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid;
+    }
+    .mdtBadgeAlert{
+      background: rgba(255,60,60,.15);
+      border-color: rgba(255,60,60,.55);
+      color: rgba(255,100,100,.95);
+    }
+    .mdtBadgeWarn{
+      background: rgba(255,180,60,.12);
+      border-color: rgba(255,180,60,.45);
+      color: rgba(255,200,100,.92);
+    }
+    .mdtBadgeOk{
+      background: rgba(60,255,120,.10);
+      border-color: rgba(60,255,120,.40);
+      color: rgba(100,255,150,.90);
+    }
+    .mdtBadgeInfo{
+      background: rgba(96,143,255,.12);
+      border-color: rgba(96,143,255,.40);
+      color: rgba(140,180,255,.90);
+    }
+    .mdtDetailGrid{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      padding: 0 20px;
+    }
+    .mdtDetailSection{
+      border: 1px solid rgba(96,143,255,.14);
+      background: rgba(0,0,0,.18);
+      padding: 16px;
+    }
+    .mdtSectionAlert{
+      border-color: rgba(255,60,60,.35);
+      background: rgba(255,60,60,.06);
+    }
+    .mdtSectionWarn{
+      border-color: rgba(255,180,60,.30);
+      background: rgba(255,180,60,.05);
+    }
+    .mdtDetailSectionTitle{
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      color: rgba(96,143,255,.75);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(96,143,255,.12);
+    }
+    .mdtDetailRow{
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(96,143,255,.06);
+    }
+    .mdtDetailRow:last-child{
+      border-bottom: none;
+    }
+    .mdtDetailKey{
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: rgba(215,230,255,.48);
+      flex-shrink: 0;
+    }
+    .mdtDetailVal{
+      color: rgba(215,230,255,.88);
+      text-align: right;
+      word-break: break-word;
+    }
+    .mdtValWarn{
+      color: rgba(255,180,80,.95);
+    }
+    .mdtValAlert{
+      color: rgba(255,80,80,.95);
+    }
+    .mdtValHighlight{
+      color: rgba(96,200,255,.95);
+      font-weight: 700;
+    }
+    .mdtDetailItem{
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      background: rgba(0,0,0,.22);
+      border-left: 3px solid rgba(96,143,255,.35);
+      color: rgba(215,230,255,.78);
+      font-size: 13px;
+    }
+    .mdtItemNone{
+      color: rgba(215,230,255,.40);
+      font-style: italic;
+      border-left-color: rgba(96,143,255,.15);
+    }
+    .mdtItemWarn{
+      border-left-color: rgba(255,180,60,.65);
+      background: rgba(255,180,60,.08);
+    }
+    .mdtItemAlert{
+      border-left-color: rgba(255,60,60,.65);
+      background: rgba(255,60,60,.08);
+      color: rgba(255,140,140,.92);
+    }
+    .mdtDetailNotes{
+      margin: 20px;
+      padding: 16px;
+      border: 1px solid rgba(96,143,255,.12);
+      background: rgba(0,0,0,.15);
+    }
+    .mdtDetailNotesText{
+      color: rgba(215,230,255,.72);
+      line-height: 1.6;
+      letter-spacing: .4px;
+    }
+
     /* Lore view: Data Shards (Cyberpunk-style) */
     .lorestage{
       position: absolute;

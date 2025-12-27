@@ -25,6 +25,7 @@
     <div class="tabs" role="tablist" aria-label="Menu">
       <button class="tab disabled" data-view="settings" type="button" role="tab" aria-selected="false" tabindex="-1" aria-disabled="true"><span>SETTINGS</span></button>
       <button class="tab on" data-view="map" type="button" role="tab" aria-selected="true"><span>MAP</span></button>
+      <button class="tab" data-view="mdt" type="button" role="tab" aria-selected="false" tabindex="-1"><span>MDT</span></button>
       <button class="tab disabled" data-view="augments" type="button" role="tab" aria-selected="false" tabindex="-1" aria-disabled="true"><span>AUGMENTS</span></button>
       <button class="tab tab-lore" data-view="lore" type="button" role="tab" aria-selected="false" tabindex="-1"><span>LORE TERMINAL</span></button>
     </div>
@@ -78,6 +79,37 @@
         <img src="./SS.png" alt="" draggable="false" onerror="this.onerror=null; this.src='./SS.png';" />
       </div>
     </main>
+
+    <main class="mdtstage" id="mdtStage" aria-hidden="true">
+      <div class="mdt" id="mdt" aria-label="MDT">
+        <aside class="mdtSide" aria-label="MDT categories">
+          <div class="mdtSideHead">MDT</div>
+          <div class="mdtModeToggle" id="mdtModeToggle" role="group" aria-label="MDT mode">
+            <button type="button" class="mdtModeBtn on" data-mode="ncpd">NCPD</button>
+            <button type="button" class="mdtModeBtn" data-mode="medical">Medical</button>
+            <button type="button" class="mdtModeBtn" data-mode="council">City Council</button>
+          </div>
+          <div class="mdtCats" id="mdtCats" role="list"></div>
+        </aside>
+ 
+        <section class="mdtMain" aria-label="MDT workspace">
+          <header class="mdtTop" aria-label="MDT tabs">
+            <div class="mdtTabstrip" id="mdtTabstrip" role="tablist" aria-label="Open MDT tabs"></div>
+            <button class="mdtTabAdd" id="mdtNewTab" type="button" aria-label="New dashboard tab">+</button>
+          </header>
+ 
+          <div class="mdtNav" aria-label="MDT navigation">
+            <button class="mdtBack" id="mdtBack" type="button" aria-label="Back">&larr;</button>
+            <button class="mdtFwd" id="mdtForward" type="button" aria-label="Forward">&rarr;</button>
+            <button class="mdtRestore" id="mdtRestore" type="button" aria-label="Reopen last closed tab">&#8635;</button>
+            <div class="mdtCrumbs" id="mdtCrumbs" aria-hidden="true"></div>
+          </div>
+ 
+          <section class="mdtView" id="mdtView" aria-label="MDT content"></section>
+        </section>
+      </div>
+    </main>
+
 
     <main class="lorestage" id="loreStage" aria-hidden="true">
       <div class="shardDesk" id="shardDesk" aria-hidden="true">
@@ -302,6 +334,7 @@
 
   <script src="js/00-bootstrap-config.js"></script>
   <script src="js/10-data-hackprompt.js"></script>
+  <script src="js/10-data-mdt.js"></script>
   <script src="js/20-dom-logos.js"></script>
   <script src="js/30-camera-and-logoslayer.js"></script>
   <script src="js/40-svg-patterns-and-color.js"></script>
