@@ -459,16 +459,15 @@
       filter: grayscale(.25);
     }
 
-    /* High-contrast yellow button variant (used for HIDE/SHOW toggles). */
+    /* Yellow-tinted button variant (used for HIDE/SHOW toggles). */
     .mdtBtn.mdtBtnY{
-      background: rgba(var(--ylRGB), .92);
-      border-color: rgba(var(--ylRGB), .72);
-      color: rgba(0,0,0,.88);
+      background: rgba(var(--ylRGB), .18);
+      border-color: rgba(var(--ylRGB), .45);
+      color: rgba(var(--ylRGB), .95);
     }
     .mdtBtn.mdtBtnY:hover{
-      background: rgba(var(--ylRGB), 1);
-      border-color: rgba(var(--ylRGB), .90);
-      box-shadow: 0 0 12px rgba(var(--ylRGB), .18);
+      background: rgba(var(--ylRGB), .32);
+      border-color: rgba(var(--ylRGB), .72);
     }
 
     .mdtRange{

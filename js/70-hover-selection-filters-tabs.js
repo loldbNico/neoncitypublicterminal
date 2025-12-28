@@ -2078,17 +2078,28 @@
 
         function boloClearedByServedArrest(boloArrest, personName, allArrestsForPerson){
            // BOLO stays active until the suspect is either removed from the BOLO
-           // (i.e. no longer listed) or they get charged and served.
-           // We model "charged and served" as: any later non-BOLO arrest record
-           // where the person is marked served (SIP/PRISON).
+           // (i.e. no longer listed) or they get charged+served.
+           //
+           // Rules:
+           // - If the BOLO record itself marks them served (SIP/PRISON), it's no longer an active BOLO.
+           // - A different arrest clears the BOLO only when the person has charges in that arrest AND is served.
            if(!boloArrest) return false;
            const boloTs = arrestTimestamp(boloArrest);
            const name = String(personName || '').trim();
            if(!name) return false;
  
+           if(isPersonServedInArrest(boloArrest, name)) return true;
+ 
+           const personHasChargesInArrest = (a) => {
+             const rows = chargeCountsFromArrestForPerson(a, name, { includeUnservedWarrantCharges: true });
+             return Array.isArray(rows) && rows.length > 0;
+           };
+ 
            for(const a of (Array.isArray(allArrestsForPerson) ? allArrestsForPerson : [])){
-             if(!a || isBoloArrest(a)) continue;
+             if(!a || a === boloArrest) continue;
+             if(isBoloArrest(a)) continue;
              if(arrestTimestamp(a) <= boloTs) continue;
+             if(!personHasChargesInArrest(a)) continue;
              if(isPersonServedInArrest(a, name)) return true;
            }
            return false;
@@ -2655,19 +2666,25 @@
                     </select>
                   </label>
 
-                  <label class="mdtFormRow mdtFormRowFull">
-                    <span class="k">LOCATION</span>
-                    <div class="mdtPickerRow">
-                      <input class="mdtInput" data-field="location" placeholder="Where did it happen?"/>
-                      <button type="button" class="mdtBtn" data-use-current-location title="Use current location" style="width:38px; min-width:38px; height:38px; padding:0;">
-                        <span aria-hidden="true">◎</span>
-                      </button>
-                      <button type="button" class="mdtBtn" data-use-marker-location title="Use map GPS marker" style="width:38px; min-width:38px; height:38px; padding:0;">
-                        <span aria-hidden="true">⌖</span>
-                      </button>
-                    </div>
-                    <input type="hidden" data-field="gps" value="" />
-                  </label>
+                  <div class="mdtFormRow mdtFormRowFull" style="display:grid; grid-template-columns: 1fr 0.5fr; gap: 10px; align-items:end;">
+                    <label class="mdtFormRow" style="margin:0;">
+                      <span class="k">LOCATION</span>
+                      <div class="mdtPickerRow">
+                        <input class="mdtInput" data-field="location" placeholder="Where did it happen?"/>
+                        <button type="button" class="mdtBtn" data-use-current-location title="Use current location" style="width:38px; min-width:38px; height:38px; padding:0;">
+                          <span aria-hidden="true">◌</span>
+                        </button>
+                        <button type="button" class="mdtBtn" data-use-marker-location title="Use map GPS marker" style="width:38px; min-width:38px; height:38px; padding:0;">
+                          <span aria-hidden="true">⌖</span>
+                        </button>
+                      </div>
+                    </label>
+
+                    <label class="mdtFormRow" style="margin:0;">
+                      <span class="k">COORDINATES</span>
+                      <input class="mdtInput" data-field="gps" value="" readonly />
+                    </label>
+                  </div>
                 </div>
                 <div class="mdtFormActions">
                   <button type="button" class="mdtBtn mdtCreateSubmit">CREATE</button>
@@ -3030,8 +3047,10 @@
                     ${detailRow('STATUS', status)}
                     ${detailRow('DATE', shortDate(a.date))}
                     ${detailRow('TIME', a.time)}
-                    ${detailRow('LOCATION', a.location || '—')}
-                 ${detailRow('COORDINATES', a.gps || '—', { copyValue: a.gps || '' })}
+                    <div style="display:grid; grid-template-columns: 1fr 0.5fr; gap: 10px; align-items:start;">
+                      ${detailRow('LOCATION', a.location || '—')}
+                      ${detailRow('COORDINATES', a.gps || '—', { copyValue: a.gps || '' })}
+                    </div>
                    </div>
  
                    <div class="mdtDetailSection">
@@ -3175,54 +3194,90 @@
                      ${renderPicker('OFFICERS INVOLVED', 'officers', { placeholder: 'Type officer name or state ID...', chips: officers })}
 
 
-                    <label class="mdtFormRow mdtFormRowFull">
-                      <span class="k">LOCATION</span>
-                      <div class="mdtPickerRow">
-                        <input class="mdtInput" data-field="location" value="${escapeHtml(a.location || '')}" />
-                        <button type="button" class="mdtBtn" data-use-current-location title="Use current location" style="width:38px; min-width:38px; height:38px; padding:0;">
-                          <span aria-hidden="true">◎</span>
-                        </button>
-                        <button type="button" class="mdtBtn" data-use-marker-location title="Use map GPS marker" style="width:38px; min-width:38px; height:38px; padding:0;">
-                          <span aria-hidden="true">⌖</span>
-                        </button>
-                      </div>
-                    </label>
+                    <div class="mdtFormRow mdtFormRowFull" style="display:grid; grid-template-columns: 1fr 0.5fr; gap: 10px; align-items:end;">
+                      <label class="mdtFormRow" style="margin:0;">
+                        <span class="k">LOCATION</span>
+                        <div class="mdtPickerRow">
+                          <input class="mdtInput" data-field="location" value="${escapeHtml(a.location || '')}" />
+                          <button type="button" class="mdtBtn" data-use-current-location title="Use current location" style="width:38px; min-width:38px; height:38px; padding:0;">
+                            <span aria-hidden="true">◌</span>
+                          </button>
+                          <button type="button" class="mdtBtn" data-use-marker-location title="Use map GPS marker" style="width:38px; min-width:38px; height:38px; padding:0;">
+                            <span aria-hidden="true">⌖</span>
+                          </button>
+                        </div>
+                      </label>
 
-                    <label class="mdtFormRow mdtFormRowFull"><span class="k">COORDINATES</span><input class="mdtInput" data-field="gps" value="${escapeHtml(a.gps || '')}" readonly /></label>
-
-                    ${renderPicker('ATTACHED PAPERWORK', 'relatedPaperwork', { placeholder: 'Type case/arrest or ID...', chips: relatedPaperwork })}
-
-                     <div class="mdtDetailSection" data-collapsible="charges" style="margin-top: 6px;">
-                     <div class="mdtDetailNotesHead" style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0;">
-                       <div class="mdtDetailSectionTitle" style="margin:0;">CHARGES</div>
-                        <button type="button" class="mdtBtn mdtBtnY" data-toggle-collapsible="charges" style="height:28px; padding:0 8px; font-size:11px;">HIDE</button>
-
-                     </div>
-
-                     <div data-collapsible-body="charges">
-                     <label class="mdtFormRow mdtFormRowFull" style="margin: 0 0 6px;">
-                      <span class="k">CHARGE TARGET</span>
-                       <select class="mdtInput" data-charge-target>
-                         ${(chargeTargets || []).length
-                           ? (chargeTargets || []).map(n => `<option value="${escapeHtml(n)}" ${String(n) === String(primaryKnownCriminalName || primaryCriminalName) ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')
-                           : `<option value="" selected>(No identified criminals)</option>`}
-                       </select>
-
-                    </label>
-
-                    <div class="mdtChargesTotals" data-charges-totals style="opacity:.9; margin-bottom: 6px;"></div>
-                    <div class="mdtChargesList" data-charges-list></div>
-                    <div style="margin-top: 8px; display:flex; gap:10px;">
-                      <button type="button" class="mdtBtn" data-open-penal-overlay>OPEN PENAL CODE</button>
+                      <label class="mdtFormRow" style="margin:0;">
+                        <span class="k">COORDINATES</span>
+                        <input class="mdtInput" data-field="gps" value="${escapeHtml(a.gps || '')}" readonly />
+                      </label>
                     </div>
 
-                     ${renderPicker('ADD CHARGE', 'chargesV2', { placeholder: 'Start typing a charge...', chips: chargesV2, hideChips: true })}
-                     <input type="hidden" data-field="charges" value="${escapeHtml(JSON.stringify(flattenChargesV2(chargesV2)))}" />
-                     <input type="hidden" data-field="chargesByCriminal" value="${escapeHtml(JSON.stringify(chargesByCriminal))}" />
+                      <div class="mdtDetailSection" data-collapsible="charges" style="margin-top: 6px;">
+                      <div class="mdtDetailNotesHead" style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0;">
+                        <div class="mdtDetailSectionTitle" style="margin:0;">CHARGES</div>
+                         <button type="button" class="mdtBtn mdtBtnY" data-toggle-collapsible="charges" style="height:28px; padding:0 8px; font-size:11px;">HIDE</button>
+ 
+                      </div>
+ 
+                      <div data-collapsible-body="charges">
+                      <label class="mdtFormRow mdtFormRowFull" style="margin: 0 0 6px;">
+                       <span class="k">CHARGE TARGET</span>
+                        <select class="mdtInput" data-charge-target>
+                          ${(chargeTargets || []).length
+                            ? (chargeTargets || []).map(n => `<option value="${escapeHtml(n)}" ${String(n) === String(primaryKnownCriminalName || primaryCriminalName) ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')
+                            : `<option value="" selected>(No identified criminals)</option>`}
+                        </select>
+ 
+                     </label>
+ 
+                     <div class="mdtChargesTotals" data-charges-totals style="opacity:.9; margin-bottom: 6px;"></div>
+                     <div class="mdtChargesList" data-charges-list></div>
+                     <div style="margin-top: 8px; display:flex; gap:10px;">
+                       <button type="button" class="mdtBtn" data-open-penal-overlay>OPEN PENAL CODE</button>
                      </div>
-                   </div>
-                   </div>
+ 
+                      ${renderPicker('ADD CHARGE', 'chargesV2', { placeholder: 'Start typing a charge...', chips: chargesV2, hideChips: true })}
+                      <input type="hidden" data-field="charges" value="${escapeHtml(JSON.stringify(flattenChargesV2(chargesV2)))}" />
+                      <input type="hidden" data-field="chargesByCriminal" value="${escapeHtml(JSON.stringify(chargesByCriminal))}" />
+                      </div>
+                    </div>
 
+                    <div class="mdtDetailSection" data-collapsible="evidence" style="margin-top: 6px;">
+                      <div class="mdtDetailNotesHead" style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0;">
+                        <div class="mdtDetailSectionTitle" style="margin:0;">EVIDENCE</div>
+                        <button type="button" class="mdtBtn mdtBtnY" data-toggle-collapsible="evidence" style="height:28px; padding:0 8px; font-size:11px;">HIDE</button>
+                      </div>
+
+                      <div data-collapsible-body="evidence">
+                        <div class="mdtMeta" style="opacity:.82; margin-top:-6px;">Attach photos/links and preview locker contents.</div>
+
+                        <div style="margin-top:10px; display:flex; justify-content:space-between; gap:10px; align-items:center;">
+                          <div style="display:flex; gap:10px; align-items:center;">
+                            <button type="button" class="mdtBtn" data-open-evidence-photos title="Attach picture evidence" aria-label="Attach picture evidence" style="width:38px; min-width:38px; height:38px; padding:0;">
+                              <span aria-hidden="true">◉</span>
+                            </button>
+                          </div>
+
+                          <div style="display:flex; gap:10px; align-items:center;">
+                            <button type="button" class="mdtBtn" data-open-evidence-view title="VIEW EVIDENCE" aria-label="View evidence" style="width:38px; min-width:38px; height:38px; padding:0;">
+                              <span aria-hidden="true">▣</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div style="margin-top:10px;">
+                          <div class="mdtDetailSectionTitle" style="margin:0 0 6px; font-size:12px; opacity:.9;">ATTACHED EVIDENCE</div>
+                          <div data-evidence-summary class="mdtMeta" style="opacity:.85;">None</div>
+                        </div>
+                      </div>
+
+                      <input type="hidden" data-field="evidence" value="${escapeHtml(JSON.stringify(snapshotArrestValues(a).evidence || {}))}" />
+                    </div>
+
+                    ${renderPicker('ATTACHED PAPERWORK', 'relatedPaperwork', { placeholder: 'Type case/arrest or ID...', chips: relatedPaperwork })}
+ 
                 </div>
               </div>
             </div>
@@ -3643,7 +3698,7 @@
         const mdtEditValueHistory = new Map();
 
         const NCPD_EDIT_FIELDS = ['title', 'status', 'location', 'gps', 'officer', 'officers', 'suspects', 'summary'];
-        const ARREST_EDIT_FIELDS = ['criminals', 'officers', 'title', 'type', 'status', 'location', 'gps', 'chargesV2', 'chargesByCriminal', 'sentencingByCriminal', 'relatedPaperwork', 'notes', 'notesHtml'];
+        const ARREST_EDIT_FIELDS = ['criminals', 'officers', 'title', 'type', 'status', 'location', 'gps', 'chargesV2', 'chargesByCriminal', 'sentencingByCriminal', 'evidence', 'relatedPaperwork', 'notes', 'notesHtml'];
 
         function editHistoryKeyFor(dataKey, id){
           return historyKeyFor(dataKey, id);
@@ -3708,8 +3763,16 @@
             }
           };
 
+          const normalizeEvidence = (raw) => {
+            const obj = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+            return {
+              photos: Array.isArray(obj.photos) ? obj.photos.map(x => String(x)).filter(Boolean) : [],
+              links: Array.isArray(obj.links) ? obj.links.map(x => String(x)).filter(Boolean) : [],
+            };
+          };
+ 
           const criminals = dedupeStrings(normalizeStringArray(readJsonArr('criminals')));
-
+ 
           const chargesV2 = normalizeChargesV2(readJsonArr('chargesV2'));
           const chargesByCriminalRaw = readJsonObj('chargesByCriminal');
           const chargesByCriminal = (() => {
@@ -3756,6 +3819,8 @@
 
           const notesHtml = String(read('notesHtml') || '');
 
+          const evidence = normalizeEvidence(readJsonObj('evidence'));
+ 
           return {
             criminals,
             officers: dedupeStrings(normalizeStringArray(readJsonArr('officers'))),
@@ -3767,6 +3832,7 @@
             chargesV2,
             chargesByCriminal,
             sentencingByCriminal,
+            evidence,
             relatedPaperwork: normalizeStringArray(readJsonArr('relatedPaperwork')),
             notesHtml,
             notes: notesHtml ? stripHtmlToText(notesHtml) : read('notes'),
@@ -4329,6 +4395,15 @@
             return out;
           })();
 
+          const evidence = (() => {
+            const raw = a?.evidence;
+            const obj = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+            return {
+              photos: Array.isArray(obj.photos) ? obj.photos.map(x => String(x)).filter(Boolean) : [],
+              links: Array.isArray(obj.links) ? obj.links.map(x => String(x)).filter(Boolean) : [],
+            };
+          })();
+
           return {
             criminals,
             officers: normalizeStringArray(a?.officers),
@@ -4340,6 +4415,7 @@
             chargesV2,
             chargesByCriminal,
             sentencingByCriminal,
+            evidence,
             relatedPaperwork: normalizeStringArray(a?.relatedPaperwork),
             // Back-compat: store both fields in session snapshot so history comparisons work.
             notes: String(a?.notes || '').trim(),
@@ -4399,8 +4475,9 @@
                     chargesByCriminal: 'charges',
                     sentencingByCriminal: 'sentencing',
                     relatedPaperwork: 'related paperwork',
-                    notes: 'report body',
-                    notesHtml: 'report body',
+                    evidence: 'evidence',
+                     notes: 'report body',
+                     notesHtml: 'report body',
                   }
                : {};
 
@@ -6584,13 +6661,399 @@
 
 
            wrap.querySelectorAll('[data-open-penal-overlay]').forEach(btn => {
-             btn.onclick = openPenalOverlay;
-           });
+              btn.onclick = openPenalOverlay;
+            });
+ 
+            // Ensure charge editing is disabled unless a target exists.
+            updateChargesUiEnabledState();
 
-           // Ensure charge editing is disabled unless a target exists.
-           updateChargesUiEnabledState();
+            // Evidence helpers
+            const evidenceField = wrap.querySelector('[data-field="evidence"]');
 
-          // location helper
+            const getEvidence = () => {
+              try{
+                const raw = JSON.parse(String(evidenceField?.value || '{}'));
+                const obj = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+                return {
+                  photos: Array.isArray(obj.photos) ? obj.photos.map(x => String(x)).filter(Boolean) : [],
+                  links: Array.isArray(obj.links) ? obj.links.map(x => String(x)).filter(Boolean) : [],
+                };
+              }catch{
+                return { photos: [], links: [] };
+              }
+            };
+
+            const setEvidence = (next) => {
+              const obj = (next && typeof next === 'object' && !Array.isArray(next)) ? next : {};
+              const normalized = {
+                photos: Array.isArray(obj.photos) ? obj.photos.map(x => String(x)).filter(Boolean) : [],
+                links: Array.isArray(obj.links) ? obj.links.map(x => String(x)).filter(Boolean) : [],
+              };
+              if(evidenceField) evidenceField.value = JSON.stringify(normalized);
+              markEditedField('arrests', id, 'evidence');
+              renderEvidenceSummary();
+            };
+
+            const renderEvidenceSummary = () => {
+              const host = wrap.querySelector('[data-evidence-summary]');
+              if(!host) return;
+              const ev = getEvidence();
+              const photos = (ev.photos || []).length;
+              const links = (ev.links || []).length;
+              if(!photos && !links){
+                host.textContent = 'None';
+                return;
+              }
+              const parts = [];
+              if(photos) parts.push(`${photos} photo${photos === 1 ? '' : 's'}`);
+              if(links) parts.push(`${links} link${links === 1 ? '' : 's'}`);
+              host.textContent = parts.join(' • ');
+            };
+
+            renderEvidenceSummary();
+
+            // Photo evidence overlay
+            let evidencePhotosOverlayRef = null;
+            const ensureEvidencePhotosOverlay = () => {
+              let overlay = (evidencePhotosOverlayRef && evidencePhotosOverlayRef.isConnected)
+                ? evidencePhotosOverlayRef
+                : document.querySelector('[data-evidence-photos-overlay]');
+              if(overlay){
+                evidencePhotosOverlayRef = overlay;
+                return overlay;
+              }
+
+              overlay = document.createElement('div');
+              overlay.setAttribute('data-evidence-photos-overlay', '1');
+              overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:9999; display:none;';
+              overlay.innerHTML = `
+                <div style="position:absolute; inset:8vh 8vw; background:rgba(10,10,14,.96); border:1px solid var(--mdt-border-strong); box-shadow:0 0 24px var(--mdt-glow-strong); padding:12px; overflow:hidden; display:flex; flex-direction:column;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                    <div class="mdtDetailSectionTitle" style="margin:0;">EVIDENCE — PICTURES</div>
+                    <button type="button" class="mdtBtn" data-evidence-photos-close>CLOSE</button>
+                  </div>
+
+                  <div class="mdtFilters" role="group" aria-label="Evidence tabs" style="margin-top:10px;">
+                    <button type="button" class="mdtFilterBtn on" data-evidence-photos-tab="scanner">Scanner Photos</button>
+                    <button type="button" class="mdtFilterBtn" data-evidence-photos-tab="link">Link / Clipboard</button>
+                  </div>
+
+                  <div style="display:flex; gap:12px; margin-top:10px; overflow:hidden; flex:1;">
+                    <div style="flex:1; overflow:auto; border:1px solid var(--mdt-border); padding:10px;" data-evidence-photos-panel="scanner"></div>
+                    <div style="flex:1; overflow:auto; border:1px solid var(--mdt-border); padding:10px; display:none;" data-evidence-photos-panel="link"></div>
+                  </div>
+                </div>
+              `;
+
+              document.body.appendChild(overlay);
+              evidencePhotosOverlayRef = overlay;
+
+              const closeBtn = overlay.querySelector('[data-evidence-photos-close]');
+              if(closeBtn) closeBtn.onclick = () => { overlay.style.display = 'none'; };
+              overlay.onclick = (e) => {
+                if(e.target === overlay) overlay.style.display = 'none';
+              };
+
+              return overlay;
+            };
+
+            const renderEvidencePhotosOverlay = () => {
+              const overlay = ensureEvidencePhotosOverlay();
+              const ev = getEvidence();
+
+              // Scanner photos: currently no data source in MDT seed data, so show placeholder.
+              // For now we also show whatever is attached to this arrest as "photos".
+              const scannerHost = overlay.querySelector('[data-evidence-photos-panel="scanner"]');
+              if(scannerHost){
+                const photos = Array.isArray(ev.photos) ? ev.photos : [];
+                scannerHost.innerHTML = `
+                  <div class="mdtDetailSectionTitle" style="margin-top:0;">SCANNER PHOTOS</div>
+                  <div class="mdtMeta" style="opacity:.85; margin-top:-6px;">No scanner photo dataset found in this build yet.</div>
+
+                  <div class="mdtDetailSectionTitle" style="margin:14px 0 6px; font-size:12px; opacity:.9;">ATTACHED PHOTOS (THIS ARREST)</div>
+                  <div data-evidence-photo-list>
+                    ${photos.length
+                      ? photos.map(u => `
+                        <div class="mdtDetailRow" style="gap:10px; align-items:center;">
+                          <img src="${escapeHtml(u)}" alt="Evidence photo" style="width:64px; height:64px; object-fit:cover; border:1px solid var(--mdt-border);" />
+                          <span class="mdtDetailVal" style="flex:1; word-break:break-all;">${escapeHtml(u)}</span>
+                          <button type="button" class="mdtBtn" data-evidence-photo-remove="${escapeHtml(u)}" style="height:30px; padding:0 10px;">REMOVE</button>
+                        </div>
+                      `).join('')
+                      : '<div class="mdtDetailItem mdtItemNone">No attached photos</div>'}
+                  </div>
+
+                  <div class="mdtMeta" style="opacity:.75; margin-top:10px;">Clipboard uploads use local session URLs and may not survive a reload.</div>
+                  <div class="mdtMeta" style="opacity:.75; margin-top:6px;">(Later we can wire this tab to whatever your scanner saves.)</div>
+                `;
+
+                scannerHost.querySelectorAll('[data-evidence-photo-remove]').forEach(btn => {
+                  btn.onclick = () => {
+                    const url = String(btn.dataset.evidencePhotoRemove || '').trim();
+                    const cur = getEvidence();
+                    const next = { ...cur, photos: (cur.photos || []).filter(x => String(x) !== url) };
+                    setEvidence(next);
+                    renderEvidencePhotosOverlay();
+                  };
+                });
+              }
+
+              const linkHost = overlay.querySelector('[data-evidence-photos-panel="link"]');
+              if(linkHost){
+                const links = Array.isArray(ev.links) ? ev.links : [];
+                linkHost.innerHTML = `
+                  <div class="mdtDetailSectionTitle" style="margin-top:0;">ADD PICTURE VIA LINK</div>
+                  <div class="mdtMeta" style="opacity:.85; margin-top:-6px;">Paste an image URL, or try uploading directly from clipboard.</div>
+
+                  <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; align-items:center;">
+                    <input class="mdtInput" data-evidence-link-input placeholder="https://..." style="flex:1; min-width:240px;" />
+                    <button type="button" class="mdtBtn" data-evidence-link-add>ADD LINK</button>
+                    <button type="button" class="mdtBtn" data-evidence-clipboard-upload>UPLOAD FROM CLIPBOARD</button>
+                  </div>
+
+                  <div class="mdtDetailSectionTitle" style="margin:14px 0 6px; font-size:12px; opacity:.9;">CURRENT LINKS</div>
+                  <div data-evidence-link-list>
+                    ${links.length ? links.map(u => `<div class="mdtDetailRow" style="gap:10px; align-items:center;"><span class="mdtDetailVal" style="flex:1; word-break:break-all;">${escapeHtml(u)}</span><button type="button" class="mdtBtn" data-evidence-link-remove="${escapeHtml(u)}" style="height:30px; padding:0 10px;">REMOVE</button></div>`).join('') : '<div class="mdtDetailItem mdtItemNone">No links added</div>'}
+                  </div>
+
+                  <div data-evidence-clipboard-status class="mdtMeta" style="opacity:.8; margin-top:10px;"></div>
+                `;
+
+                const input = linkHost.querySelector('[data-evidence-link-input]');
+                const addBtn = linkHost.querySelector('[data-evidence-link-add]');
+                addBtn && (addBtn.onclick = () => {
+                  const url = String(input?.value || '').trim();
+                  if(!url) return;
+                  const cur = getEvidence();
+                  const next = { ...cur, links: dedupeStrings([...(cur.links || []), url]) };
+                  setEvidence(next);
+                  renderEvidencePhotosOverlay();
+                });
+
+                linkHost.querySelectorAll('[data-evidence-link-remove]').forEach(btn => {
+                  btn.onclick = () => {
+                    const url = String(btn.dataset.evidenceLinkRemove || '').trim();
+                    const cur = getEvidence();
+                    const next = { ...cur, links: (cur.links || []).filter(x => String(x) !== url) };
+                    setEvidence(next);
+                    renderEvidencePhotosOverlay();
+                  };
+                });
+
+                const status = linkHost.querySelector('[data-evidence-clipboard-status]');
+                const clipBtn = linkHost.querySelector('[data-evidence-clipboard-upload]');
+                clipBtn && (clipBtn.onclick = async () => {
+                  if(status) status.textContent = '';
+
+                  if(!navigator.clipboard || !navigator.clipboard.read){
+                    if(status) status.textContent = 'Clipboard image upload not supported in this browser/context.';
+                    return;
+                  }
+
+                  try{
+                    const items = await navigator.clipboard.read();
+                    let found = null;
+                    for(const it of items){
+                      for(const t of (it.types || [])){
+                        if(String(t).toLowerCase().startsWith('image/')){
+                          found = { it, type: t };
+                          break;
+                        }
+                      }
+                      if(found) break;
+                    }
+                    if(!found){
+                      if(status) status.textContent = 'No image found in clipboard.';
+                      return;
+                    }
+                    const blob = await found.it.getType(found.type);
+                    const url = URL.createObjectURL(blob);
+                    const cur = getEvidence();
+                    const next = { ...cur, photos: dedupeStrings([...(cur.photos || []), url]) };
+                    setEvidence(next);
+                    if(status) status.textContent = 'Added clipboard image (local session URL).';
+                    renderEvidencePhotosOverlay();
+                  }catch(err){
+                    if(status) status.textContent = `Clipboard read failed: ${String(err && err.message ? err.message : err)}`;
+                  }
+                });
+              }
+
+              const btns = Array.from(overlay.querySelectorAll('[data-evidence-photos-tab]'));
+              const panels = {
+                scanner: overlay.querySelector('[data-evidence-photos-panel="scanner"]'),
+                link: overlay.querySelector('[data-evidence-photos-panel="link"]'),
+              };
+              const setTab = (tab) => {
+                btns.forEach(b => b.classList.toggle('on', String(b.dataset.evidencePhotosTab) === tab));
+                if(panels.scanner) panels.scanner.style.display = (tab === 'scanner') ? '' : 'none';
+                if(panels.link) panels.link.style.display = (tab === 'link') ? '' : 'none';
+              };
+              btns.forEach(b => {
+                b.onclick = () => setTab(String(b.dataset.evidencePhotosTab || 'scanner'));
+              });
+              setTab('scanner');
+            };
+
+            const openEvidencePhotosOverlay = () => {
+              const overlay = ensureEvidencePhotosOverlay();
+              overlay.style.display = '';
+              renderEvidencePhotosOverlay();
+            };
+
+            wrap.querySelectorAll('[data-open-evidence-photos]').forEach(btn => {
+              btn.onclick = openEvidencePhotosOverlay;
+            });
+
+            // View evidence overlay (photos gallery + locker preview)
+            let evidenceViewOverlayRef = null;
+            const ensureEvidenceViewOverlay = () => {
+              let overlay = (evidenceViewOverlayRef && evidenceViewOverlayRef.isConnected)
+                ? evidenceViewOverlayRef
+                : document.querySelector('[data-evidence-view-overlay]');
+              if(overlay){
+                evidenceViewOverlayRef = overlay;
+                return overlay;
+              }
+
+              overlay = document.createElement('div');
+              overlay.setAttribute('data-evidence-view-overlay', '1');
+              overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:9999; display:none;';
+              overlay.innerHTML = `
+                <div style="position:absolute; inset:8vh 6vw; background:rgba(10,10,14,.96); border:1px solid var(--mdt-border-strong); box-shadow:0 0 24px var(--mdt-glow-strong); padding:12px; overflow:hidden; display:flex; flex-direction:column;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                    <div class="mdtDetailSectionTitle" style="margin:0;">VIEW EVIDENCE</div>
+                    <button type="button" class="mdtBtn" data-evidence-view-close>CLOSE</button>
+                  </div>
+
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px; overflow:hidden; flex:1;">
+                    <div style="border:1px solid var(--mdt-border); overflow:hidden; display:flex; flex-direction:column;">
+                      <div class="mdtDetailSectionTitle" style="margin:0; padding:10px; border-bottom:1px solid var(--mdt-border);">PHOTOS</div>
+                      <div style="padding:10px; overflow:auto; flex:1;" data-evidence-view-photos></div>
+                    </div>
+
+                    <div style="border:1px solid var(--mdt-border); overflow:hidden; display:flex; flex-direction:column;">
+                      <div class="mdtDetailSectionTitle" style="margin:0; padding:10px; border-bottom:1px solid var(--mdt-border);">LOCKER INVENTORY</div>
+                      <div style="padding:10px; overflow:auto; flex:1;" data-evidence-view-locker></div>
+                    </div>
+                  </div>
+
+                  <div class="mdtMeta" style="opacity:.9; margin-top:10px; padding:10px; border:1px solid var(--mdt-border); background:rgba(255,238,152,.06);">
+                    VIEW-ONLY MODE ENABLED | to input or take out evidence please open the tab while inside the evidence locker room
+                  </div>
+                </div>
+              `;
+
+              document.body.appendChild(overlay);
+              evidenceViewOverlayRef = overlay;
+
+              const closeBtn = overlay.querySelector('[data-evidence-view-close]');
+              if(closeBtn) closeBtn.onclick = () => { overlay.style.display = 'none'; };
+              overlay.onclick = (e) => {
+                if(e.target === overlay) overlay.style.display = 'none';
+              };
+
+              return overlay;
+            };
+
+            const renderEvidenceViewOverlay = () => {
+              const overlay = ensureEvidenceViewOverlay();
+              const ev = getEvidence();
+              const photosHost = overlay.querySelector('[data-evidence-view-photos]');
+              const lockerHost = overlay.querySelector('[data-evidence-view-locker]');
+
+              if(photosHost){
+                const photos = Array.isArray(ev.photos) ? ev.photos : [];
+                const links = Array.isArray(ev.links) ? ev.links : [];
+
+                const photoRows = photos.length
+                  ? photos.map(u => `
+                      <div class="mdtDetailRow" style="gap:10px; align-items:center;">
+                        <img src="${escapeHtml(u)}" alt="Evidence photo" style="width:84px; height:84px; object-fit:cover; border:1px solid var(--mdt-border);" />
+                        <div style="flex:1; min-width:0;">
+                          <div class="mdtDetailVal" style="word-break:break-all;">${escapeHtml(u)}</div>
+                          <div class="mdtMeta" style="opacity:.75; margin-top:4px;">(Some photos may be session-only)</div>
+                        </div>
+                        <button type="button" class="mdtBtn" data-evidence-view-photo-remove="${escapeHtml(u)}" style="height:30px; padding:0 10px;">REMOVE</button>
+                      </div>
+                    `).join('')
+                  : '<div class="mdtDetailItem mdtItemNone">No photos attached</div>';
+
+                const linkRows = links.length
+                  ? links.map(u => `
+                      <div class="mdtDetailRow" style="gap:10px; align-items:center;">
+                        <span class="mdtDetailVal" style="flex:1; word-break:break-all;">${escapeHtml(u)}</span>
+                        <button type="button" class="mdtBtn" data-evidence-view-link-remove="${escapeHtml(u)}" style="height:30px; padding:0 10px;">REMOVE</button>
+                      </div>
+                    `).join('')
+                  : '<div class="mdtDetailItem mdtItemNone">No links added</div>';
+
+                photosHost.innerHTML = `
+                  <div class="mdtDetailSectionTitle" style="margin-top:0; font-size:12px; opacity:.9;">ATTACHED PHOTOS</div>
+                  ${photoRows}
+                  <div class="mdtDetailSectionTitle" style="margin:14px 0 6px; font-size:12px; opacity:.9;">ATTACHED LINKS</div>
+                  ${linkRows}
+                `;
+
+                photosHost.querySelectorAll('[data-evidence-view-photo-remove]').forEach(btn => {
+                  btn.onclick = () => {
+                    const url = String(btn.dataset.evidenceViewPhotoRemove || '').trim();
+                    const cur = getEvidence();
+                    setEvidence({ ...cur, photos: (cur.photos || []).filter(x => String(x) !== url) });
+                    renderEvidenceViewOverlay();
+                  };
+                });
+                photosHost.querySelectorAll('[data-evidence-view-link-remove]').forEach(btn => {
+                  btn.onclick = () => {
+                    const url = String(btn.dataset.evidenceViewLinkRemove || '').trim();
+                    const cur = getEvidence();
+                    setEvidence({ ...cur, links: (cur.links || []).filter(x => String(x) !== url) });
+                    renderEvidenceViewOverlay();
+                  };
+                });
+              }
+
+              if(lockerHost){
+                const placeholder = [
+                  { label: 'Bagged Phone', note: 'Sealed — Case #??' },
+                  { label: '9mm Casing', note: 'Bag #A-12' },
+                  { label: 'Blood Sample', note: 'Refrigerated' },
+                  { label: 'Unknown Substance', note: 'Needs lab' },
+                  null,
+                  null,
+                  null,
+                  null,
+                ];
+
+                lockerHost.innerHTML = `
+                  <div class="mdtMeta" style="opacity:.8; margin-bottom:10px;">No locker dataset wired yet — showing placeholder slots.</div>
+                  <div style="display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:10px;">
+                    ${placeholder.map((it, idx) => {
+                      if(!it) return `<div style="border:1px dashed var(--mdt-border); padding:10px; opacity:.55; min-height:72px;">EMPTY</div>`;
+                      return `
+                        <div style="border:1px solid var(--mdt-border); padding:10px; min-height:72px;">
+                          <div style="font-weight:700; letter-spacing:.5px;">${escapeHtml(it.label)}</div>
+                          <div class="mdtMeta" style="opacity:.85; margin-top:4px;">${escapeHtml(it.note || '')}</div>
+                          <div class="mdtMeta" style="opacity:.65; margin-top:6px;">Slot ${idx + 1}</div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                `;
+              }
+            };
+
+            const openEvidenceViewOverlay = () => {
+              const overlay = ensureEvidenceViewOverlay();
+              overlay.style.display = '';
+              renderEvidenceViewOverlay();
+            };
+
+            wrap.querySelectorAll('[data-open-evidence-view]').forEach(btn => {
+              btn.onclick = openEvidenceViewOverlay;
+            });
+ 
+           // location helper
           wrap.querySelectorAll('[data-use-current-location]').forEach(btn => {
             btn.addEventListener('click', () => {
               const loc = dummyCurrentLocation();
@@ -6642,7 +7105,7 @@
             };
           });
 
-          // Collapsible right-side panels (Sentencing/Charges)
+          // Collapsible right-side panels (Sentencing/Charges/Evidence)
           {
             const prefKey = `arrests:${id}:panelCollapsed`;
             const collapsed = (() => {
@@ -6664,7 +7127,7 @@
               if(btn) btn.textContent = isCollapsed ? 'SHOW' : 'HIDE';
             };
 
-            ['sentencing','charges'].forEach(panel => applyCollapsedUi(panel));
+            ['sentencing','charges','evidence'].forEach(panel => applyCollapsedUi(panel));
 
             wrap.querySelectorAll('[data-toggle-collapsible]').forEach(btn => {
               btn.onclick = () => {
