@@ -84,13 +84,31 @@
         // Wire up regions
         bootSet(95, "ready");
         bootLine("[SVG] regions wired • colorizing…");
+
+        // Defensive: if another script failed to load (e.g. handlers in 70-*.js),
+        // don't crash the entire SVG boot.
+        const safeOnRegionMove = (typeof onRegionMove === "function") ? onRegionMove : null;
+        const safeOnRegionEnter = (typeof onRegionEnter === "function") ? onRegionEnter : null;
+        const safeOnRegionLeave = (typeof onRegionLeave === "function") ? onRegionLeave : null;
+        const safeSelectRegion = (typeof selectRegion === "function") ? selectRegion : null;
+
+        if(!safeOnRegionMove || !safeOnRegionEnter || !safeOnRegionLeave || !safeSelectRegion){
+          term("[WARN] region handlers missing; map interaction limited");
+          console.warn("Region handlers missing", {
+            onRegionMove: typeof onRegionMove,
+            onRegionEnter: typeof onRegionEnter,
+            onRegionLeave: typeof onRegionLeave,
+            selectRegion: typeof selectRegion,
+          });
+        }
+
         const regions = svgEl.querySelectorAll(".region, [data-region='true']");
         regions.forEach(r => {
           r.classList.add("region");
           r.style.cursor = "pointer";
-          r.addEventListener("mousemove", onRegionMove);
-          r.addEventListener("mouseenter", onRegionEnter);
-          r.addEventListener("mouseleave", onRegionLeave);
+          if(safeOnRegionMove) r.addEventListener("mousemove", safeOnRegionMove);
+          if(safeOnRegionEnter) r.addEventListener("mouseenter", safeOnRegionEnter);
+          if(safeOnRegionLeave) r.addEventListener("mouseleave", safeOnRegionLeave);
           r.addEventListener("click", (e) => {
             e.stopPropagation();
             if(suppressRegionClickOnce){
@@ -98,7 +116,7 @@
               e.preventDefault();
               return;
             }
-            selectRegion(r);
+            if(safeSelectRegion) safeSelectRegion(r);
           });
         });
 
@@ -106,7 +124,11 @@
         rebuildRestrictedBlurClip();
 
         // Robust hover tracking (fixes edge cases where enter/move can be missed)
-        bindGlobalHoverTracking();
+        if(typeof bindGlobalHoverTracking === "function"){
+          bindGlobalHoverTracking();
+        }else{
+          term("[WARN] bindGlobalHoverTracking missing; hover may be less accurate");
+        }
 
         svgEl.querySelectorAll(".region:not(.wall)").forEach(r => {
           r.addEventListener("dblclick", (e) => {
@@ -118,6 +140,10 @@
         colorizeRegions();
         ensureWastelineMarquee();
         buildDistrictLogos();
+
+        if(!safeOnRegionMove || !safeOnRegionEnter || !safeOnRegionLeave || !safeSelectRegion){
+          bootLine("[WARN] UI scripts missing; check console for syntax errors", true);
+        }
 
         // Clicking empty map should do nothing (selection/popup stays)
         

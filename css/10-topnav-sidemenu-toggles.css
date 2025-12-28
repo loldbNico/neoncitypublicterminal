@@ -65,7 +65,8 @@ body.view-lore:not(.securosserv-mode) #securoservChaos,
 body.view-lore:not(.securosserv-mode) #securoservMidbar,
 body.view-lore:not(.securosserv-mode) #screenGlitch,
 body.view-lore:not(.securosserv-mode) #screenOff,
-body.view-lore:not(.securosserv-mode) #inputBlocker{
+body.view-lore:not(.securosserv-mode) #inputBlocker,
+body.view-mdt #inputBlocker{
   display:none !important;
 }
 

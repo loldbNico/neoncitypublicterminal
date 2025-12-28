@@ -349,6 +349,9 @@
       const blocker = document.getElementById("inputBlocker");
       if(!blocker) return;
       blocker.classList.toggle("on", Boolean(on));
+      if(!on){
+        try{ blocker.classList.remove('on'); }catch{}
+      }
     }
 
     function handleSecuroservChallengeKeydown(e){
@@ -623,6 +626,7 @@
       // any accidental hover/click from re-enabling wall/logo states under the fade.
       setSecuroservMouseBlock(true);
       try{ buildDistrictLogos(); }catch{}
+      try{ window.forceUnblockInputs && window.forceUnblockInputs(); }catch{}
 
       // Force-clear any stuck logo highlight state (can happen if hover was reacquired
       // during the crossfade and the logo layer got rebuilt).
@@ -656,6 +660,7 @@
       // Final hard reset (covers the case where the user interacted during the overlay).
       hardResetAfterSecuroservSuccess();
       setSecuroservMouseBlock(false);
+      try{ window.forceUnblockInputs && window.forceUnblockInputs(); }catch{}
 
       securoservCounterhackResolving = false;
     }

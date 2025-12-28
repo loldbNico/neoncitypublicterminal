@@ -29,8 +29,8 @@ window.MDT_DATA = {
       notes: 'Commercial food-service group. Owns multiple restaurant properties across Little Seoul.',
       employees: [
         { citizenId: 6, rank: 'Owner' },
-        { citizenId: 2, rank: 'Medical Consultant' },
-      ],
+        { citizenId: 2, rank: 'Medical Consultant' }
+      ]
     },
     {
       id: 2,
@@ -41,8 +41,8 @@ window.MDT_DATA = {
       notes: 'High-profile corporate entity with private security contracts.',
       employees: [
         { citizenId: 5, rank: 'CEO' },
-        { citizenId: 7, rank: 'Security Contractor' },
-      ],
+        { citizenId: 7, rank: 'Security Contractor' }
+      ]
     },
     {
       id: 3,
@@ -52,9 +52,9 @@ window.MDT_DATA = {
       hq: 'Warehouse 7, Neon City Ports',
       notes: 'RESTRICTED operations across port facilities.',
       employees: [
-        { citizenId: 7, rank: 'Contractor' },
-      ],
-    },
+        { citizenId: 7, rank: 'Contractor' }
+      ]
+    }
   ],
 
   // ========== PROPERTIES ==========
@@ -68,7 +68,7 @@ window.MDT_DATA = {
     { id: 7, address: '999 Pacific Bluffs Way', type: 'Single Family Home', owner: 'Derek Stone', value: '$2,100,000', taxStatus: 'Current', notes: 'Cliffside property. Security cameras.' },
     { id: 8, address: '320 La Puerta St', type: 'Commercial', owner: 'Santos Auto LLC', value: '$540,000', taxStatus: 'Current', notes: 'Auto repair shop with residential above.' },
     { id: 9, address: 'Warehouse 7, Neon City Ports', type: 'Industrial', owner: 'SecuroServ Holdings', value: '$3,200,000', taxStatus: 'Current', notes: 'RESTRICTED - SecuroServ property.' },
-    { id: 10, address: '600 Palomino Lands Ranch', type: 'Ranch', owner: 'Petrov Family', value: '$890,000', taxStatus: 'Current', notes: '40 acres. Livestock permitted.' },
+    { id: 10, address: '600 Palomino Lands Ranch', type: 'Ranch', owner: 'Petrov Family', value: '$890,000', taxStatus: 'Current', notes: '40 acres. Livestock permitted.' }
   ],
 
   // ========== VEHICLES ==========
@@ -82,7 +82,7 @@ window.MDT_DATA = {
     { id: 7, plate: 'PBW-9990', make: 'Gallivanter', model: 'Baller', year: 2022, color: 'Black', owner: 'Derek Stone', status: 'Registered', flags: [], notes: 'Tinted windows - exempt (security).' },
     { id: 8, plate: 'LPT-3200', make: 'Vapid', model: 'Bobcat XL', year: 2019, color: 'Orange', owner: 'Maria Santos', status: 'Registered', flags: [], notes: 'Commercial plates.' },
     { id: 9, plate: 'VWH-1800', make: 'Obey', model: 'Tailgater', year: 2023, color: 'Gray', owner: 'Tyler Reed', status: 'Suspended', flags: ['Unpaid citations'], notes: 'Registration suspended - unpaid fines.' },
-    { id: 10, plate: 'PLR-6000', make: 'Bravado', model: 'Bison', year: 2018, color: 'Green', owner: 'Nina Petrov', status: 'Registered', flags: [], notes: 'Ranch use vehicle.' },
+    { id: 10, plate: 'PLR-6000', make: 'Bravado', model: 'Bison', year: 2018, color: 'Green', owner: 'Nina Petrov', status: 'Registered', flags: [], notes: 'Ranch use vehicle.' }
   ],
 
   // ========== WEAPONS ==========
@@ -96,7 +96,7 @@ window.MDT_DATA = {
     { id: 7, serial: 'WPN-00007', type: 'Rifle', make: 'Shrewsbury', model: 'Marksman Rifle', caliber: '.308 WIN', owner: 'Derek Stone', status: 'Registered', ccw: false, notes: 'Hunting rifle.' },
     { id: 8, serial: 'UNKNOWN', type: 'Pistol', make: 'Unknown', model: 'Unknown', caliber: '9mm', owner: 'Unknown', status: 'Unregistered', ccw: false, notes: 'Recovered from crime scene - Case #2024-1102' },
     { id: 9, serial: 'WPN-00009', type: 'Taser', make: 'Coil', model: 'Stun Gun', caliber: 'N/A', owner: 'Private Security Inc', status: 'Registered', ccw: false, notes: 'Non-lethal.' },
-    { id: 10, serial: 'WPN-00010', type: 'Shotgun', make: 'Vom Feuer', model: 'Sweeper', caliber: '12 Gauge', owner: 'NCPD Armory', status: 'Registered', ccw: false, notes: 'Riot control.' },
+    { id: 10, serial: 'WPN-00010', type: 'Shotgun', make: 'Vom Feuer', model: 'Sweeper', caliber: '12 Gauge', owner: 'NCPD Armory', status: 'Registered', ccw: false, notes: 'Riot control.' }
   ],
 
   // ========== MEDICAL PROFILES ==========
@@ -110,7 +110,7 @@ window.MDT_DATA = {
     { id: 7, patientId: 'PAT-0007', name: 'Derek Stone', bloodType: 'O+', allergies: [], conditions: ['PTSD', 'Prior combat injuries'], emergencyContact: 'VA Hospital - 555-0207', notes: 'Veteran. Metal fragments in left leg.' },
     { id: 8, patientId: 'PAT-0008', name: 'Maria Santos', bloodType: 'B-', allergies: ['Ibuprofen'], conditions: [], emergencyContact: 'Carlos Santos (Son) - 555-0208', notes: '' },
     { id: 9, patientId: 'PAT-0009', name: 'Tyler Reed', bloodType: 'A+', allergies: [], conditions: ['ADHD'], emergencyContact: 'Susan Reed (Mother) - 555-0209', notes: 'Prescribed Adderall.' },
-    { id: 10, patientId: 'PAT-0010', name: 'Nina Petrov', bloodType: 'AB-', allergies: ['Bee stings'], conditions: [], emergencyContact: 'Alexei Petrov (Husband) - 555-0210', notes: 'Carries EpiPen.' },
+    { id: 10, patientId: 'PAT-0010', name: 'Nina Petrov', bloodType: 'AB-', allergies: ['Bee stings'], conditions: [], emergencyContact: 'Alexei Petrov (Husband) - 555-0210', notes: 'Carries EpiPen.' }
   ],
 
   // ========== NCPD REPORTS ==========
@@ -124,7 +124,7 @@ window.MDT_DATA = {
     { id: 7, caseNum: '2024-0334', type: 'Drug Possession', date: '2024-03-22', time: '16:40', location: 'South Side Park', officer: 'Ofc. Williams', suspects: ['Tyler Reed'], status: 'Pending', summary: 'Subject found with marijuana. Minor amount. Citation pending.' },
     { id: 8, caseNum: '2024-0412', type: 'Missing Person', date: '2024-04-02', time: '10:00', location: 'Reported at NCPD Central', officer: 'Det. Vasquez', suspects: [], status: 'Open', summary: 'Jessica Lane, 24, last seen Mirror Hills. No foul play suspected.' },
     { id: 9, caseNum: '2024-0501', type: 'Homicide', date: '2024-04-15', time: '02:33', location: 'Warehouse 12, Neon City Ports', officer: 'Det. Morrison', suspects: ['Unknown'], status: 'Open', summary: 'Body discovered. Male, 30s, GSW. Gang-related suspected.' },
-    { id: 10, caseNum: '2024-0567', type: 'Noise Complaint', date: '2024-04-28', time: '01:15', location: '1200 Rockford Hills Estate', officer: 'Ofc. Taylor', suspects: [], status: 'Closed', summary: 'Party noise. Resident compliant. Warning issued.' },
+    { id: 10, caseNum: '2024-0567', type: 'Noise Complaint', date: '2024-04-28', time: '01:15', location: '1200 Rockford Hills Estate', officer: 'Ofc. Taylor', suspects: [], status: 'Closed', summary: 'Party noise. Resident compliant. Warning issued.' }
   ],
 
   // ========== MEDICAL REPORTS ==========
@@ -138,7 +138,7 @@ window.MDT_DATA = {
     { id: 7, reportNum: 'MED-2024-0112', date: '2024-03-25', patient: 'Unknown Male', facility: 'Pillbox Hill Medical', type: 'ER Visit', diagnosis: 'DOA - GSW', treatment: 'N/A', notes: 'Pronounced dead on arrival. NCPD Case #2024-0501.' },
     { id: 8, reportNum: 'MED-2024-0134', date: '2024-04-05', patient: 'Nina Petrov', facility: 'Sandy Shores Medical', type: 'ER Visit', diagnosis: 'Allergic reaction - bee sting', treatment: 'Epinephrine, observation', notes: 'Anaphylaxis. EpiPen administered by patient prior to arrival.' },
     { id: 9, reportNum: 'MED-2024-0156', date: '2024-04-12', patient: 'Tyler Reed', facility: 'Central Los Santos Medical', type: 'ER Visit', diagnosis: 'Anxiety attack', treatment: 'Benzodiazepine, counseling referral', notes: 'Stress-related. Academic pressure cited.' },
-    { id: 10, reportNum: 'MED-2024-0178', date: '2024-04-20', patient: 'Maria Santos', facility: 'Pillbox Hill Medical', type: 'ER Visit', diagnosis: 'Chemical burn - hand', treatment: 'Irrigation, bandaging', notes: 'Workplace injury. Workers comp filed.' },
+    { id: 10, reportNum: 'MED-2024-0178', date: '2024-04-20', patient: 'Maria Santos', facility: 'Pillbox Hill Medical', type: 'ER Visit', diagnosis: 'Chemical burn - hand', treatment: 'Irrigation, bandaging', notes: 'Workplace injury. Workers comp filed.' }
   ],
 
   // ========== NCC REPORTS ==========
@@ -152,27 +152,27 @@ window.MDT_DATA = {
     { id: 7, reportNum: 'NCC-2024-0101', date: '2024-03-15', type: 'Traffic Study', location: 'Neon Core Ave corridor', requester: 'City Planning', status: 'In Progress', summary: 'Traffic flow analysis for proposed light rail.' },
     { id: 8, reportNum: 'NCC-2024-0123', date: '2024-03-28', type: 'Demolition Permit', location: '1500 South Side Industrial', applicant: 'Urban Renewal LLC', status: 'Approved', summary: 'Condemned warehouse demolition approved.' },
     { id: 9, reportNum: 'NCC-2024-0145', date: '2024-04-10', type: 'Liquor License', location: 'The Neon Lounge, Vespucci', applicant: 'NL Entertainment LLC', status: 'Renewal Approved', summary: 'Annual renewal. No violations on record.' },
-    { id: 10, reportNum: 'NCC-2024-0167', date: '2024-04-22', type: 'Public Works', location: 'Mirror Hills Dr', requester: 'HOA', status: 'Scheduled', summary: 'Street repaving scheduled for May 2024.' },
+    { id: 10, reportNum: 'NCC-2024-0167', date: '2024-04-22', type: 'Public Works', location: 'Mirror Hills Dr', requester: 'HOA', status: 'Scheduled', summary: 'Street repaving scheduled for May 2024.' }
   ],
 
   // ========== PENAL CODE ==========
   penalCode: [
-    { id: 1, code: 'PC-001', title: 'First Degree Murder', category: 'Felony', fine: '$0', jailTime: 'Life / HUT', points: 0, description: 'Premeditated killing of another person.' },
-    { id: 2, code: 'PC-002', title: 'Second Degree Murder', category: 'Felony', fine: '$0', jailTime: '25-50 years', points: 0, description: 'Killing without premeditation but with malice.' },
-    { id: 3, code: 'PC-003', title: 'Manslaughter', category: 'Felony', fine: '$50,000', jailTime: '10-20 years', points: 0, description: 'Unintentional killing due to recklessness.' },
-    { id: 4, code: 'PC-010', title: 'Assault', category: 'Misdemeanor', fine: '$5,000', jailTime: '30 days', points: 0, description: 'Intentionally causing physical harm to another.' },
-    { id: 5, code: 'PC-011', title: 'Aggravated Assault', category: 'Felony', fine: '$15,000', jailTime: '1-5 years', points: 0, description: 'Assault with a deadly weapon or causing serious injury.' },
-    { id: 6, code: 'PC-020', title: 'Robbery', category: 'Felony', fine: '$25,000', jailTime: '5-10 years', points: 0, description: 'Taking property by force or threat.' },
-    { id: 7, code: 'PC-021', title: 'Armed Robbery', category: 'Felony', fine: '$50,000', jailTime: '10-20 years', points: 0, description: 'Robbery while armed with a weapon.' },
-    { id: 8, code: 'PC-030', title: 'Burglary', category: 'Felony', fine: '$10,000', jailTime: '2-5 years', points: 0, description: 'Unlawful entry with intent to commit a crime.' },
-    { id: 9, code: 'PC-040', title: 'Grand Theft Auto', category: 'Felony', fine: '$20,000', jailTime: '3-7 years', points: 0, description: 'Stealing a motor vehicle.' },
-    { id: 10, code: 'PC-041', title: 'Petty Theft', category: 'Misdemeanor', fine: '$1,000', jailTime: '10 days', points: 0, description: 'Theft of property valued under $500.' },
-    { id: 11, code: 'PC-050', title: 'Disorderly Conduct', category: 'Infraction', fine: '$500', jailTime: '0 days', points: 0, description: 'Public disturbance, minor non-violent offense.' },
-    { id: 12, code: 'PC-051', title: 'Loitering', category: 'Infraction', fine: '$250', jailTime: '0 days', points: 0, description: 'Remaining in a public place without purpose, after warning.' },
-    { id: 13, code: 'PC-052', title: 'Vandalism', category: 'Misdemeanor', fine: '$2,000', jailTime: '15-60 days', points: 0, description: 'Defacing or damaging property.' },
-    { id: 14, code: 'PC-053', title: 'Obstruction of Justice', category: 'Misdemeanor', fine: '$3,500', jailTime: '30-90 days', points: 0, description: 'Interfering with law enforcement duties.' },
-    { id: 15, code: 'PC-054', title: 'Bribery', category: 'Felony', fine: '$35,000', jailTime: '3-8 years', points: 0, description: 'Offering or receiving value to influence actions of officials.' },
-    { id: 16, code: 'PC-055', title: 'Perjury', category: 'Felony', fine: '$20,000', jailTime: '2-5 years', points: 0, description: 'Knowingly giving false testimony under oath.' },
+    { id: 1, code: 'PC-001', title: 'First Degree Murder', category: 'Felony', fine: '$0', jailTime: '20-100 months', points: 0, description: 'Premeditated killing of another person.' },
+    { id: 2, code: 'PC-002', title: 'Second Degree Murder', category: 'Felony', fine: '$0', jailTime: '20-100 months', points: 0, description: 'Killing without premeditation but with malice.' },
+    { id: 3, code: 'PC-003', title: 'Manslaughter', category: 'Felony', fine: '$50,000', jailTime: '20-100 months', points: 0, description: 'Unintentional killing due to recklessness.' },
+    { id: 4, code: 'PC-010', title: 'Assault', category: 'Misdemeanor', fine: '$5,000', jailTime: '5-20 months', points: 0, description: 'Intentionally causing physical harm to another.' },
+    { id: 5, code: 'PC-011', title: 'Aggravated Assault', category: 'Felony', fine: '$15,000', jailTime: '20-100 months', points: 0, description: 'Assault with a deadly weapon or causing serious injury.' },
+    { id: 6, code: 'PC-020', title: 'Robbery', category: 'Felony', fine: '$25,000', jailTime: '20-100 months', points: 0, description: 'Taking property by force or threat.' },
+    { id: 7, code: 'PC-021', title: 'Armed Robbery', category: 'Felony', fine: '$50,000', jailTime: '20-100 months', points: 0, description: 'Robbery while armed with a weapon.' },
+    { id: 8, code: 'PC-030', title: 'Burglary', category: 'Felony', fine: '$10,000', jailTime: '20-100 months', points: 0, description: 'Unlawful entry with intent to commit a crime.' },
+    { id: 9, code: 'PC-040', title: 'Grand Theft Auto', category: 'Felony', fine: '$20,000', jailTime: '20-100 months', points: 0, description: 'Stealing a motor vehicle.' },
+    { id: 10, code: 'PC-041', title: 'Petty Theft', category: 'Misdemeanor', fine: '$1,000', jailTime: '5-20 months', points: 0, description: 'Theft of property valued under $500.' },
+    { id: 11, code: 'PC-050', title: 'Disorderly Conduct', category: 'Infraction', fine: '$500', jailTime: '0 months', points: 0, description: 'Public disturbance, minor non-violent offense.' },
+    { id: 12, code: 'PC-051', title: 'Loitering', category: 'Infraction', fine: '$250', jailTime: '0 months', points: 0, description: 'Remaining in a public place without purpose, after warning.' },
+    { id: 13, code: 'PC-052', title: 'Vandalism', category: 'Misdemeanor', fine: '$2,000', jailTime: '5-20 months', points: 0, description: 'Defacing or damaging property.' },
+    { id: 14, code: 'PC-053', title: 'Obstruction of Justice', category: 'Misdemeanor', fine: '$3,500', jailTime: '5-20 months', points: 0, description: 'Interfering with law enforcement duties.' },
+    { id: 15, code: 'PC-054', title: 'Bribery', category: 'Felony', fine: '$35,000', jailTime: '20-100 months', points: 0, description: 'Offering or receiving value to influence actions of officials.' },
+    { id: 16, code: 'PC-055', title: 'Perjury', category: 'Felony', fine: '$20,000', jailTime: '20-100 months', points: 0, description: 'Knowingly giving false testimony under oath.' }
   ],
 
   // ========== STATE LAWS ==========
@@ -186,7 +186,7 @@ window.MDT_DATA = {
     { id: 7, code: 'SL-011', title: 'Illegal Discharge', category: 'Felony', fine: '$10,000', points: 0, description: 'Discharging firearm in prohibited area.' },
     { id: 8, code: 'SL-020', title: 'Trespassing', category: 'Misdemeanor', fine: '$750', points: 0, description: 'Entering private property without permission.' },
     { id: 9, code: 'SL-021', title: 'Restricted Area Violation', category: 'Felony', fine: '$25,000', points: 0, description: 'Unauthorized entry to restricted government/military area.' },
-    { id: 10, code: 'SL-030', title: 'Drug Possession', category: 'Misdemeanor/Felony', fine: '$1,000-$50,000', points: 0, description: 'Possession of controlled substances. Severity varies.' },
+    { id: 10, code: 'SL-030', title: 'Drug Possession', category: 'Misdemeanor/Felony', fine: '$1,000-$50,000', points: 0, description: 'Possession of controlled substances. Severity varies.' }
   ],
 
   // ========== WARRANTS (linked to citizens) ==========
@@ -195,7 +195,7 @@ window.MDT_DATA = {
     { id: 2, warrantNum: 'WAR-2024-0002', type: 'Arrest', citizenId: 3, citizenName: 'Viktor Kozlov', issuedDate: '2024-04-20', issuedBy: 'Judge R. Chen', charges: ['Assault', 'Battery', 'Resisting Arrest'], status: 'Active', bail: '$50,000', notes: 'Subject is considered dangerous. Approach with caution. Known gang ties.' },
     { id: 3, warrantNum: 'WAR-2024-0003', type: 'Search', citizenId: null, citizenName: null, issuedDate: '2024-04-22', issuedBy: 'Judge L. Vasquez', charges: [], status: 'Active', bail: 'N/A', notes: 'Search warrant for 2200 South Side Blvd. Related to drug trafficking investigation.' },
     { id: 4, warrantNum: 'WAR-2024-0004', type: 'Arrest', citizenId: null, citizenName: 'John Doe (Unknown Male)', issuedDate: '2024-03-16', issuedBy: 'Judge M. Harrison', charges: ['Armed Robbery'], status: 'Active', bail: '$100,000', notes: 'Suspect in 24/7 Store robbery. Case #2024-0289. Male, approximately 6ft, wore black mask.' },
-    { id: 5, warrantNum: 'WAR-2023-0156', type: 'Arrest', citizenId: 3, citizenName: 'Viktor Kozlov', issuedDate: '2023-11-08', issuedBy: 'Judge K. Patel', charges: ['DUI'], status: 'Served', bail: 'N/A', notes: 'Warrant served 2023-11-15. Subject arrested and processed.' },
+    { id: 5, warrantNum: 'WAR-2023-0156', type: 'Arrest', citizenId: 3, citizenName: 'Viktor Kozlov', issuedDate: '2023-11-08', issuedBy: 'Judge K. Patel', charges: ['DUI'], status: 'Served', bail: 'N/A', notes: 'Warrant served 2023-11-15. Subject arrested and processed.' }
   ],
 
   // ========== ARRESTS (linked to citizens) ==========
@@ -204,7 +204,7 @@ window.MDT_DATA = {
     { id: 2, arrestNum: 'ARR-2024-0012', citizenId: 9, citizenName: 'Tyler Reed', date: '2024-03-22', time: '16:55', location: 'South Side Park', arrestingOfficer: 'Ofc. Williams', charges: ['Drug Possession - Marijuana'], status: 'Pending Court', relatedCase: '2024-0334', notes: 'Minor in possession. Small amount. Released to parent custody pending court date.' },
     { id: 3, arrestNum: 'ARR-2023-0089', citizenId: 3, citizenName: 'Viktor Kozlov', date: '2023-11-15', time: '02:30', location: '2200 South Side Blvd', arrestingOfficer: 'Ofc. Martinez', charges: ['DUI', 'Reckless Driving'], status: 'Convicted', relatedCase: '2023-0892', notes: 'Warrant arrest. Subject found intoxicated at residence. Blood alcohol 0.14.' },
     { id: 4, arrestNum: 'ARR-2019-0234', citizenId: 3, citizenName: 'Viktor Kozlov', date: '2019-06-12', time: '23:15', location: 'The Neon Lounge, Vespucci', arrestingOfficer: 'Ofc. Stone', charges: ['Assault', 'Disorderly Conduct'], status: 'Convicted', relatedCase: '2019-0456', notes: 'Bar fight. Victim required hospitalization. Subject served 6 months.' },
-    { id: 5, arrestNum: 'ARR-2018-0567', citizenId: 4, citizenName: 'Elena Vasquez', date: '2018-08-20', time: '15:30', location: 'Vespucci Beach Boardwalk', arrestingOfficer: 'Ofc. Chen', charges: ['Petty Theft'], status: 'Convicted', relatedCase: '2018-0789', notes: 'Shoplifting from tourist vendor. First offense. Community service completed.' },
+    { id: 5, arrestNum: 'ARR-2018-0567', citizenId: 4, citizenName: 'Elena Vasquez', date: '2018-08-20', time: '15:30', location: 'Vespucci Beach Boardwalk', arrestingOfficer: 'Ofc. Chen', charges: ['Petty Theft'], status: 'Convicted', relatedCase: '2018-0789', notes: 'Shoplifting from tourist vendor. First offense. Community service completed.' }
   ],
 
   // ========== BOLOs (Be On the Lookout) ==========
@@ -213,7 +213,7 @@ window.MDT_DATA = {
     { id: 2, boloNum: 'BOLO-2024-0002', type: 'Person', issuedDate: '2024-03-15', issuedBy: 'Det. Stone', status: 'Active', priority: 'Critical', plate: null, vehicleDesc: null, suspectDesc: 'Male, approximately 6ft, medium build. Last seen wearing black hoodie and ski mask.', citizenId: null, citizenName: 'Unknown', relatedCase: '2024-0289', notes: 'Armed robbery suspect. Considered armed and dangerous. Weapon: handgun.' },
     { id: 3, boloNum: 'BOLO-2024-0003', type: 'Person', issuedDate: '2024-04-02', issuedBy: 'Det. Vasquez', status: 'Active', priority: 'Medium', plate: null, vehicleDesc: null, suspectDesc: 'Female, 24 years old, 5\'6", blonde hair, last seen wearing blue dress.', citizenId: null, citizenName: 'Jessica Lane', relatedCase: '2024-0412', notes: 'Missing person. Last seen Mirror Hills area. No foul play suspected but welfare check requested.' },
     { id: 4, boloNum: 'BOLO-2024-0004', type: 'Vehicle', issuedDate: '2024-04-25', issuedBy: 'Ofc. Taylor', status: 'Active', priority: 'Low', plate: 'VWH-1800', vehicleDesc: '2023 Obey Tailgater, Gray', suspectDesc: null, citizenId: 9, citizenName: 'Tyler Reed', relatedCase: null, notes: 'Vehicle registration suspended. Multiple unpaid citations. Stop and cite if observed.' },
-    { id: 5, boloNum: 'BOLO-2024-0005', type: 'Weapon', issuedDate: '2024-02-10', issuedBy: 'Det. Park', status: 'Active', priority: 'High', plate: null, vehicleDesc: null, suspectDesc: 'Hawk & Little Pistol .50, Serial: WPN-00004', citizenId: null, citizenName: null, relatedCase: '2024-0892', notes: 'Stolen firearm. If recovered, secure and notify Det. Park immediately.' },
+    { id: 5, boloNum: 'BOLO-2024-0005', type: 'Weapon', issuedDate: '2024-02-10', issuedBy: 'Det. Park', status: 'Active', priority: 'High', plate: null, vehicleDesc: null, suspectDesc: 'Hawk & Little Pistol .50, Serial: WPN-00004', citizenId: null, citizenName: null, relatedCase: '2024-0892', notes: 'Stolen firearm. If recovered, secure and notify Det. Park immediately.' }
   ],
 
   // ========== AMBULANCE CALLS (for Medical mode) ==========
@@ -225,7 +225,7 @@ window.MDT_DATA = {
     { id: 5, callNum: 'EMS-2024-0112', date: '2024-04-12', time: '22:45', location: '1800 Vinewood Hills Rd', patientId: 9, patientName: 'Tyler Reed', priority: 'Code 2', nature: 'Anxiety attack / Psychiatric', dispatchedUnit: 'Medic 2', facility: 'Central Los Santos Medical', outcome: 'Transported', notes: 'Patient cooperative. No physical injuries. Counseling referral provided.' },
     { id: 6, callNum: 'EMS-2024-0078', date: '2024-03-10', time: '10:00', location: 'VA Medical Center', patientId: 7, patientName: 'Derek Stone', priority: 'Scheduled', nature: 'Psychiatric evaluation - PTSD followup', dispatchedUnit: 'N/A', facility: 'VA Medical Center', outcome: 'Completed', notes: 'Scheduled appointment. Patient stable.' },
     { id: 7, callNum: 'EMS-2024-0134', date: '2024-04-20', time: '11:30', location: '320 La Puerta St', patientId: 8, patientName: 'Maria Santos', priority: 'Code 2', nature: 'Chemical burn - occupational', dispatchedUnit: 'Medic 9', facility: 'Pillbox Hill Medical', outcome: 'Transported', notes: 'Workplace injury at auto shop. Hand irrigated on scene.' },
-    { id: 8, callNum: 'EMS-2024-0150', date: '2024-04-15', time: '02:45', location: 'Warehouse 12, Neon City Ports', patientId: null, patientName: 'Unknown Male', priority: 'Code 3', nature: 'GSW - DOA', dispatchedUnit: 'Medic 1', facility: 'Pillbox Hill Medical', outcome: 'DOA', notes: 'Coroner dispatched. NCPD Homicide on scene. Case #2024-0501.' },
+    { id: 8, callNum: 'EMS-2024-0150', date: '2024-04-15', time: '02:45', location: 'Warehouse 12, Neon City Ports', patientId: null, patientName: 'Unknown Male', priority: 'Code 3', nature: 'GSW - DOA', dispatchedUnit: 'Medic 1', facility: 'Pillbox Hill Medical', outcome: 'DOA', notes: 'Coroner dispatched. NCPD Homicide on scene. Case #2024-0501.' }
   ],
 
   // ========== CITY PERMITS (for City Council mode) ==========
@@ -235,7 +235,7 @@ window.MDT_DATA = {
     { id: 3, permitNum: 'BL-2024-0078', type: 'Business License', applicant: 'Maria Santos', location: '320 La Puerta St', issuedDate: '2024-02-01', expiryDate: '2025-02-01', status: 'Active', inspector: null, notes: 'Santos Auto Repair - Automotive services.' },
     { id: 4, permitNum: 'LL-2024-0145', type: 'Liquor License', applicant: 'NL Entertainment LLC', location: 'The Neon Lounge, Vespucci', issuedDate: '2024-04-10', expiryDate: '2025-04-10', status: 'Active', inspector: 'R. Davis', notes: 'Annual renewal approved. No violations.' },
     { id: 5, permitNum: 'DP-2024-0123', type: 'Demolition', applicant: 'Urban Renewal LLC', location: '1500 South Side Industrial', issuedDate: '2024-03-28', expiryDate: '2024-09-28', status: 'Active', inspector: 'M. Garcia', notes: 'Condemned warehouse. Asbestos abatement required.' },
-    { id: 6, permitNum: 'HB-2024-0056', type: 'Home Business', applicant: 'Elena Vasquez', location: '445 Vespucci Beach Rd', issuedDate: null, expiryDate: null, status: 'Denied', inspector: 'K. Brown', notes: 'Application denied due to zoning restrictions.' },
+    { id: 6, permitNum: 'HB-2024-0056', type: 'Home Business', applicant: 'Elena Vasquez', location: '445 Vespucci Beach Rd', issuedDate: null, expiryDate: null, status: 'Denied', inspector: 'K. Brown', notes: 'Application denied due to zoning restrictions.' }
   ],
 
   // ========== TAX RECORDS (for City Council mode) ==========
@@ -244,7 +244,7 @@ window.MDT_DATA = {
     { id: 2, taxId: 'TAX-2024-0002', propertyId: 5, address: '1200 Rockford Hills Estate', owner: 'Morrison Industries', assessedValue: '$12,500,000', taxDue: '$312,500', taxPaid: '$312,500', status: 'Paid', dueDate: '2024-03-01', notes: 'Paid in full.' },
     { id: 3, taxId: 'TAX-2024-0003', propertyId: 6, address: '78 Little Seoul Plaza', owner: 'Yuki Tanaka', assessedValue: '$920,000', taxDue: '$23,000', taxPaid: '$23,000', status: 'Paid', dueDate: '2024-03-01', notes: 'Commercial property tax paid.' },
     { id: 4, taxId: 'TAX-2024-0004', propertyId: 8, address: '320 La Puerta St', owner: 'Santos Auto LLC', assessedValue: '$540,000', taxDue: '$13,500', taxPaid: '$13,500', status: 'Paid', dueDate: '2024-03-01', notes: 'Mixed use commercial/residential.' },
-    { id: 5, taxId: 'TAX-2024-0005', propertyId: 9, address: 'Warehouse 7, Neon City Ports', owner: 'SecuroServ Holdings', assessedValue: '$3,200,000', taxDue: '$80,000', taxPaid: '$80,000', status: 'Paid', dueDate: '2024-03-01', notes: 'Industrial zone. RESTRICTED access.' },
+    { id: 5, taxId: 'TAX-2024-0005', propertyId: 9, address: 'Warehouse 7, Neon City Ports', owner: 'SecuroServ Holdings', assessedValue: '$3,200,000', taxDue: '$80,000', taxPaid: '$80,000', status: 'Paid', dueDate: '2024-03-01', notes: 'Industrial zone. RESTRICTED access.' }
   ],
 
   // ========== CODE VIOLATIONS (for City Council mode) ==========
@@ -253,7 +253,7 @@ window.MDT_DATA = {
     { id: 2, violationNum: 'CV-2024-0012', type: 'Noise', location: '2200 South Side Blvd', reportedDate: '2024-02-15', reportedBy: 'Multiple Residents', status: 'Ongoing', fine: '$1,000', notes: 'Repeated noise complaints. Multiple warnings. Fine issued.' },
     { id: 3, violationNum: 'CV-2024-0034', type: 'Health', location: '78 Little Seoul Plaza', reportedDate: '2024-02-02', reportedBy: 'Routine Inspection', status: 'Resolved', fine: '$0', notes: 'Minor issues corrected during inspection. No fine.' },
     { id: 4, violationNum: 'CV-2024-0056', type: 'Environmental', location: 'Neon City Ports', reportedDate: '2024-03-08', reportedBy: 'Green NC Coalition', status: 'Under Investigation', fine: 'TBD', notes: 'Alleged chemical dumping. EPA investigation ongoing.' },
-    { id: 5, violationNum: 'CV-2024-0078', type: 'Building', location: '1500 South Side Industrial', reportedDate: '2024-01-15', reportedBy: 'City Inspector', status: 'Condemned', fine: 'N/A', notes: 'Structural failure. Building condemned. Demolition scheduled.' },
+    { id: 5, violationNum: 'CV-2024-0078', type: 'Building', location: '1500 South Side Industrial', reportedDate: '2024-01-15', reportedBy: 'City Inspector', status: 'Condemned', fine: 'N/A', notes: 'Structural failure. Building condemned. Demolition scheduled.' }
   ],
 };
 
@@ -261,37 +261,60 @@ window.MDT_DATA = {
  * Search helper - searches array by ID or text fields
  */
 window.mdtSearch = function(dataKey, query) {
-  const base = window.MDT_DATA?.[dataKey] || [];
-  const extra = window.MDT_DATA_RUNTIME?.created?.[dataKey] || [];
-  const updated = window.MDT_DATA_RUNTIME?.updated?.[dataKey] || {};
+  var base = (window.MDT_DATA && window.MDT_DATA[dataKey]) ? window.MDT_DATA[dataKey] : [];
+  var runtime = window.MDT_DATA_RUNTIME || {};
+  var created = (runtime.created && runtime.created[dataKey] && Array.isArray(runtime.created[dataKey])) ? runtime.created[dataKey] : [];
+  var updated = (runtime.updated && runtime.updated[dataKey] && typeof runtime.updated[dataKey] === 'object') ? runtime.updated[dataKey] : {};
 
-  const applyUpdated = (item) => {
-    const patch = updated?.[item?.id];
-    return patch ? { ...item, ...patch } : item;
-  };
-
-  const data = base.map(applyUpdated).concat((Array.isArray(extra) ? extra : []).map(applyUpdated));
-  
-  const q = String(query || '').trim().toLowerCase();
-  if (!q) return data.slice(0, 20); // Return first 20 if no query
-  
-  // Check if query is a number (ID search)
-  const numQuery = parseInt(q, 10);
-  if (!isNaN(numQuery)) {
-    const exact = data.find(item => item.id === numQuery);
-    if (exact) return [exact];
+  function applyUpdated(item){
+    if(!item) return item;
+    var id = item.id;
+    var patch = (id != null && updated && updated[id]) ? updated[id] : null;
+    if(!patch) return item;
+    var merged = {};
+    for(var k in item){ merged[k] = item[k]; }
+    for(var k2 in patch){ merged[k2] = patch[k2]; }
+    return merged;
   }
-  
-  // Text search across all string fields
-  return data.filter(item => {
-    return Object.values(item).some(val => {
-      if (typeof val === 'string') {
-        return val.toLowerCase().includes(q);
+
+  var data = [];
+  for(var i=0;i<base.length;i++) data.push(applyUpdated(base[i]));
+  for(var j=0;j<created.length;j++) data.push(applyUpdated(created[j]));
+
+  var q = String(query || '').trim().toLowerCase();
+  if(!q) return data.slice(0, 20);
+
+  var numQuery = parseInt(q, 10);
+  if(!isNaN(numQuery)){
+    for(var x=0;x<data.length;x++){
+      if(data[x] && data[x].id === numQuery) return [data[x]];
+    }
+  }
+
+  function arrayIncludes(arr, needle){
+    for(var a=0;a<arr.length;a++){
+      if(String(arr[a]).toLowerCase().indexOf(needle) !== -1) return true;
+    }
+    return false;
+  }
+
+  var out = [];
+  for(var r=0;r<data.length;r++){
+    var item = data[r];
+    if(!item) continue;
+
+    var vals = Object.values ? Object.values(item) : (function(o){ var res=[]; for(var kk in o) res.push(o[kk]); return res; })(item);
+    var match = false;
+    for(var v=0; v<vals.length; v++){
+      var val = vals[v];
+      if(typeof val === 'string'){
+        if(val.toLowerCase().indexOf(q) !== -1){ match = true; break; }
+      }else if(Array.isArray(val)){
+        if(arrayIncludes(val, q)){ match = true; break; }
       }
-      if (Array.isArray(val)) {
-        return val.some(v => String(v).toLowerCase().includes(q));
-      }
-      return false;
-    });
-  });
+    }
+
+    if(match) out.push(item);
+  }
+  return out;
 };

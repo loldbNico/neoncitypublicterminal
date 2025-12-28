@@ -388,6 +388,13 @@
       text-transform: uppercase;
       transition: border-color .12s ease, color .12s ease, background .12s ease, box-shadow .12s ease;
     }
+
+    /* Smaller filter buttons (used on Arrests page controls) */
+    .mdtFilterBtn.mdtFilterBtn--sm{
+      padding: 4px 8px;
+      font-size: 11px;
+      letter-spacing: .8px;
+    }
     .mdtFilterBtn.on{
       border-color: var(--mdt-border-strong, rgba(96,143,255,.85));
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.35));
@@ -446,6 +453,75 @@
       border-color: rgba(96,143,255,.72);
     }
 
+    .mdtBtn:disabled{
+      opacity: .45;
+      cursor: not-allowed;
+      filter: grayscale(.25);
+    }
+
+    /* High-contrast yellow button variant (used for HIDE/SHOW toggles). */
+    .mdtBtn.mdtBtnY{
+      background: rgba(var(--ylRGB), .92);
+      border-color: rgba(var(--ylRGB), .72);
+      color: rgba(0,0,0,.88);
+    }
+    .mdtBtn.mdtBtnY:hover{
+      background: rgba(var(--ylRGB), 1);
+      border-color: rgba(var(--ylRGB), .90);
+      box-shadow: 0 0 12px rgba(var(--ylRGB), .18);
+    }
+
+    .mdtRange{
+      -webkit-appearance: none;
+      appearance: none;
+      height: 18px;
+      background: transparent;
+      accent-color: rgba(96,143,255,.85);
+    }
+    .mdtRange::-webkit-slider-runnable-track{
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(96,143,255,.55), rgba(96,143,255,.18));
+      border: 1px solid rgba(96,143,255,.20);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.4);
+    }
+    .mdtRange::-webkit-slider-thumb{
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      margin-top: -5px;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.85), rgba(96,143,255,.85));
+      border: 1px solid rgba(96,143,255,.85);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.65) inset, 0 0 10px rgba(96,143,255,.25);
+    }
+    .mdtRange::-moz-range-track{
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(96,143,255,.55), rgba(96,143,255,.18));
+      border: 1px solid rgba(96,143,255,.20);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.4);
+    }
+    .mdtRange::-moz-range-thumb{
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.85), rgba(96,143,255,.85));
+      border: 1px solid rgba(96,143,255,.85);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.65) inset, 0 0 10px rgba(96,143,255,.25);
+    }
+    .mdtRange:disabled::-webkit-slider-runnable-track,
+    .mdtRange:disabled::-moz-range-track{
+      background: rgba(96,143,255,.10);
+      border-color: rgba(96,143,255,.12);
+    }
+    .mdtRange:disabled::-webkit-slider-thumb,
+    .mdtRange:disabled::-moz-range-thumb{
+      opacity: .45;
+      box-shadow: none;
+    }
+
     .mdtCreateBar{
       display: flex;
       justify-content: flex-end;
@@ -454,6 +530,19 @@
 
     .mdtCreateBtn{
       min-width: 86px;
+    }
+
+    .mdtCreateBtn--primary{
+      background: rgba(96,143,255,.28);
+      border-color: rgba(96,143,255,.78);
+      color: rgba(225,238,255,.98);
+      box-shadow: 0 0 12px rgba(96,143,255,.18);
+      min-width: 160px;
+    }
+
+    .mdtCreateBtn--primary:hover{
+      background: rgba(96,143,255,.38);
+      border-color: rgba(96,143,255,.95);
     }
 
     /* Create forms */
@@ -498,12 +587,20 @@
        gap: 8px;
      }
 
-     .mdtPickerRow{
-       display: grid;
-       grid-template-columns: 1fr auto;
-       gap: 10px;
-       align-items: center;
-     }
+      .mdtPickerRow{
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .mdtPickerRow > [data-picker-input]{
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .mdtPickerRow > button,
+      .mdtPickerRow > .mdtBtn{
+        flex: 0 0 auto;
+      }
+
 
      .mdtPickerResults{
        position: absolute;

@@ -31,7 +31,67 @@
         "screenOff",
       ].forEach(hoistToBody);
     }
+
+    // Safety: ensure overlays cannot get stuck blocking UI after reloads.
+    // We keep the intended in-game behavior (block only during active hacks), but always
+    // recover if an animation/timer was interrupted by a refresh.
+    function enforceOverlaySafety(){
+      const blocker = document.getElementById("inputBlocker");
+      const screenOff = document.getElementById("screenOff");
+
+      // Only allow the global input blocker while hack systems are active.
+      const allowBlock = Boolean(
+        document.body?.classList?.contains?.("securosserv-mode") ||
+        document.body?.classList?.contains?.("restricted-hack-active") ||
+        document.body?.classList?.contains?.("counterhack-resolving") ||
+        document.body?.classList?.contains?.("counterhack_resolving")
+      );
+      if(blocker && !allowBlock){
+        try{ blocker.classList.remove("on"); }catch{}
+      }
+
+      // `body.powering-off` disables pointer-events on the HUD. It should only exist while
+      // the black screen layer itself is active. If not, it is a stuck state.
+      const screenIsOff = Boolean(screenOff && screenOff.classList.contains("on"));
+      if(!screenIsOff){
+        try{ document.body?.classList?.remove?.("powering-off"); }catch{}
+      }
+    }
+
+    function forceUnblockInputs(){
+      // Emergency cleanup: remove any classes that disable input.
+      try{ document.body?.classList?.remove?.("powering-off"); }catch{}
+      try{ document.body?.classList?.remove?.("counterhack-resolving"); }catch{}
+      try{ document.body?.classList?.remove?.("counterhack_resolving"); }catch{}
+
+      try{ document.getElementById("inputBlocker")?.classList?.remove?.("on"); }catch{}
+      try{ document.getElementById("screenOff")?.classList?.remove?.("on", "black", "fadeout"); }catch{}
+    }
+
+    // Debug/escape hatch: Ctrl+Shift+U unlocks UI if something got stuck.
+    try{
+      window.addEventListener("keydown", (e) => {
+        if(!e) return;
+        if(!(e.ctrlKey && e.shiftKey)) return;
+        const code = String(e.code || "");
+        const key = String(e.key || "");
+        if(code !== "KeyU" && key.toUpperCase() !== "U") return;
+        try{ forceUnblockInputs(); }catch{}
+        try{ enforceOverlaySafety(); }catch{}
+        console.warn("[UI] force-unblocked inputs (Ctrl+Shift+U)");
+      }, true);
+    }catch{}
+
     hoistSecuroservOverlays();
+
+    // Clear any persisted blocker/screen overlay from previous interrupted sessions.
+    forceUnblockInputs();
+    enforceOverlaySafety();
+
+    // Re-check after styles are applied.
+    try{ setTimeout(enforceOverlaySafety, 0); }catch{}
+
+    window.forceUnblockInputs = forceUnblockInputs;
     // Load raster layers
     document.getElementById("layerOcean").src = LAYERS.ocean;
     document.getElementById("layerLand").src = LAYERS.land;

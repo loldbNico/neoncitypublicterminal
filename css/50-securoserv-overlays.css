@@ -287,7 +287,9 @@
     .hudpopup{
       position:fixed;
       left: 14px;
-      top: var(--detailsTop, calc(var(--topbar-h) + 10px + 170px));
+      /* Keep this panel below top header + filter UI.
+         `--detailsTop` is recomputed from the left-side UI. */
+      top: max(var(--detailsTop, calc(var(--topbar-h) + 10px + 170px)), calc(var(--topbar-h) + 10px + 6px + 36px + 10px));
       bottom: calc(14px + var(--dockH, 0px) + 14px);
       width: 270px;
       max-height: none;
@@ -794,15 +796,19 @@ body.view-lore .securoserv-midbar{ z-index: 85; }
     .screen-off{
       position: fixed;
       inset: 0;
-      z-index: 12050;
-      pointer-events: none;
+      background: #000;
+      z-index: 120;
       opacity: 0;
-      background: rgba(0,0,0,1);
       transition: opacity .12s linear;
+      pointer-events: none;
     }
-    .screen-off.on{ opacity: 1; }
+    .screen-off.on{
+      opacity: 1;
+      pointer-events: auto;
+    }
     .screen-off.black::before{ display:none; }
     .screen-off.fadeout{ opacity: 0; transition: opacity 2.2s ease; }
+
 
     /* While the screen is powering off, force-hide HUD so nothing can leak */
     body.powering-off .topnav,

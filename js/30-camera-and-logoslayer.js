@@ -43,8 +43,25 @@
         document.documentElement.style.setProperty("--detailsTop", (b + 14) + "px");
       }
     }
+
+    // This offset is used to place the Area Details panel below the left-side UI.
+    // Recompute not just on window resize, but also when UI elements reflow
+    // (font load, in-game mode changes, etc.).
     window.addEventListener("resize", () => requestAnimationFrame(updateDockMetrics));
+    window.addEventListener("load", () => requestAnimationFrame(updateDockMetrics));
     requestAnimationFrame(updateDockMetrics);
+
+    try{
+      const toggles = document.getElementById("layerToggles");
+      if(toggles && typeof ResizeObserver !== 'undefined'){
+        new ResizeObserver(() => requestAnimationFrame(updateDockMetrics)).observe(toggles);
+      }
+      const topnav = document.querySelector('.topnav');
+      if(topnav && typeof ResizeObserver !== 'undefined'){
+        new ResizeObserver(() => requestAnimationFrame(updateDockMetrics)).observe(topnav);
+      }
+    }catch{}
+
 
     // perf mode removed; transforms now apply to lightweight raster stack
 

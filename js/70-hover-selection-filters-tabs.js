@@ -2,7 +2,9 @@
       if(globalHoverBound) return;
       globalHoverBound = true;
 
-      mapwrap.addEventListener('pointermove', (e) => {
+      const wrap = document.querySelector('.mapwrap');
+      if(!wrap) return;
+      wrap.addEventListener('pointermove', (e) => {
         if(document.body?.classList?.contains?.('counterhack-resolving')) return;
         if(!svgEl) return;
         const r = regionFromClientPoint(e.clientX, e.clientY);
@@ -34,7 +36,7 @@
         moveCursorLogo(e);
       }, { passive:true });
 
-      mapwrap.addEventListener('pointerleave', () => {
+      wrap.addEventListener('pointerleave', () => {
         if(hoveredEl){
           hoveredEl.classList.remove('hot');
           clearHotStyle(hoveredEl);
@@ -56,6 +58,17 @@
       }
       moveCursorLogo(e);
     }
+
+    // Back-compat / typo guard: some assets/code may reference these globals.
+    // Use function declarations (not just window props) so a bare identifier like
+    // `onregionmvoe` won't throw ReferenceError during loadSvg() wiring.
+    function onregionmove(e){ return onRegionMove(e); }
+    function onregionmvoe(e){ return onRegionMove(e); }
+    try{
+      window.onRegionMove = onRegionMove;
+      window.onregionmove = onregionmove;
+      window.onregionmvoe = onregionmvoe;
+    }catch{}
 
     function onRegionEnter(e){
       const r = e.target.closest('.region');
@@ -817,6 +830,11 @@
         // Ensure we never carry the input blocker into non-map views.
         if(next !== 'map'){
           try{ setSecuroservMouseBlock(false); }catch{}
+          try{ document.body?.classList?.remove?.('view-map'); }catch{}
+          try{ window.forceUnblockInputs && window.forceUnblockInputs(); }catch{}
+        }else{
+          try{ document.body?.classList?.add?.('view-map'); }catch{}
+          try{ window.forceUnblockInputs && window.forceUnblockInputs(); }catch{}
         }
 
         currentView = next;
@@ -846,8 +864,10 @@
         btn.addEventListener('click', () => setView(btn.getAttribute('data-view') || 'map'));
       }
 
-      // Default view
-      setView('map');
+        // Default view
+        setView('map');
+        try{ document.body?.classList?.add?.('view-map'); }catch{}
+
     })();
 
     // =========================
@@ -1054,11 +1074,22 @@
          saveMdtRuntime(mdtRuntime);
        }
 
-       function getRuntimeNotes(dataKey, id){
-         const key = `${dataKey}:${id}`;
-         const val = mdtRuntime.notes?.[key];
-         return (val == null) ? null : String(val);
-       }
+        function getRuntimeNotes(dataKey, id){
+          const key = `${dataKey}:${id}`;
+          const val = mdtRuntime.notes?.[key];
+          return (val == null) ? null : String(val);
+        }
+
+        function setRuntimeUiPref(prefKey, value){
+          if(!mdtRuntime.uiPrefs) mdtRuntime.uiPrefs = {};
+          mdtRuntime.uiPrefs[prefKey] = value;
+          saveMdtRuntime(mdtRuntime);
+        }
+
+        function getRuntimeUiPref(prefKey, fallback){
+          const val = mdtRuntime.uiPrefs?.[prefKey];
+          return (val == null) ? fallback : val;
+        }
 
         function addCreatedRecord(dataKey, record){
           if(!mdtRuntime.created) mdtRuntime.created = {};
@@ -1097,6 +1128,24 @@
           const key = historyKeyFor(dataKey, id);
           const arr = mdtRuntime.history?.[key];
           return Array.isArray(arr) ? arr : [];
+        }
+
+        function creatorLabelFromHistory(dataKey, id){
+          const entries = getHistoryEntries(dataKey, id);
+          if(!entries.length) return '';
+
+          const created = entries.find(e => {
+            const changes = Array.isArray(e?.changes) ? e.changes : [];
+            return changes.some(c => String(c || '').toLowerCase().includes('created'));
+          }) || null;
+
+          if(!created) return '';
+          const name = String(created.actorName || '').trim();
+          const rank = String(created.actorRank || '').trim();
+          const stateId = created.actorStateId != null ? String(created.actorStateId).trim() : '';
+          const label = [rank, name].filter(Boolean).join(' ').trim();
+          if(!label) return '';
+          return `${label}${stateId ? ` (${stateId})` : ''}`;
         }
 
         const state = {
@@ -1317,7 +1366,7 @@
               const properties = getMdtData('properties')?.length || 0;
               const organizations = getMdtData('organizations')?.length || 0;
               const arrests = getMdtData('arrests')?.length || 0;
-              const activeWarrants = getMdtData('warrants').filter(w => w.status === 'Active').length;
+              const activeWarrants = countActiveWarrantArrestRecords();
               const medicalProfiles = getMdtData('medicalProfiles')?.length || 0;
               const ncpdReports = getMdtData('ncpdReports')?.length || 0;
               const nccReports = getMdtData('nccReports')?.length || 0;
@@ -1376,37 +1425,63 @@
 
       
        function renderSearchPage(dataKey, title, fields, getPrimary, getSecondary, opts = {}){
-          const allowCreate = Boolean(opts.allowCreate);
-          const initial = window.mdtSearch ? window.mdtSearch(dataKey, '') : getMdtData(dataKey).slice(0, 20);
-          const createHtml = allowCreate ? `
-            <div class="mdtCreateBar">
-              <button type="button" class="mdtBtn mdtCreateBtn" data-create-key="${escapeHtml(dataKey)}">NEW</button>
-            </div>
-          ` : '';
-         const showFilters = dataKey === 'penalCode';
-         const filterBtns = showFilters ? `
-           <div class="mdtFilters" role="group" aria-label="Penal code filters">
-             <button type="button" class="mdtFilterBtn on" data-filter="all">All</button>
-             <button type="button" class="mdtFilterBtn" data-filter="felony">Felonies</button>
-             <button type="button" class="mdtFilterBtn" data-filter="misdemeanor">Misdemeanors</button>
-             <button type="button" class="mdtFilterBtn" data-filter="infraction">Infractions</button>
-           </div>` : '';
-         const searchPlaceholder = dataKey === 'penalCode' ? 'Search by code, title, or description...' : 'Search by ID, name, or keyword...';
-         return `
-            <div class="mdtPanel mdtSearch" data-key="${escapeHtml(dataKey)}">
-              <div class="mdtH">${escapeHtml(title)}</div>
-              ${filterBtns}
-              ${createHtml}
-              <div class="mdtSearchBar">
-               <input type="text" class="mdtInput" id="mdtSearchInput" placeholder="${escapeHtml(searchPlaceholder)}" autocomplete="off" />
-               <button type="button" class="mdtBtn" id="mdtSearchBtn">SEARCH</button>
-             </div>
-             <div class="mdtResults" id="mdtResults">
-               ${renderResults(initial, getPrimary, getSecondary, dataKey, 'all')}
-             </div>
-           </div>
-         `;
-       }
+           const allowCreate = Boolean(opts.allowCreate);
+           const initial = window.mdtSearch ? window.mdtSearch(dataKey, '') : getMdtData(dataKey).slice(0, 20);
+
+           const showFilters = dataKey === 'penalCode';
+           const showArrestControls = dataKey === 'arrests';
+
+           const createLabel = (dataKey === 'arrests') ? '+ NEW RECORD' : 'NEW';
+           const createClass = (dataKey === 'arrests') ? 'mdtBtn mdtCreateBtn mdtCreateBtn--primary' : 'mdtBtn mdtCreateBtn';
+
+           const createHtml = allowCreate ? `
+              <button type="button" class="${createClass}" data-create-key="${escapeHtml(dataKey)}" style="height:32px; padding:0 10px;">${escapeHtml(createLabel)}</button>
+            ` : '';
+
+
+           const filterBtns = showFilters ? `
+             <div class="mdtFilters" role="group" aria-label="Penal code filters">
+               <button type="button" class="mdtFilterBtn on" data-filter="all">All</button>
+               <button type="button" class="mdtFilterBtn" data-filter="felony">Felonies</button>
+               <button type="button" class="mdtFilterBtn" data-filter="misdemeanor">Misdemeanors</button>
+               <button type="button" class="mdtFilterBtn" data-filter="infraction">Infractions</button>
+             </div>` : '';
+
+            const arrestControls = showArrestControls ? `
+              <div class="mdtSearchControls" data-arrests-controls>
+                <div class="mdtFilters" role="group" aria-label="Arrests display">
+                  <button type="button" class="mdtFilterBtn mdtFilterBtn--sm on" data-arrest-sort="date">Newest</button>
+                  <button type="button" class="mdtFilterBtn mdtFilterBtn--sm" data-arrest-sort="updated">Newly Updated</button>
+                </div>
+ 
+                <div class="mdtFilters" role="group" aria-label="Arrest type filters">
+                  <button type="button" class="mdtFilterBtn mdtFilterBtn--sm on" data-arrest-type="Arrest" aria-pressed="true">✓ Arrest</button>
+                  <button type="button" class="mdtFilterBtn mdtFilterBtn--sm on" data-arrest-type="Warrant" aria-pressed="true">✓ Warrant</button>
+                  <button type="button" class="mdtFilterBtn mdtFilterBtn--sm on" data-arrest-type="BOLO" aria-pressed="true">✓ BOLO</button>
+                </div>
+              </div>
+            ` : '';
+
+
+           const searchPlaceholder = dataKey === 'penalCode' ? 'Search by code, title, or description...' : 'Search by ID, name, or keyword...';
+           return `
+              <div class="mdtPanel mdtSearch" data-key="${escapeHtml(dataKey)}">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                  <div class="mdtH" style="margin:0; flex:1 1 auto;">${escapeHtml(title)}</div>
+                  ${createHtml}
+                </div>
+                ${filterBtns}
+                ${arrestControls}
+                <div class="mdtSearchBar">
+                  <input type="text" class="mdtInput" id="mdtSearchInput" placeholder="${escapeHtml(searchPlaceholder)}" autocomplete="off" />
+                </div>
+                <div class="mdtResults" id="mdtResults">
+                  ${renderResults(initial, getPrimary, getSecondary, dataKey, 'all')}
+                </div>
+              </div>
+            `;
+
+        }
        
         function renderResults(items, getPrimary, getSecondary, dataKey, filter = 'all'){
           if(!items || items.length === 0){
@@ -1420,25 +1495,35 @@
             return list.filter(item => (item.category || '').toLowerCase().includes(f));
           };
 
-          const newestFirstKeys = new Set(['ncpdReports', 'medicalReports', 'nccReports', 'arrests']);
-          const sortNewestFirst = (list) => {
-            if(!newestFirstKeys.has(dataKey)) return list;
+           const newestFirstKeys = new Set(['ncpdReports', 'medicalReports', 'nccReports', 'arrests']);
 
-            const getTs = (item) => {
-              const date = String(item?.date || '').trim();
-              const time = String(item?.time || '').trim();
-              if(date){
-                const iso = time ? `${date}T${time}` : `${date}T00:00`;
-                const ms = Date.parse(iso);
-                if(Number.isFinite(ms)) return ms;
-              }
+           // Arrest list uses a toggle (newest vs updated) in bindSearchHandlers().
+           // Default is newest-by-date.
+           const sortNewestFirst = (list) => {
+             if(!newestFirstKeys.has(dataKey)) return list;
 
-              const updatedMs = Date.parse(String(item?.updatedAt || ''));
-              if(Number.isFinite(updatedMs)) return updatedMs;
+             const useUpdated = (dataKey === 'arrests') && (String(window.MDT_ARRESTS_SORT_MODE || 'date') === 'updated');
 
-              const idNum = Number(item?.id);
-              return Number.isFinite(idNum) ? idNum : 0;
-            };
+             const getTs = (item) => {
+               if(useUpdated){
+                 const updatedMs = Date.parse(String(item?.updatedAt || ''));
+                 if(Number.isFinite(updatedMs)) return updatedMs;
+               }
+
+               const date = String(item?.date || '').trim();
+               const time = String(item?.time || '').trim();
+               if(date){
+                 const iso = time ? `${date}T${time}` : `${date}T00:00`;
+                 const ms = Date.parse(iso);
+                 if(Number.isFinite(ms)) return ms;
+               }
+ 
+               const updatedMs = Date.parse(String(item?.updatedAt || ''));
+               if(Number.isFinite(updatedMs)) return updatedMs;
+ 
+               const idNum = Number(item?.id);
+               return Number.isFinite(idNum) ? idNum : 0;
+             };
 
             return list.slice().sort((a, b) => {
               const ta = getTs(a);
@@ -1460,15 +1545,45 @@
            if(dataKey === 'medicalProfiles'){
              return `<div class="mdtCardGrid mdtMedicalGrid">${filtered.map(renderMedicalProfileCard).join('')}</div>`;
            }
-           if(dataKey === 'penalCode'){
-              return `<div class="mdtPenal">${filtered.map(renderPenalRow).join('')}</div>`;
-            }
+             if(dataKey === 'penalCode'){
+               return `<div class="mdtPenal">${filtered.map(renderPenalRow).join('')}</div>`;
+             }
 
-            if(dataKey === 'weapons'){
-              return `<div class="mdtCardGrid mdtWeaponGrid">${filtered.map(renderWeaponCard).join('')}</div>`;
-            }
+             if(dataKey === 'weapons'){
+               return `<div class="mdtCardGrid mdtWeaponGrid">${filtered.map(renderWeaponCard).join('')}</div>`;
+             }
 
-            return filtered.map(item => {
+             if(dataKey === 'arrests'){
+               const badgeClassForType = (t) => {
+                 const tt = String(t || '').toLowerCase();
+                 if(tt.includes('warrant')) return 'mdtBadgeAlert';
+                 if(tt.includes('bolo')) return 'mdtBadgeWarn';
+                 return 'mdtBadgeInfo';
+               };
+
+               return filtered.map(item => {
+                 const linkInfo = linkTargetFor(dataKey, item);
+                 const primary = escapeHtml(getPrimary(item));
+                 const secondary = escapeHtml(getSecondary(item));
+                 const type = String(item?.type || 'Arrest').trim() || 'Arrest';
+                 const badgeClass = badgeClassForType(type);
+                 const linkAttrs = (linkInfo && linkInfo.id) ? `data-link-target="${linkInfo.target}" data-link-id="${linkInfo.id}" class="mdtLinkish"` : '';
+                 return `
+                   <div class="mdtResultItem" data-id="${item.id}" data-key="${escapeHtml(dataKey)}">
+                     <div style="display:flex; gap:10px; align-items:center;">
+                       <div class="mdtResultPrimary" ${linkAttrs} style="flex:1;">${primary}</div>
+                       <span class="mdtBadge ${badgeClass}" style="white-space:nowrap;">${escapeHtml(type)}</span>
+                     </div>
+                     <div class="mdtResultSecondary">${secondary}</div>
+                     <div class="mdtResultActions">
+                       <button type="button" class="mdtResultView" data-id="${item.id}" data-key="${escapeHtml(dataKey)}">VIEW</button>
+                     </div>
+                   </div>
+                 `;
+               }).join('');
+             }
+
+             return filtered.map(item => {
               const linkInfo = linkTargetFor(dataKey, item);
               const primary = escapeHtml(getPrimary(item));
               const secondary = escapeHtml(getSecondary(item));
@@ -1487,10 +1602,11 @@
 
         function renderCitizenCard(c){
           const fullName = `${c.firstName} ${c.lastName}`;
-          const hasWarrants = Boolean(c.warrants && c.warrants.length);
+          const hasWarrants = getActiveWarrantEntriesForCitizen(c).length > 0;
+          const hasBolos = getActiveBoloEntriesForCitizen(c).length > 0;
           const hasPriors = Boolean(c.priors && c.priors.length);
           const statusClass = (c.licenseStatus === 'Suspended') ? 'mdtBadgeWarn' : (c.licenseStatus === 'Provisional') ? 'mdtBadgeInfo' : 'mdtBadgeOk';
-
+ 
           return `
             <div class="mdtCard mdtCitizenCard" data-id="${c.id}">
               <div class="mdtCardHead">
@@ -1498,6 +1614,7 @@
                 <div class="mdtCardBadges">
                   <span class="mdtBadge ${statusClass}">${escapeHtml(c.licenseStatus || '—')}</span>
                   ${hasWarrants ? '<span class="mdtBadge mdtBadgeAlert">WARRANT</span>' : ''}
+                  ${hasBolos ? '<span class="mdtBadge mdtBadgeWarn">BOLO</span>' : ''}
                   ${hasPriors ? '<span class="mdtBadge mdtBadgeWarn">PRIORS</span>' : ''}
                 </div>
               </div>
@@ -1513,6 +1630,7 @@
             </div>
           `;
         }
+
 
           function renderVehicleCard(v){
             const hasFlags = Boolean(v.flags && v.flags.length);
@@ -1650,40 +1768,88 @@
         }
         
         function bindSearchHandlers(pageKey){
-         const input = document.getElementById('mdtSearchInput');
-         const btn = document.getElementById('mdtSearchBtn');
-         const results = document.getElementById('mdtResults');
-         const panel = viewHost.querySelector('.mdtSearch');
-         const dataKey = panel?.dataset?.key;
-         const filters = Array.from(viewHost.querySelectorAll('.mdtFilterBtn'));
-         
-         if(!input || !btn || !results || !dataKey) return;
-         let activeFilter = 'all';
-         
-         const renderAndBind = () => {
-           const q = input.value.trim();
-            const items = window.mdtSearch ? window.mdtSearch(dataKey, q) : getMdtData(dataKey);
-           const getPrimary = getterForKey(dataKey, 'primary');
-           const getSecondary = getterForKey(dataKey, 'secondary');
-           results.innerHTML = renderResults(items, getPrimary, getSecondary, dataKey, activeFilter);
+          const input = document.getElementById('mdtSearchInput');
+          const results = document.getElementById('mdtResults');
+          const panel = viewHost.querySelector('.mdtSearch');
+          const dataKey = panel?.dataset?.key;
+          const filters = Array.from(viewHost.querySelectorAll('.mdtFilterBtn[data-filter]'));
+
+          if(!input || !results || !dataKey) return;
+          let activeFilter = 'all';
+
+          // Arrests page: local UI state.
+          let arrestSort = 'date'; // 'date' | 'updated'
+          const arrestTypes = new Set(['Arrest', 'Warrant', 'BOLO']);
+
+          // Used by renderResults() to choose its sort key.
+          if(dataKey === 'arrests') window.MDT_ARRESTS_SORT_MODE = arrestSort;
+
+          const applyArrestControls = (items) => {
+            if(dataKey !== 'arrests') return items;
+
+            return (Array.isArray(items) ? items : []).filter(it => {
+              const t = String(it?.type || 'Arrest').trim() || 'Arrest';
+              return arrestTypes.has(t);
+            });
+          };
+
+          const renderAndBind = () => {
+            const q = input.value.trim();
+            const itemsRaw = window.mdtSearch ? window.mdtSearch(dataKey, q) : getMdtData(dataKey);
+            const items = applyArrestControls(itemsRaw);
+            const getPrimary = getterForKey(dataKey, 'primary');
+            const getSecondary = getterForKey(dataKey, 'secondary');
+            results.innerHTML = renderResults(items, getPrimary, getSecondary, dataKey, activeFilter);
             bindAllInlineHandlers();
-         };
-         
-         const doSearch = () => renderAndBind();
-         
-         btn.addEventListener('click', doSearch);
-         input.addEventListener('keydown', e => { if(e.key === 'Enter') doSearch(); });
-         
-         filters.forEach(f => {
-           f.addEventListener('click', () => {
-             filters.forEach(x => x.classList.remove('on'));
-             f.classList.add('on');
-             activeFilter = f.dataset.filter || 'all';
-             renderAndBind();
-           });
-         });
-         
-         renderAndBind();
+          };
+
+          // Live search: update results as you type.
+          input.addEventListener('input', () => renderAndBind());
+          input.addEventListener('keydown', e => { if(e.key === 'Enter') e.preventDefault(); });
+
+          // Penal code category filters (existing behavior).
+          filters.forEach(f => {
+            f.addEventListener('click', () => {
+              filters.forEach(x => x.classList.remove('on'));
+              f.classList.add('on');
+              activeFilter = f.dataset.filter || 'all';
+              renderAndBind();
+            });
+          });
+
+          // Arrests: sort toggle and type checkmarks.
+          if(dataKey === 'arrests'){
+            const sortBtns = Array.from(viewHost.querySelectorAll('[data-arrest-sort]'));
+            const typeBtns = Array.from(viewHost.querySelectorAll('[data-arrest-type]'));
+
+            sortBtns.forEach(btn => {
+              btn.onclick = () => {
+                sortBtns.forEach(x => x.classList.remove('on'));
+                btn.classList.add('on');
+                arrestSort = btn.dataset.arrestSort || 'date';
+                window.MDT_ARRESTS_SORT_MODE = arrestSort;
+                renderAndBind();
+              };
+            });
+
+            typeBtns.forEach(btn => {
+              btn.onclick = () => {
+                const t = String(btn.dataset.arrestType || '').trim();
+                if(!t) return;
+
+                if(arrestTypes.has(t)) arrestTypes.delete(t);
+                else arrestTypes.add(t);
+
+                const isOn = arrestTypes.has(t);
+                btn.classList.toggle('on', isOn);
+                btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+                btn.textContent = `${isOn ? '✓' : '✕'} ${t}`;
+                renderAndBind();
+              };
+            });
+          }
+
+          renderAndBind();
        }
        
         function bindViewButtons(){
@@ -1703,19 +1869,22 @@
          }
 
  
-         function bindLinkButtons(){
-           viewHost.querySelectorAll('[data-link-target]').forEach(el => {
-             el.onclick = (e) => {
-               e.preventDefault();
-               const target = el.dataset.linkTarget;
-               const id = parseInt(el.dataset.linkId, 10);
-               if(!target || Number.isNaN(id)) return;
+         function bindLinkButtons(root = viewHost){
+            const host = root || viewHost;
+            if(!host || !host.querySelectorAll) return;
 
-               const openInNewTab = Boolean(e.ctrlKey || e.metaKey || e.shiftKey || el.dataset.linkNewtab === '1');
-               navigateToDetail(target, id, { openInNewTab });
-             };
-           });
-         }
+            host.querySelectorAll('[data-link-target]').forEach(el => {
+              el.onclick = (e) => {
+                e.preventDefault();
+                const target = el.dataset.linkTarget;
+                const id = parseInt(el.dataset.linkId, 10);
+                if(!target || Number.isNaN(id)) return;
+
+                const openInNewTab = Boolean(e.ctrlKey || e.metaKey || e.shiftKey || el.dataset.linkNewtab === '1');
+                navigateToDetail(target, id, { openInNewTab });
+              };
+            });
+          }
 
 
       
@@ -1891,13 +2060,215 @@
               return null;
           }
         }
- 
-       function findCitizenIdByName(name){
-         if(!name) return null;
-         const lower = String(name).toLowerCase();
-         const hit = (window.MDT_DATA?.citizens || []).find(c => `${c.firstName} ${c.lastName}`.toLowerCase() === lower);
-         return hit ? hit.id : null;
+
+       function isUnknownPlaceholderCriminalName(name){
+         const s = String(name || '').trim();
+         if(!s) return false;
+         const lc = s.toLowerCase();
+         return lc === 'unknown' || lc.startsWith('unknown #');
        }
+
+       function isWarrantArrest(a){
+          return String(a?.type || '').trim().toLowerCase() === 'warrant';
+        }
+
+        function isBoloArrest(a){
+          return String(a?.type || '').trim().toLowerCase() === 'bolo';
+        }
+
+        function boloClearedByServedArrest(boloArrest, personName, allArrestsForPerson){
+           // BOLO stays active until the suspect is either removed from the BOLO
+           // (i.e. no longer listed) or they get charged and served.
+           // We model "charged and served" as: any later non-BOLO arrest record
+           // where the person is marked served (SIP/PRISON).
+           if(!boloArrest) return false;
+           const boloTs = arrestTimestamp(boloArrest);
+           const name = String(personName || '').trim();
+           if(!name) return false;
+ 
+           for(const a of (Array.isArray(allArrestsForPerson) ? allArrestsForPerson : [])){
+             if(!a || isBoloArrest(a)) continue;
+             if(arrestTimestamp(a) <= boloTs) continue;
+             if(isPersonServedInArrest(a, name)) return true;
+           }
+           return false;
+         }
+ 
+        function isPersonServedInArrest(a, personName){
+
+         if(!a) return false;
+         const name = String(personName || '').trim();
+         if(!name) return false;
+
+         const by = a.sentencingByCriminal;
+         if(!by || typeof by !== 'object' || Array.isArray(by)) return false;
+
+         const target = name.toLowerCase();
+         for(const k of Object.keys(by)){
+           if(String(k || '').trim().toLowerCase() !== target) continue;
+           const disp = String(by[k]?.disposition || '').trim().toLowerCase();
+           return disp === 'prison' || disp === 'sip';
+         }
+         return false;
+       }
+
+         function getActiveWarrantEntriesForCitizen(c){
+          if(!c) return [];
+          const fullName = `${c.firstName} ${c.lastName}`.trim();
+ 
+          const hits = getArrestsForCitizen(c)
+            .filter(a => isWarrantArrest(a) && !isPersonServedInArrest(a, fullName));
+ 
+          return hits.map(a => {
+            const charges = chargeCountsFromArrestForPerson(a, fullName, { includeUnservedWarrantCharges: true });
+            return { arrest: a, charges };
+          });
+        }
+
+        function getActiveBoloEntriesForCitizen(c){
+           if(!c) return [];
+           const fullName = `${c.firstName} ${c.lastName}`.trim();
+           if(!fullName) return [];
+ 
+           // Use the same citizen->arrests matcher as warrants.
+           // `getArrestsForCitizen` returns newest->oldest.
+           const all = getArrestsForCitizen(c);
+ 
+           // Active rule:
+           // - BOLO applies if the citizen is listed in that BOLO record
+           // - It stays active until a later non-BOLO arrest marks them served (SIP/PRISON)
+           const out = [];
+           for(const a of all){
+             if(!isBoloArrest(a)) continue;
+             if(boloClearedByServedArrest(a, fullName, all)) continue;
+             out.push({ arrest: a });
+           }
+ 
+           return out;
+         }
+
+
+       function countActiveWarrantArrestRecords(){
+         const arrests = getMdtData('arrests') || [];
+         const warrantArrests = arrests.filter(isWarrantArrest);
+         return warrantArrests.filter(a => {
+           const criminals = Array.isArray(a?.criminals)
+             ? a.criminals
+             : (a?.citizenName ? [a.citizenName] : []);
+
+           // If no target listed, still treat as active.
+           if(!criminals.length) return true;
+
+           // Active if ANY listed criminal isn't served yet.
+           for(const n of criminals){
+             if(!isPersonServedInArrest(a, n)) return true;
+           }
+           return false;
+         }).length;
+       }
+
+        // Legacy warrants dataset lookup (kept for backwards compatibility).
+        // The UI now primarily derives warrants from warrant-type arrest records.
+        function findWarrantIdByNum(warrantNum){
+          const n = String(warrantNum || '').trim();
+          if(!n) return null;
+          const hit = (window.MDT_DATA?.warrants || []).find(w => String(w.warrantNum || '').trim().toLowerCase() === n.toLowerCase());
+          return hit ? hit.id : null;
+        }
+
+
+       function arrestTimestamp(a){
+         const dateStr = String(a?.date || '').trim();
+         const timeStr = String(a?.time || '').trim() || '00:00';
+         const d = new Date(dateStr ? `${dateStr}T${timeStr}` : '');
+         const t = d.getTime();
+         if(Number.isFinite(t)) return t;
+         const u = new Date(String(a?.updatedAt || '')).getTime();
+         return Number.isFinite(u) ? u : 0;
+       }
+
+       function getArrestsForCitizen(c){
+         if(!c) return [];
+         const fullName = `${c.firstName} ${c.lastName}`.trim();
+         const fullLc = fullName.toLowerCase();
+         const arrests = getMdtData('arrests') || [];
+         const hits = arrests.filter(a => {
+           if(a?.citizenId === c.id) return true;
+           if(String(a?.citizenName || '').trim().toLowerCase() === fullLc) return true;
+           if(Array.isArray(a?.criminals) && a.criminals.some(n => String(n || '').trim().toLowerCase() === fullLc)) return true;
+           return false;
+         });
+         hits.sort((a, b) => arrestTimestamp(b) - arrestTimestamp(a));
+         return hits;
+       }
+
+        function chargeCountsFromArrestForPerson(a, personName, opts = {}){
+         const includeUnservedWarrantCharges = Boolean(opts && opts.includeUnservedWarrantCharges);
+
+         // Warrant charges should not count toward criminal history until served.
+         if(!includeUnservedWarrantCharges && isWarrantArrest(a) && !isPersonServedInArrest(a, personName)) return [];
+
+         const out = new Map();
+
+         const add = (label, count = 1) => {
+           const l = String(label || '').trim();
+           if(!l) return;
+           const c = Math.max(1, Math.round(Number(count || 1)));
+           const key = l.toLowerCase();
+           const prev = out.get(key);
+           out.set(key, { label: prev?.label || l, count: (prev?.count || 0) + c });
+         };
+
+         const findKeyCI = (obj, key) => {
+           if(!obj || typeof obj !== 'object') return null;
+           const target = String(key || '').trim().toLowerCase();
+           if(!target) return null;
+           for(const k of Object.keys(obj)){
+             if(String(k || '').trim().toLowerCase() === target) return k;
+           }
+           return null;
+         };
+
+         const name = String(personName || '').trim();
+
+         // Newer arrest records might store per-criminal charges.
+         if(a && a.chargesByCriminal && typeof a.chargesByCriminal === 'object' && !Array.isArray(a.chargesByCriminal)){
+           const realKey = findKeyCI(a.chargesByCriminal, name);
+           const items = realKey ? normalizeChargesV2(a.chargesByCriminal[realKey]) : [];
+           for(const it of items){
+             add(chargeLabelFromToken(it.token), it.count);
+           }
+         }
+
+         // Otherwise use global/v2 or legacy.
+         if(a && Array.isArray(a.chargesV2)){
+           for(const it of normalizeChargesV2(a.chargesV2)) add(chargeLabelFromToken(it.token), it.count);
+         }else if(a && Array.isArray(a.charges)){
+           for(const ch of a.charges) add(ch, 1);
+         }
+
+         return Array.from(out.values()).sort((x, y) => (y.count - x.count) || x.label.localeCompare(y.label));
+       }
+
+        function aggregateChargeCountsForPerson(arrests, personName, opts = {}){
+         const out = new Map();
+         for(const a of (Array.isArray(arrests) ? arrests : [])){
+           for(const row of chargeCountsFromArrestForPerson(a, personName, opts)){
+             const key = row.label.toLowerCase();
+             const prev = out.get(key);
+             out.set(key, { label: prev?.label || row.label, count: (prev?.count || 0) + row.count });
+           }
+         }
+         return Array.from(out.values()).sort((x, y) => (y.count - x.count) || x.label.localeCompare(y.label));
+       }
+
+       function findCitizenIdByName(name){
+          if(!name) return null;
+          const lower = String(name).toLowerCase();
+          const hit = (window.MDT_DATA?.citizens || []).find(c => `${c.firstName} ${c.lastName}`.toLowerCase() === lower);
+          return hit ? hit.id : null;
+        }
+
 
        function findOrgIdByName(name){
          if(!name) return null;
@@ -1923,21 +2294,22 @@
           if(!item) return `<div class="mdtPanel"><div class="mdtH">NOT FOUND</div><div class="mdtP">Record ID ${id} not found.</div></div>`;
 
           // Route to specific detail renderer
-           switch(dataKey){
-             case 'citizens': return renderCitizenDetail(item);
-             case 'organizations': return renderOrganizationDetail(item);
-             case 'properties': return renderPropertyDetail(item);
-             case 'vehicles': return renderVehicleDetail(item);
-             case 'weapons': return renderWeaponDetail(item);
-             case 'medicalProfiles': return renderMedicalProfileDetail(item);
-             case 'ncpdReports': return renderNcpdReportDetail(item);
-             case 'medicalReports': return renderMedicalReportDetail(item);
-             case 'nccReports': return renderNccReportDetail(item);
-             case 'arrests': return renderArrestDetail(item);
-             case 'penalCode': return renderPenalCodeDetail(item);
-             case 'stateLaws': return renderStateLawDetail(item);
-             default: return renderGenericDetail(item, dataKey);
-           }
+            switch(dataKey){
+              case 'citizens': return renderCitizenDetail(item);
+              case 'organizations': return renderOrganizationDetail(item);
+              case 'properties': return renderPropertyDetail(item);
+              case 'vehicles': return renderVehicleDetail(item);
+              case 'weapons': return renderWeaponDetail(item);
+              case 'warrants': return renderWarrantDetail(item);
+              case 'medicalProfiles': return renderMedicalProfileDetail(item);
+              case 'ncpdReports': return renderNcpdReportDetail(item);
+              case 'medicalReports': return renderMedicalReportDetail(item);
+              case 'nccReports': return renderNccReportDetail(item);
+              case 'arrests': return renderArrestDetail(item);
+              case 'penalCode': return renderPenalCodeDetail(item);
+              case 'stateLaws': return renderStateLawDetail(item);
+              default: return renderGenericDetail(item, dataKey);
+            }
         }
 
         function canEditNotesFor(dataKey){
@@ -2098,6 +2470,17 @@
             if(!s) return;
             const arr = getChips();
 
+            const shouldUnique = (opts.unique === true) || (opts.type === 'citizen') || (opts.type === 'officer');
+            if(shouldUnique){
+              const key = s.toLowerCase();
+              const exists = arr.some(x => String(x || '').trim().toLowerCase() === key);
+              if(exists){
+                input.value = '';
+                if(opts.keepResultsOpen) searchItems();
+                return;
+              }
+            }
+
             // Allow consumers to normalize/aggregate values.
             const next = (typeof opts.onBeforeAdd === 'function')
               ? opts.onBeforeAdd(arr, s)
@@ -2237,10 +2620,11 @@
           if(opts.unknownBtnSelector){
             const unknownBtn = wrap.querySelector(opts.unknownBtnSelector);
             unknownBtn && (unknownBtn.onclick = () => {
+              const prefix = String(opts.unknownPrefix || 'Unknown suspect').trim() || 'Unknown suspect';
+              const prefixLc = prefix.toLowerCase();
               const arr = getChips();
-              const n = arr.filter(x => String(x).toLowerCase().startsWith('unknown suspect')).length + 1;
-              addChip(`Unknown suspect #${n}`);
-              setChips(getChips());
+              const n = arr.filter(x => String(x).toLowerCase().startsWith(prefixLc)).length + 1;
+              addChip(`${prefix} #${n}`);
             });
           }
         }
@@ -2256,7 +2640,6 @@
           const title = labels[dataKey] ? `NEW ${labels[dataKey].toUpperCase()}` : `NEW ${String(dataKey).toUpperCase()}`;
 
           if(dataKey === 'arrests'){
-            const officerLabel = currentOfficerLabel();
             return `
               <div class="mdtPanel mdtCreate" data-create="arrests">
                 <div class="mdtH">${escapeHtml(title)}</div>
@@ -2272,18 +2655,18 @@
                     </select>
                   </label>
 
-                  <label class="mdtFormRow">
+                  <label class="mdtFormRow mdtFormRowFull">
                     <span class="k">LOCATION</span>
                     <div class="mdtPickerRow">
                       <input class="mdtInput" data-field="location" placeholder="Where did it happen?"/>
-                      <button type="button" class="mdtBtn" data-use-current-location>USE CURRENT LOCATION</button>
+                      <button type="button" class="mdtBtn" data-use-current-location title="Use current location" style="width:38px; min-width:38px; height:38px; padding:0;">
+                        <span aria-hidden="true">◎</span>
+                      </button>
+                      <button type="button" class="mdtBtn" data-use-marker-location title="Use map GPS marker" style="width:38px; min-width:38px; height:38px; padding:0;">
+                        <span aria-hidden="true">⌖</span>
+                      </button>
                     </div>
                     <input type="hidden" data-field="gps" value="" />
-                  </label>
-
-                  <label class="mdtFormRow">
-                    <span class="k">ARRESTING OFFICER</span>
-                    <input class="mdtInput" value="${escapeHtml(officerLabel)}" readonly />
                   </label>
                 </div>
                 <div class="mdtFormActions">
@@ -2409,6 +2792,17 @@
             });
           });
 
+          // marker helper
+          wrap.querySelectorAll('[data-use-marker-location]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const loc = dummyMarkerLocation();
+              const locInput = wrap.querySelector('[data-field="location"]');
+              const gpsInput = wrap.querySelector('[data-field="gps"]');
+              if(locInput) locInput.value = loc.location;
+              if(gpsInput) gpsInput.value = loc.gps;
+            });
+          });
+
           const submit = wrap.querySelector('.mdtCreateSubmit');
           const cancel = wrap.querySelector('.mdtCreateCancel');
 
@@ -2470,6 +2864,16 @@
               };
 
               addCreatedRecord('arrests', record);
+              try{
+                const actor = window.MDT_CURRENT_USER || {};
+                appendHistoryEntry('arrests', id, {
+                  ts: Date.now(),
+                  actorStateId: actor.stateId || null,
+                  actorName: actor.name || 'Unknown',
+                  actorRank: actor.rank || '',
+                  changes: [`created arrest report ${arrestNum}`],
+                });
+              }catch{}
               navigateToDetail('arrests', id);
               return;
             }
@@ -2553,11 +2957,46 @@
           const type = String(a.type || '').trim();
           const status = String(a.status || 'Ongoing').trim() || 'Ongoing';
 
-          const chargesV2 = Array.isArray(a.chargesV2)
+          const criminals = Array.isArray(a.criminals) ? a.criminals : (a.citizenName ? [a.citizenName] : []);
+          const knownCriminals = criminals.filter(n => !isUnknownPlaceholderCriminalName(n));
+          const primaryCriminalName = String(criminals[0] || a.citizenName || 'Unknown').trim() || 'Unknown';
+          const primaryKnownCriminalName = String(knownCriminals[0] || '').trim();
+
+          const chargesV2Fallback = Array.isArray(a.chargesV2)
             ? normalizeChargesV2(a.chargesV2)
             : chargesV2FromFlat(Array.isArray(a.charges) ? a.charges.map(normalizeChargeToken).filter(Boolean) : []);
 
-          const criminals = Array.isArray(a.criminals) ? a.criminals : (a.citizenName ? [a.citizenName] : []);
+          const chargesByCriminal = (() => {
+            const raw = a && (typeof a.chargesByCriminal === 'object') ? a.chargesByCriminal : null;
+            const out = {};
+
+            if(raw && !Array.isArray(raw)){
+              for(const [k, v] of Object.entries(raw)){
+                const key = String(k || '').trim();
+                if(!key) continue;
+                out[key] = normalizeChargesV2(v);
+              }
+            }
+
+            // Back-compat: if an old record had only a flat/global charges list.
+            if(Object.keys(out).length === 0 && chargesV2Fallback.length){
+              out[primaryCriminalName] = chargesV2Fallback;
+            }
+
+            return out;
+          })();
+
+          // The editor shows charges for the currently selected (default: primary) criminal.
+          const chargesV2 = normalizeChargesV2(chargesByCriminal[primaryCriminalName] || []);
+
+          // Unknown placeholders should never appear in sentencing UI or charge target dropdown.
+          const chargeTargets = (() => {
+            const list = knownCriminals;
+            const keys = Object.keys(chargesByCriminal || {}).filter(k => !isUnknownPlaceholderCriminalName(k));
+            if(list.length) return list;
+            if(keys.length) return keys;
+            return [];
+          })();
           const officers = Array.isArray(a.officers)
             ? a.officers
             : (a.arrestingOfficer ? [a.arrestingOfficer] : [currentOfficerLabel()].filter(Boolean));
@@ -2577,6 +3016,10 @@
                 <div class="mdtDetailHead">
                   <div class="mdtDetailTitle">${escapeHtml(title || (a.arrestNum || 'ARREST'))} ${copyBtn(a.arrestNum || '', 'COPY #')}</div>
                   <div class="mdtDetailSubtitle">${primaryCriminal ? linkSpan(primaryCriminal, 'citizens', citizenId) : 'Unknown'} • ${escapeHtml(shortDate(a.date))} ${escapeHtml(a.time || '')}</div>
+                  ${(() => {
+                    const createdBy = creatorLabelFromHistory('arrests', a.id);
+                    return createdBy ? `<div class="mdtMeta" style="opacity:.85; margin-top:2px;">Created by: ${escapeHtml(createdBy)}</div>` : '';
+                  })()}
                   <div class="mdtDetailBadge mdtBadgeInfo">${escapeHtml(status)}</div>
                 </div>
 
@@ -2594,13 +3037,14 @@
                    <div class="mdtDetailSection">
                      <div class="mdtDetailSectionTitle">CRIMINALS</div>
                      ${(criminals.length ? criminals : ['Unknown']).map(n => {
-                       const cid = findCitizenIdByName(n);
-                       return `<div class="mdtDetailItem">${linkSpan(n, 'citizens', cid)}</div>`;
+                       const label = String(n || '').trim() || 'Unknown';
+                       const cid = findCitizenIdByName(label);
+                       return `<div class="mdtDetailItem">${cid ? linkSpan(label, 'citizens', cid) : escapeHtml(label)}</div>`;
                      }).join('')}
                    </div>
  
                    <div class="mdtDetailSection">
-                     <div class="mdtDetailSectionTitle">ARRESTING OFFICERS</div>
+                     <div class="mdtDetailSectionTitle">OFFICERS INVOLVED</div>
                      ${(officers.length ? officers : ['—']).map(o => `<div class="mdtDetailItem">${escapeHtml(o)}</div>`).join('')}
                    </div>
  
@@ -2611,7 +3055,8 @@
                         if(!items.length) return '<div class="mdtDetailItem mdtItemNone">None</div>';
                         return items.map(it => {
                           const totals = computeChargeTotals([it]);
-                          return `<div class="mdtDetailItem">${escapeHtml(chargeLabelFromToken(it.token))} <span style="opacity:.75;">x${it.count}</span> <span style="opacity:.75;">(${escapeHtml(formatJailMonths(totals.jailMonths))} / ${escapeHtml(formatMoney(totals.fine))})</span></div>`;
+                          const jailText = formatJailMonthsRange({ min: totals.jailMinMonths, max: totals.jailMaxMonths });
+                          return `<div class="mdtDetailItem">${escapeHtml(chargeLabelFromToken(it.token))} <span style="opacity:.75;">x${it.count}</span> <span style="opacity:.75;">(${escapeHtml(jailText)} / ${escapeHtml(formatMoney(totals.fine))})</span></div>`;
                         }).join('');
                       })()}
                    </div>
@@ -2643,27 +3088,65 @@
           return `
             <div class="mdtDetail" data-arrest="${a.id}" data-arrest-live-edit="${a.id}">
               <div class="mdtDetailHead">
-                <div class="mdtDetailTitle">${escapeHtml(title || 'ARREST')} <span style="opacity:.7;">(${escapeHtml(a.arrestNum || `#${a.id}`)})</span> ${copyBtn(a.arrestNum || '', 'COPY #')}</div>
-                <div class="mdtDetailSubtitle">${escapeHtml(shortDate(a.date))} ${escapeHtml(a.time || '')} • Autosave: every 2s</div>
-                <div class="mdtDetailBadge mdtBadgeInfo">${escapeHtml(status)}</div>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <input class="mdtInput" data-field="title" value="${escapeHtml(title)}" placeholder="Title..." style="flex:1; min-width:220px; height:28px; padding:0 8px;" />
+
+                  <button type="button" class="mdtBtn" data-mini-select="type" style="height:28px; padding:0 8px; min-width:70px; font-size:12px;"></button>
+                  <button type="button" class="mdtBtn" data-mini-select="status" style="height:28px; padding:0 8px; min-width:86px; font-size:12px;"></button>
+
+                  <div class="mdtMeta" style="white-space:nowrap; opacity:.85; font-size:12px;">
+                    <span style="opacity:.85;">${escapeHtml(a.arrestNum || `#${a.id}`)}</span>
+                    ${copyBtn(a.arrestNum || '', 'COPY #')}
+                  </div>
+
+                   <div class="mdtMeta" style="white-space:nowrap; opacity:.75; font-size:12px;">${escapeHtml(shortDate(a.date))} ${escapeHtml(a.time || '')} • Auto 2s</div>
+                   ${(() => {
+                     const createdBy = creatorLabelFromHistory('arrests', a.id);
+                     return createdBy ? `<div class="mdtMeta" style="white-space:nowrap; opacity:.72; font-size:12px;">Created by: ${escapeHtml(createdBy)}</div>` : '';
+                   })()}
+
+                   <div style="display:flex; gap:6px; align-items:center;">
+                     <button type="button" class="mdtBtn" data-edit-undo style="height:28px; padding:0 8px; font-size:11px; min-width:56px;">UNDO</button>
+                     <button type="button" class="mdtBtn" data-edit-redo style="height:28px; padding:0 8px; font-size:11px; min-width:56px;">REDO</button>
+                     <button type="button" class="mdtBtn" data-open-history="arrests" data-open-history-id="${a.id}" style="height:28px; padding:0 8px; font-size:11px; min-width:70px;">HISTORY</button>
+                   </div>
+                 </div>
+
+
+                <select class="mdtInput" data-field="type" data-mini-source="type" style="display:none;">
+                  ${['Arrest','Warrant','BOLO'].map(t => `<option value="${escapeHtml(t)}" ${String(type) === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+                </select>
+
+                <select class="mdtInput" data-field="status" data-mini-source="status" style="display:none;">
+                  ${['Ongoing','Submitted','Processed','Closed'].map(s => `<option value="${escapeHtml(s)}" ${String(status) === s ? 'selected' : ''}>${escapeHtml(s)}</option>`).join('')}
+                </select>
               </div>
+
 
               <div class="mdtArrestLayout" style="display:grid; grid-template-columns: 1.2fr 1fr; gap: 14px; margin-top: 12px; align-items:start;">
                 <div class="mdtArrestLeft">
                   <div class="mdtDetailNotes">
-                    <div class="mdtDetailNotesHead" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                      <div class="mdtDetailSectionTitle">REPORT BODY</div>
-                      <div class="mdtRichbar" data-richbar style="display:flex; gap:6px; flex-wrap:wrap;">
-                        <button type="button" class="mdtBtn" data-rich-cmd="bold" title="Bold" style="min-width:30px; height:30px; padding:0;"><b>B</b></button>
-                        <button type="button" class="mdtBtn" data-rich-cmd="italic" title="Italic" style="min-width:30px; height:30px; padding:0;"><i>I</i></button>
-                        <button type="button" class="mdtBtn" data-rich-cmd="underline" title="Underline" style="min-width:30px; height:30px; padding:0;"><u>U</u></button>
-                        <button type="button" class="mdtBtn" data-rich-cmd="insertUnorderedList" title="Bullets" style="min-width:30px; height:30px; padding:0;">•</button>
-                        <button type="button" class="mdtBtn" data-rich-cmd="insertOrderedList" title="Numbered" style="min-width:30px; height:30px; padding:0;">1.</button>
-                        <button type="button" class="mdtBtn" data-rich-cmd="formatBlock" data-rich-value="h2" title="Heading" style="min-width:46px; height:30px; padding:0;">H</button>
-                        <button type="button" class="mdtBtn" data-rich-cmd="formatBlock" data-rich-value="blockquote" title="Quote" style="min-width:46px; height:30px; padding:0;">❝</button>
-                        <button type="button" class="mdtBtn" data-rich-cmd="removeFormat" title="Clear" style="min-width:46px; height:30px; padding:0;">CLR</button>
-                      </div>
-                    </div>
+                      <div class="mdtDetailNotesHead" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                       <div class="mdtDetailSectionTitle">REPORT BODY</div>
+                       <div class="mdtRichbar" data-richbar style="display:flex; gap:6px; flex-wrap:wrap;">
+                         <button type="button" class="mdtBtn" data-rich-cmd="bold" title="Bold" style="min-width:30px; height:30px; padding:0;"><b>B</b></button>
+                         <button type="button" class="mdtBtn" data-rich-cmd="italic" title="Italic" style="min-width:30px; height:30px; padding:0;"><i>I</i></button>
+                         <button type="button" class="mdtBtn" data-rich-cmd="underline" title="Underline" style="min-width:30px; height:30px; padding:0;"><u>U</u></button>
+                         <button type="button" class="mdtBtn" data-rich-cmd="insertUnorderedList" title="Bullets" style="min-width:30px; height:30px; padding:0;">•</button>
+                         <button type="button" class="mdtBtn" data-rich-cmd="insertOrderedList" title="Numbered" style="min-width:30px; height:30px; padding:0;">1.</button>
+
+                         <button type="button" class="mdtBtn" data-rich-action="normal" title="Normal" style="min-width:46px; height:30px; padding:0;">P</button>
+                         <button type="button" class="mdtBtn" data-rich-action="heading" title="Heading" style="min-width:46px; height:30px; padding:0;">H</button>
+                         <button type="button" class="mdtBtn" data-rich-action="quote" title="Quote" style="min-width:46px; height:30px; padding:0;">❝</button>
+
+                         <button type="button" class="mdtBtn" data-rich-cmd="justifyLeft" title="Align left" style="min-width:30px; height:30px; padding:0;">L</button>
+                         <button type="button" class="mdtBtn" data-rich-cmd="justifyCenter" title="Center" style="min-width:30px; height:30px; padding:0;">C</button>
+                         <button type="button" class="mdtBtn" data-rich-cmd="justifyRight" title="Align right" style="min-width:30px; height:30px; padding:0;">R</button>
+                         <button type="button" class="mdtBtn" data-rich-cmd="justifyFull" title="Justify" style="min-width:30px; height:30px; padding:0;">J</button>
+
+                         <button type="button" class="mdtBtn" data-rich-action="clear" title="Clear formatting" style="min-width:46px; height:30px; padding:0;">CLR</button>
+                       </div>
+                     </div>
                     <div class="mdtRichEditor mdtInput" data-rich-editor contenteditable="true" style="min-height:48vh; padding:10px; white-space:pre-wrap; overflow:auto;">${sanitizeRichHtml(String(a.notesHtml || a.notes || ''))}</div>
                     <textarea class="mdtInput" data-field="notes" style="display:none;">${escapeHtml(a.notes || '')}</textarea>
                     <input type="hidden" data-field="notesHtml" value="${escapeHtml(String(a.notesHtml || ''))}" />
@@ -2672,24 +3155,25 @@
 
                 <div class="mdtArrestRight">
                   <div class="mdtFormGrid" style="margin-top: 0;">
-                    <label class="mdtFormRow mdtFormRowFull"><span class="k">TITLE</span><input class="mdtInput" data-field="title" value="${escapeHtml(title)}" /></label>
+                     ${renderPicker('CRIMINALS', 'criminals', { placeholder: 'Type name or ID...', chips: criminals, buttonHtml: '<button type="button" class="mdtBtn" data-add-unknown-criminal style="height:28px; padding:0 8px; font-size:12px; opacity:.9;">+ UNKNOWN</button>' })}
 
-                    <label class="mdtFormRow">
-                      <span class="k">TYPE</span>
-                      <select class="mdtInput" data-field="type">
-                        ${['Arrest','Warrant','BOLO'].map(t => `<option value="${escapeHtml(t)}" ${String(type) === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
-                      </select>
-                    </label>
+                       <div class="mdtDetailSection" data-collapsible="sentencing" style="margin-top:-4px;">
+                         <div class="mdtDetailNotesHead" style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0;">
+                           <div class="mdtDetailSectionTitle" style="margin:0;">SENTENCING</div>
+                            <button type="button" class="mdtBtn mdtBtnY" data-toggle-collapsible="sentencing" style="height:28px; padding:0 8px; font-size:11px;">HIDE</button>
 
-                    <label class="mdtFormRow">
-                      <span class="k">STATUS</span>
-                      <select class="mdtInput" data-field="status">
-                        ${['Ongoing','Submitted','Processed','Closed'].map(s => `<option value="${escapeHtml(s)}" ${String(status) === s ? 'selected' : ''}>${escapeHtml(s)}</option>`).join('')}
-                      </select>
-                    </label>
+                         </div>
+                         <div data-collapsible-body="sentencing">
+                           <div class="mdtMeta" style="opacity:.85; margin-top:-6px;">Adjust totals per criminal (defaults from charges).</div>
+                           <div data-sentencing-list style="margin-top:10px;"></div>
+                         </div>
+                         <input type="hidden" data-field="sentencingByCriminal" value="${escapeHtml(JSON.stringify(snapshotArrestValues(a).sentencingByCriminal || {}))}" />
+                       </div>
 
-                    ${renderPicker('CRIMINALS', 'criminals', { placeholder: 'Type name or ID...', chips: criminals })}
-                    ${renderPicker('ARRESTING OFFICERS', 'officers', { placeholder: 'Type officer name or state ID...', chips: officers })}
+
+
+                     ${renderPicker('OFFICERS INVOLVED', 'officers', { placeholder: 'Type officer name or state ID...', chips: officers })}
+
 
                     <label class="mdtFormRow mdtFormRowFull">
                       <span class="k">LOCATION</span>
@@ -2708,22 +3192,37 @@
 
                     ${renderPicker('ATTACHED PAPERWORK', 'relatedPaperwork', { placeholder: 'Type case/arrest or ID...', chips: relatedPaperwork })}
 
-                    <div class="mdtDetailSection" style="margin-top: 6px;">
-                      <div class="mdtDetailSectionTitle">CHARGES</div>
-                      <div class="mdtChargesTotals" data-charges-totals style="opacity:.9; margin-bottom: 6px;"></div>
-                      <div class="mdtChargesList" data-charges-list></div>
-                      <div style="margin-top: 8px;">
-                        <button type="button" class="mdtBtn" data-open-penal-overlay>OPEN PENAL CODE</button>
-                      </div>
-                      ${renderPicker('ADD CHARGE', 'chargesV2', { placeholder: 'Start typing a charge...', chips: chargesV2, hideChips: true })}
-                      <input type="hidden" data-field="charges" value="${escapeHtml(JSON.stringify(flattenChargesV2(chargesV2)))}" />
-                    </div>
-                  </div>
+                     <div class="mdtDetailSection" data-collapsible="charges" style="margin-top: 6px;">
+                     <div class="mdtDetailNotesHead" style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0;">
+                       <div class="mdtDetailSectionTitle" style="margin:0;">CHARGES</div>
+                        <button type="button" class="mdtBtn mdtBtnY" data-toggle-collapsible="charges" style="height:28px; padding:0 8px; font-size:11px;">HIDE</button>
 
-                  <div class="mdtFormActions">
-                    <button type="button" class="mdtBtn" data-arrest-save-live="${a.id}">SAVE NOW</button>
-                    <button type="button" class="mdtBtn" data-open-history="arrests" data-open-history-id="${a.id}">HISTORY</button>
-                  </div>
+                     </div>
+
+                     <div data-collapsible-body="charges">
+                     <label class="mdtFormRow mdtFormRowFull" style="margin: 0 0 6px;">
+                      <span class="k">CHARGE TARGET</span>
+                       <select class="mdtInput" data-charge-target>
+                         ${(chargeTargets || []).length
+                           ? (chargeTargets || []).map(n => `<option value="${escapeHtml(n)}" ${String(n) === String(primaryKnownCriminalName || primaryCriminalName) ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')
+                           : `<option value="" selected>(No identified criminals)</option>`}
+                       </select>
+
+                    </label>
+
+                    <div class="mdtChargesTotals" data-charges-totals style="opacity:.9; margin-bottom: 6px;"></div>
+                    <div class="mdtChargesList" data-charges-list></div>
+                    <div style="margin-top: 8px; display:flex; gap:10px;">
+                      <button type="button" class="mdtBtn" data-open-penal-overlay>OPEN PENAL CODE</button>
+                    </div>
+
+                     ${renderPicker('ADD CHARGE', 'chargesV2', { placeholder: 'Start typing a charge...', chips: chargesV2, hideChips: true })}
+                     <input type="hidden" data-field="charges" value="${escapeHtml(JSON.stringify(flattenChargesV2(chargesV2)))}" />
+                     <input type="hidden" data-field="chargesByCriminal" value="${escapeHtml(JSON.stringify(chargesByCriminal))}" />
+                     </div>
+                   </div>
+                   </div>
+
                 </div>
               </div>
             </div>
@@ -2881,43 +3380,77 @@
        }
 
        function renderCitizenDetail(c){
-         const hasWarrants = c.warrants && c.warrants.length > 0;
-         const hasPriors = c.priors && c.priors.length > 0;
-         const fullName = `${c.firstName} ${c.lastName}`;
-         return `
-           <div class="mdtDetail">
-             <div class="mdtDetailHead">
-                <div class="mdtDetailTitle">${escapeHtml(fullName)}</div>
-                <div class="mdtDetailSubtitle">CITIZEN PROFILE #${c.id} ${copyBtn(String(c.id), 'COPY ID')}</div>
-               ${hasWarrants ? '<div class="mdtDetailBadge mdtBadgeAlert">ACTIVE WARRANT</div>' : ''}
-             </div>
-             <div class="mdtDetailGrid">
-               <div class="mdtDetailSection">
-                 <div class="mdtDetailSectionTitle">PERSONAL INFORMATION</div>
-                  ${detailRow('DATE OF BIRTH', c.dob)}
-                  ${detailRow('GENDER', c.gender)}
-                  ${detailRow('PHONE', c.phone, { copy: true, copyLabel: 'COPY PHONE', copyValue: c.phone })}
-                  ${detailRow('ADDRESS', c.address)}
-                  ${detailRow('OCCUPATION', c.occupation)}
-               </div>
-               <div class="mdtDetailSection">
-                 <div class="mdtDetailSectionTitle">LICENSE INFORMATION</div>
-                 ${detailRow('STATUS', c.licenseStatus, { valClass: c.licenseStatus === 'Suspended' ? 'mdtValWarn' : '' })}
-                 ${detailRow('CLASS', c.licenseClass)}
-               </div>
-               <div class="mdtDetailSection ${hasWarrants ? 'mdtSectionAlert' : ''}">
-                 <div class="mdtDetailSectionTitle">WARRANTS</div>
-                  ${hasWarrants ? c.warrants.map(w => `<div class="mdtDetailItem mdtItemAlert">${escapeHtml(w)}</div>`).join('') : '<div class="mdtDetailItem mdtItemNone">None</div>'}
-               </div>
-               <div class="mdtDetailSection ${hasPriors ? 'mdtSectionWarn' : ''}">
-                 <div class="mdtDetailSectionTitle">CRIMINAL HISTORY</div>
-                  ${hasPriors ? c.priors.map(p => `<div class="mdtDetailItem mdtItemWarn">${escapeHtml(p)}</div>`).join('') : '<div class="mdtDetailItem mdtItemNone">No prior convictions</div>'}
-               </div>
-             </div>
-              ${renderNotesEditor(c, 'citizens', { editable: canEditNotesFor('citizens') })}
-           </div>
-         `;
-       }
+           const activeWarrantEntries = getActiveWarrantEntriesForCitizen(c);
+           const hasWarrants = activeWarrantEntries.length > 0;
+           const activeBoloEntries = getActiveBoloEntriesForCitizen(c);
+           const hasBolos = activeBoloEntries.length > 0;
+           const fullName = `${c.firstName} ${c.lastName}`;
+ 
+           const arrests = getArrestsForCitizen(c);
+           const chargeSummary = aggregateChargeCountsForPerson(arrests, fullName);
+           const hasPriors = chargeSummary.length > 0;
+ 
+          return `
+            <div class="mdtDetail">
+              <div class="mdtDetailHead">
+                 <div class="mdtDetailTitle">${escapeHtml(fullName)}</div>
+                 <div class="mdtDetailSubtitle">CITIZEN PROFILE #${c.id} ${copyBtn(String(c.id), 'COPY ID')}</div>
+                ${hasWarrants ? '<div class="mdtDetailBadge mdtBadgeAlert">ACTIVE WARRANT</div>' : ''}
+                ${hasBolos ? '<div class="mdtDetailBadge mdtBadgeWarn">ACTIVE BOLO</div>' : ''}
+              </div>
+              <div class="mdtDetailGrid">
+                <div class="mdtDetailSection">
+                  <div class="mdtDetailSectionTitle">PERSONAL INFORMATION</div>
+                   ${detailRow('DATE OF BIRTH', c.dob)}
+                   ${detailRow('GENDER', c.gender)}
+                   ${detailRow('PHONE', c.phone, { copy: true, copyLabel: 'COPY PHONE', copyValue: c.phone })}
+                   ${detailRow('ADDRESS', c.address)}
+                   ${detailRow('OCCUPATION', c.occupation)}
+                </div>
+                <div class="mdtDetailSection">
+                  <div class="mdtDetailSectionTitle">LICENSE INFORMATION</div>
+                  ${detailRow('STATUS', c.licenseStatus, { valClass: c.licenseStatus === 'Suspended' ? 'mdtValWarn' : '' })}
+                  ${detailRow('CLASS', c.licenseClass)}
+                </div>
+                  <div class="mdtDetailSection ${hasWarrants ? 'mdtSectionAlert' : ''}">
+                    <div class="mdtDetailSectionTitle">WARRANTS</div>
+                     ${hasWarrants ? activeWarrantEntries.map(({ arrest: a, charges }) => {
+                       const label = a.title || a.arrestNum || `Warrant #${a.id}`;
+                       const sub = [shortDate(a.date), a.location].filter(Boolean).join(' • ');
+                       const subHtml = sub ? `<div class="mdtMeta" style="opacity:.85; margin-top:-2px;">${escapeHtml(sub)}</div>` : '';
+                       const chargesHtml = (Array.isArray(charges) && charges.length)
+                         ? `<div style="opacity:.85; margin-top:6px;">
+                             ${charges.slice(0, 4).map(ch => `<div class="mdtMeta" style="margin:0; padding:1px 0;">${escapeHtml(ch.label)} x${escapeHtml(String(ch.count))}</div>`).join('')}
+                             ${charges.length > 4 ? `<div class="mdtMeta" style="margin:0; padding:1px 0;">…</div>` : ''}
+                           </div>`
+                         : '';
+                       return `<div class="mdtDetailItem mdtItemAlert">${linkSpan(label, 'arrests', a.id)}${subHtml}${chargesHtml}</div>`;
+                     }).join('') : '<div class="mdtDetailItem mdtItemNone">None</div>'}
+                  </div>
+
+                   <div class="mdtDetailSection ${hasBolos ? 'mdtSectionWarn' : ''}">
+                     <div class="mdtDetailSectionTitle">BOLOS</div>
+                     ${hasBolos ? activeBoloEntries.map(({ arrest: a }) => {
+                       const label = a.title || a.arrestNum || `BOLO #${a.id}`;
+                       return `<div class="mdtDetailItem mdtItemWarn">BOLO NOTICE: ${linkSpan(label, 'arrests', a.id)}</div>`;
+                     }).join('') : '<div class="mdtDetailItem mdtItemNone">None</div>'}
+                   </div>
+
+                 <div class="mdtDetailSection ${hasPriors ? 'mdtSectionWarn' : ''}">
+                   <div class="mdtDetailSectionTitle">CRIMINAL HISTORY</div>
+                   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                     <div class="mdtMeta" style="opacity:.85;">Computed from arrest records.</div>
+                     <button type="button" class="mdtBtn" data-open-citizen-history="${c.id}" style="height:28px; padding:0 8px; font-size:11px;">FULL HISTORY</button>
+                   </div>
+                    ${hasPriors ? chargeSummary.map(row => `<div class="mdtDetailItem mdtItemWarn">${escapeHtml(row.label)} <span style="opacity:.8;">x${escapeHtml(String(row.count))}</span></div>`).join('') : '<div class="mdtDetailItem mdtItemNone">No prior arrests</div>'}
+                 </div>
+ 
+              </div>
+               ${renderNotesEditor(c, 'citizens', { editable: canEditNotesFor('citizens') })}
+            </div>
+          `;
+        }
+
 
       
         function renderPropertyDetail(p){
@@ -3013,6 +3546,60 @@
          `;
        }
 
+       function renderWarrantDetail(w){
+         const citizenId = (typeof w.citizenId === 'number') ? w.citizenId : findCitizenIdByName(w.citizenName);
+         const badgeCls = String(w.status || '').toLowerCase().includes('active') ? 'mdtBadgeAlert'
+           : String(w.status || '').toLowerCase().includes('served') ? 'mdtBadgeOk'
+           : 'mdtBadgeInfo';
+
+         const charges = Array.isArray(w.charges) ? w.charges : [];
+         const hasCharges = charges.length > 0;
+
+         const caseId = resolveReportIdFromCaseNum(w.relatedCase || w.notes);
+         const caseNum = normalizeCaseNum(w.relatedCase || w.notes);
+
+         return `
+           <div class="mdtDetail">
+             <div class="mdtDetailHead">
+               <div class="mdtDetailTitle">WARRANT ${escapeHtml(w.warrantNum || `#${w.id}`)} ${copyBtn(w.warrantNum || '', 'COPY #')}</div>
+               <div class="mdtDetailSubtitle">${escapeHtml(w.type || 'Warrant')} • Issued ${escapeHtml(shortDate(w.issuedDate))}</div>
+               <div class="mdtDetailBadge ${badgeCls}">${escapeHtml(w.status || '—')}</div>
+             </div>
+
+             <div class="mdtDetailGrid">
+               <div class="mdtDetailSection">
+                 <div class="mdtDetailSectionTitle">WARRANT DETAILS</div>
+                 ${detailRow('WARRANT #', w.warrantNum, { copy: true, copyValue: w.warrantNum })}
+                 ${detailRow('TYPE', w.type || '—')}
+                 ${detailRow('STATUS', w.status || '—')}
+                 ${detailRow('ISSUED DATE', shortDate(w.issuedDate))}
+                 ${detailRow('ISSUED BY', w.issuedBy || '—')}
+                 ${detailRow('BAIL', w.bail || '—')}
+               </div>
+
+               <div class="mdtDetailSection">
+                 <div class="mdtDetailSectionTitle">SUBJECT</div>
+                 ${detailRow('CITIZEN', w.citizenName || (citizenId ? `Citizen #${citizenId}` : 'Unknown'), { linkTarget: citizenId ? 'citizens' : null, linkId: citizenId, copyValue: w.citizenName || '' })}
+                 ${citizenId ? detailRow('CITIZEN ID', String(citizenId), { copy: true, copyValue: String(citizenId) }) : ''}
+                 ${caseNum ? detailRow('RELATED CASE', caseNum, { linkTarget: caseId ? 'ncpdReports' : null, linkId: caseId, copyValue: caseNum }) : ''}
+               </div>
+
+               <div class="mdtDetailSection ${hasCharges ? 'mdtSectionWarn' : ''}">
+                 <div class="mdtDetailSectionTitle">CHARGES</div>
+                 ${hasCharges
+                   ? charges.map(ch => `<div class="mdtDetailItem mdtItemWarn">${escapeHtml(ch)}</div>`).join('')
+                   : '<div class="mdtDetailItem mdtItemNone">None</div>'}
+               </div>
+             </div>
+
+             <div class="mdtDetailNotes">
+               <div class="mdtDetailSectionTitle">NOTES</div>
+               <div class="mdtDetailNotesText">${escapeHtml(String(w.notes || '')) || 'No additional notes.'}</div>
+             </div>
+           </div>
+         `;
+       }
+
       
       function renderMedicalProfileDetail(m){
         const hasAllergies = m.allergies && m.allergies.length > 0;
@@ -3051,12 +3638,380 @@
       
         const ncpdEditSessions = new Map();
 
+        // In-editor undo/redo history (per edit session).
+        // This is separate from the audit/history entries, and is only meant for the current edit view.
+        const mdtEditValueHistory = new Map();
+
         const NCPD_EDIT_FIELDS = ['title', 'status', 'location', 'gps', 'officer', 'officers', 'suspects', 'summary'];
-        const ARREST_EDIT_FIELDS = ['criminals', 'officers', 'title', 'type', 'status', 'location', 'gps', 'chargesV2', 'relatedPaperwork', 'notes', 'notesHtml'];
+        const ARREST_EDIT_FIELDS = ['criminals', 'officers', 'title', 'type', 'status', 'location', 'gps', 'chargesV2', 'chargesByCriminal', 'sentencingByCriminal', 'relatedPaperwork', 'notes', 'notesHtml'];
+
+        function editHistoryKeyFor(dataKey, id){
+          return historyKeyFor(dataKey, id);
+        }
+
+        function editHistoryWrapFor(dataKey, id){
+          if(dataKey === 'ncpdReports') return viewHost.querySelector(`[data-ncpd-report-edit="${id}"]`);
+          if(dataKey === 'arrests') return viewHost.querySelector(`[data-arrest-live-edit="${id}"]`) || viewHost.querySelector(`[data-arrest-edit-wrap="${id}"]`);
+          return null;
+        }
+
+        function snapshotNcpdReportValuesFromEditor(id){
+          const wrap = editHistoryWrapFor('ncpdReports', id);
+          if(!wrap) return null;
+
+          const read = (name) => wrap.querySelector(`[data-field="${name}"]`)?.value?.trim?.() || '';
+          const readJsonArr = (name) => {
+            try{
+              const raw = wrap.querySelector(`[data-field="${name}"]`)?.value || '[]';
+              const parsed = JSON.parse(raw);
+              return Array.isArray(parsed) ? parsed.map(x => String(x)).filter(Boolean) : [];
+            }catch{
+              return [];
+            }
+          };
+
+          const title = read('title');
+          return {
+            title,
+            type: title,
+            status: read('status'),
+            location: read('location'),
+            gps: read('gps'),
+            officer: read('officer'),
+            officers: dedupeStrings(readJsonArr('officers')),
+            suspects: dedupeStrings(readJsonArr('suspects')),
+            summary: read('summary'),
+          };
+        }
+
+        function snapshotArrestValuesFromEditor(id){
+          const wrap = editHistoryWrapFor('arrests', id);
+          if(!wrap) return null;
+
+          const read = (name) => wrap.querySelector(`[data-field="${name}"]`)?.value?.trim?.() || '';
+          const readJsonArr = (name) => {
+            try{
+              const raw = wrap.querySelector(`[data-field="${name}"]`)?.value || '[]';
+              const parsed = JSON.parse(raw);
+              return Array.isArray(parsed) ? parsed : [];
+            }catch{
+              return [];
+            }
+          };
+          const readJsonObj = (name) => {
+            try{
+              const raw = wrap.querySelector(`[data-field="${name}"]`)?.value || '{}';
+              const parsed = JSON.parse(raw);
+              return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+            }catch{
+              return {};
+            }
+          };
+
+          const criminals = dedupeStrings(normalizeStringArray(readJsonArr('criminals')));
+
+          const chargesV2 = normalizeChargesV2(readJsonArr('chargesV2'));
+          const chargesByCriminalRaw = readJsonObj('chargesByCriminal');
+          const chargesByCriminal = (() => {
+            const out = {};
+            for(const [k, v] of Object.entries(chargesByCriminalRaw || {})){
+              const key = String(k || '').trim();
+              if(!key) continue;
+              out[key] = normalizeChargesV2(v);
+            }
+            return out;
+          })();
+
+          const sentencingByCriminalRaw = readJsonObj('sentencingByCriminal');
+          const sentencingByCriminal = (() => {
+            const out = {};
+            for(const [k, v] of Object.entries(sentencingByCriminalRaw || {})){
+              const key = String(k || '').trim();
+              if(!key) continue;
+              const deltaJail = Math.round(Number(v?.deltaJail ?? v?.jailDelta ?? 0));
+              const deltaFine = Math.round(Number(v?.deltaFine ?? v?.fineDelta ?? 0));
+              const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
+              const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
+              const dispositionAt = String(v?.dispositionAt || '').trim();
+              const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
+              const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
+              out[key] = {
+                deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
+                deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
+                ...(disposition ? { disposition } : {}),
+                ...(dispositionAt ? { dispositionAt } : {}),
+                ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}),
+                ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}),
+              };
+            }
+
+            // Keep defaults consistent with editor behavior.
+            for(const name of criminals){
+              if(out[name]) continue;
+              out[name] = { deltaJail: 0, deltaFine: 0 };
+            }
+
+            return out;
+          })();
+
+          const notesHtml = String(read('notesHtml') || '');
+
+          return {
+            criminals,
+            officers: dedupeStrings(normalizeStringArray(readJsonArr('officers'))),
+            title: read('title'),
+            type: read('type'),
+            status: read('status') || 'Ongoing',
+            location: read('location'),
+            gps: read('gps'),
+            chargesV2,
+            chargesByCriminal,
+            sentencingByCriminal,
+            relatedPaperwork: normalizeStringArray(readJsonArr('relatedPaperwork')),
+            notesHtml,
+            notes: notesHtml ? stripHtmlToText(notesHtml) : read('notes'),
+          };
+        }
+
+        function snapshotEditorValues(dataKey, id){
+          if(dataKey === 'ncpdReports') return snapshotNcpdReportValuesFromEditor(id);
+          if(dataKey === 'arrests') return snapshotArrestValuesFromEditor(id);
+          return null;
+        }
+
+        function ensureEditHistoryState(dataKey, id){
+          const key = editHistoryKeyFor(dataKey, id);
+          const existing = mdtEditValueHistory.get(key);
+          if(existing) return existing;
+
+          const initial = snapshotEditorValues(dataKey, id);
+          if(!initial) return null;
+
+          const state = {
+            key,
+            dataKey,
+            id,
+            applying: false,
+            lastSnapshot: initial,
+            past: [initial],
+            future: [],
+            pollTimer: null,
+          };
+          mdtEditValueHistory.set(key, state);
+          return state;
+        }
+
+        function syncEditHistoryButtons(dataKey, id){
+          const wrap = editHistoryWrapFor(dataKey, id);
+          if(!wrap) return;
+
+          const st = mdtEditValueHistory.get(editHistoryKeyFor(dataKey, id));
+          const canUndo = Boolean(st && st.past && st.past.length > 1);
+          const canRedo = Boolean(st && st.future && st.future.length > 0);
+
+          const undoBtn = wrap.querySelector('[data-edit-undo]');
+          const redoBtn = wrap.querySelector('[data-edit-redo]');
+
+          if(undoBtn){
+            undoBtn.disabled = !canUndo;
+            undoBtn.title = 'Undo (Ctrl/Cmd+Z)';
+          }
+          if(redoBtn){
+            redoBtn.disabled = !canRedo;
+            redoBtn.title = 'Redo (Ctrl+Y / Ctrl+Shift+Z)';
+          }
+        }
+
+        function stopEditHistoryTracking(dataKey, id){
+          const key = editHistoryKeyFor(dataKey, id);
+          const st = mdtEditValueHistory.get(key);
+          if(!st) return;
+          if(st.pollTimer) clearInterval(st.pollTimer);
+          st.pollTimer = null;
+          mdtEditValueHistory.delete(key);
+        }
+
+        function startEditHistoryTracking(dataKey, id){
+          const st = ensureEditHistoryState(dataKey, id);
+          if(!st) return;
+          if(st.pollTimer) return;
+
+          // Poll current editor values (captures programmatic changes too, e.g. charge buttons).
+          st.pollTimer = setInterval(() => {
+            if(st.applying) return;
+            // Only track while the edit view is still mounted.
+            if(!editHistoryWrapFor(dataKey, id)){
+              stopEditHistoryTracking(dataKey, id);
+              return;
+            }
+
+            const snap = snapshotEditorValues(dataKey, id);
+            if(!snap) return;
+
+            if(valuesEqual(snap, st.lastSnapshot)) return;
+
+            st.past.push(snap);
+            st.lastSnapshot = snap;
+            st.future = [];
+
+            // Cap memory growth.
+            if(st.past.length > 120){
+              st.past = st.past.slice(st.past.length - 120);
+            }
+
+            syncEditHistoryButtons(dataKey, id);
+          }, 400);
+
+          syncEditHistoryButtons(dataKey, id);
+        }
+
+        function isTextEditingTarget(el){
+          const node = el && (el.nodeType === 1 ? el : el?.parentElement);
+          if(!node) return false;
+          const tag = String(node.tagName || '').toUpperCase();
+          if(tag === 'INPUT' || tag === 'TEXTAREA') return true;
+          if(node.isContentEditable) return true;
+          return false;
+        }
+
+        function applyEditSnapshot(dataKey, id, snapshot){
+          if(!snapshot) return;
+          const key = editHistoryKeyFor(dataKey, id);
+          const st = mdtEditValueHistory.get(key);
+          if(st) st.applying = true;
+
+          // Persist immediately so a reload keeps the applied state.
+          // (Autosave will also re-persist on its interval.)
+          const patch = { ...snapshot };
+          if(dataKey === 'arrests'){
+            patch.updatedAt = new Date().toISOString();
+            // Keep back-compat plain-text note and flattened charges.
+            try{ patch.charges = flattenChargesV2(normalizeChargesV2(patch.chargesV2)); }catch{}
+          }
+
+          setUpdatedRecord(dataKey, id, patch);
+
+          // Re-render the edit UI from the updated record.
+          const record = getMdtData(dataKey).find(x => x.id === id) || { id };
+          if(dataKey === 'ncpdReports'){
+            viewHost.innerHTML = renderNcpdReportEdit(record);
+            bindDetailHandlers();
+            startNcpdAutosave(id);
+            startEditHistoryTracking('ncpdReports', id);
+          }else if(dataKey === 'arrests'){
+            viewHost.innerHTML = renderArrestDetail(record);
+            bindDetailHandlers();
+            startArrestAutosave(id);
+            startEditHistoryTracking('arrests', id);
+          }
+
+          // After re-render, ensure button state matches the stacks.
+          syncEditHistoryButtons(dataKey, id);
+
+          if(st){
+            st.lastSnapshot = snapshot;
+            // Allow the next poll cycle to resume.
+            setTimeout(() => { st.applying = false; }, 0);
+          }
+        }
+
+        function editUndo(dataKey, id){
+          const st = ensureEditHistoryState(dataKey, id);
+          if(!st) return;
+          if(!st.past || st.past.length <= 1) return;
+
+          const cur = st.past.pop();
+          st.future.push(cur);
+          const prev = st.past[st.past.length - 1];
+          st.lastSnapshot = prev;
+          applyEditSnapshot(dataKey, id, prev);
+        }
+
+        function editRedo(dataKey, id){
+          const st = ensureEditHistoryState(dataKey, id);
+          if(!st) return;
+          if(!st.future || st.future.length < 1) return;
+
+          const next = st.future.pop();
+          st.past.push(next);
+          st.lastSnapshot = next;
+          applyEditSnapshot(dataKey, id, next);
+        }
+
+        let editHistoryKeysBound = false;
+        function bindEditHistoryKeyboardShortcuts(){
+          if(editHistoryKeysBound) return;
+          editHistoryKeysBound = true;
+
+          document.addEventListener('keydown', (e) => {
+            const key = String(e.key || '').toLowerCase();
+            const isUndo = (key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey);
+            const isRedo = (
+              (key === 'y' && (e.ctrlKey || e.metaKey)) ||
+              (key === 'z' && (e.ctrlKey || e.metaKey) && e.shiftKey)
+            );
+            if(!isUndo && !isRedo) return;
+
+            // Let native input/textarea/contenteditable undo work as expected.
+            if(isTextEditingTarget(e.target)) return;
+
+            const arrestWrap = viewHost.querySelector('[data-arrest-live-edit]');
+            const ncpdWrap = viewHost.querySelector('[data-ncpd-report-edit]');
+
+            if(arrestWrap){
+              const id = Number(arrestWrap.getAttribute('data-arrest-live-edit'));
+              if(!Number.isNaN(id)){
+                e.preventDefault();
+                (isUndo ? editUndo : editRedo)('arrests', id);
+              }
+              return;
+            }
+
+            if(ncpdWrap){
+              const id = Number(ncpdWrap.getAttribute('data-ncpd-report-edit'));
+              if(!Number.isNaN(id)){
+                e.preventDefault();
+                (isUndo ? editUndo : editRedo)('ncpdReports', id);
+              }
+            }
+          }, true);
+        }
+
+
 
         function normalizeStringArray(arr){
           if(!Array.isArray(arr)) return [];
           return arr.map(x => String(x).trim()).filter(Boolean);
+        }
+
+        function dedupeStrings(arr){
+          const out = [];
+          const seen = new Set();
+          for(const raw of (Array.isArray(arr) ? arr : [])){
+            const s = String(raw || '').trim();
+            if(!s) continue;
+            const key = s.toLowerCase();
+            if(seen.has(key)) continue;
+            seen.add(key);
+            out.push(s);
+          }
+          return out;
+        }
+
+        function shortDateTime(dateStr){
+          const raw = String(dateStr || '').trim();
+          if(!raw) return '—';
+          const d = new Date(raw);
+          if(Number.isNaN(d.getTime())){
+            // Support YYYY-MM-DDTHH:mm style strings
+            const m = raw.match(/^\d{4}-\d{2}-\d{2}[T\s](\d{2}:\d{2})/);
+            return m ? `${shortDate(raw)} ${m[1]}` : shortDate(raw);
+          }
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          const hh = String(d.getHours()).padStart(2, '0');
+          const mi = String(d.getMinutes()).padStart(2, '0');
+          return `${mm}/${dd} ${hh}:${mi}`;
         }
 
         function isChargeToken(val){
@@ -3113,23 +4068,33 @@
           return Number.isFinite(n) ? n : 0;
         }
 
+        function parseJailMonthsRange(jailStr){
+          const raw = String(jailStr ?? '').toLowerCase().trim();
+          if(!raw) return { min: 0, max: 0 };
+          if(raw.includes('life') || raw.includes('hut')) return { min: 999999, max: 999999 };
+
+          // Parse one or more numbers; treat as a range. Example: "5-20 months".
+          const nums = Array.from(raw.matchAll(/(\d+(?:\.\d+)?)/g))
+            .map(m => Number(m[1]))
+            .filter(Number.isFinite);
+          if(!nums.length) return { min: 0, max: 0 };
+
+          const lo = Math.min(...nums);
+          const hi = Math.max(...nums);
+
+          const toMonths = (n) => {
+            if(raw.includes('year')) return Math.max(0, Math.round(n * 12));
+            if(raw.includes('day')) return Math.max(0, Math.ceil(n / 30));
+            return Math.max(0, Math.round(n));
+          };
+
+          const min = toMonths(lo);
+          const max = toMonths(hi);
+          return { min: Math.min(min, max), max: Math.max(min, max) };
+        }
+
         function parseJailMonths(jailStr){
-          const raw = String(jailStr ?? '').toLowerCase();
-          if(!raw) return 0;
-          if(raw.includes('life')) return 999999;
-          if(raw.includes('hut')) return 999999;
-
-          // Extract the first number we see.
-          const m = raw.match(/(\d+(?:\.\d+)?)/);
-          if(!m) return 0;
-          const n = Number(m[1]);
-          if(!Number.isFinite(n)) return 0;
-
-          // Server system uses months; keep output in months.
-          // Convert obvious units when present.
-          if(raw.includes('year')) return Math.round(n * 12);
-          if(raw.includes('day')) return Math.max(1, Math.round(n / 30));
-          return Math.round(n); // default: months
+          return parseJailMonthsRange(jailStr).max;
         }
 
         function formatMoney(n){
@@ -3143,6 +4108,15 @@
           if(!Number.isFinite(m) || m <= 0) return '0 months';
           if(m >= 999999) return 'Life / HUT';
           return `${m} months`;
+        }
+
+        function formatJailMonthsRange(range){
+          const min = Math.round(Number(range?.min ?? 0));
+          const max = Math.round(Number(range?.max ?? 0));
+          if(!Number.isFinite(min) || !Number.isFinite(max) || (min <= 0 && max <= 0)) return '0 months';
+          if(min >= 999999 || max >= 999999) return 'Life / HUT';
+          if(min === max) return `${max} months`;
+          return `${min}-${max} months`;
         }
 
         function normalizeChargesV2(val){
@@ -3211,7 +4185,8 @@
         function computeChargeTotals(charges){
           const penal = window.MDT_DATA?.penalCode || [];
           let fine = 0;
-          let jailMonths = 0;
+          let jailMinMonths = 0;
+          let jailMaxMonths = 0;
 
           // Accept either flat tokens array or chargesV2 [{token,count}].
           const items = Array.isArray(charges)
@@ -3226,12 +4201,15 @@
               const hit = penal.find(p => p.id === id);
               if(hit){
                 fine += parseFineAmount(hit.fine) * count;
-                jailMonths += parseJailMonths(hit.jailTime) * count;
+                const range = parseJailMonthsRange(hit.jailTime);
+                jailMinMonths += Number(range.min || 0) * count;
+                jailMaxMonths += Number(range.max || 0) * count;
               }
             }
           }
 
-          return { fine, jailMonths };
+          const jailMonths = jailMaxMonths;
+          return { fine, jailMonths, jailMinMonths, jailMaxMonths };
         }
 
         function snapshotNcpdReportValues(r){
@@ -3249,15 +4227,29 @@
           };
         }
 
+        function stableJsonValue(val){
+          if(val == null) return null;
+          if(Array.isArray(val)) return val.map(stableJsonValue);
+
+          if(typeof val === 'object'){
+            const out = {};
+            for(const k of Object.keys(val).sort()) out[k] = stableJsonValue(val[k]);
+            return out;
+          }
+
+          return val;
+        }
+
         function valuesEqual(a, b){
-          if(Array.isArray(a) || Array.isArray(b)){
-            const aa = Array.isArray(a) ? a : [];
-            const bb = Array.isArray(b) ? b : [];
-            if(aa.length !== bb.length) return false;
-            for(let i = 0; i < aa.length; i++){
-              if(String(aa[i]) !== String(bb[i])) return false;
+          if(a === b) return true;
+          const aIsObj = a != null && typeof a === 'object';
+          const bIsObj = b != null && typeof b === 'object';
+          if(aIsObj || bIsObj){
+            try{
+              return JSON.stringify(stableJsonValue(a)) === JSON.stringify(stableJsonValue(b));
+            }catch{
+              return false;
             }
-            return true;
           }
           return String(a ?? '') === String(b ?? '');
         }
@@ -3275,12 +4267,70 @@
           const title = String(a?.title || '').trim();
           const type = String(a?.type || '').trim();
 
+          const criminals = normalizeStringArray(a?.criminals);
+          const primaryCriminal = criminals[0] || String(a?.citizenName || '').trim() || 'Unknown';
+
           const chargesV2 = Array.isArray(a?.chargesV2)
             ? normalizeChargesV2(a.chargesV2)
             : chargesV2FromFlat(normalizeStringArray(a?.charges).map(normalizeChargeToken).filter(Boolean));
 
+          const chargesByCriminal = (() => {
+            const raw = a?.chargesByCriminal;
+            const out = {};
+
+            if(raw && typeof raw === 'object' && !Array.isArray(raw)){
+              for(const [k, v] of Object.entries(raw)){
+                const key = String(k || '').trim();
+                if(!key) continue;
+                out[key] = normalizeChargesV2(v);
+              }
+            }
+
+            // Back-compat: older records only have global charges; attach to primary.
+            if(!Object.keys(out).length && chargesV2.length){
+              out[primaryCriminal] = normalizeChargesV2(chargesV2);
+            }
+
+            return out;
+          })();
+
+          const sentencingByCriminal = (() => {
+            const raw = a?.sentencingByCriminal;
+            const out = {};
+
+            if(raw && typeof raw === 'object' && !Array.isArray(raw)){
+              for(const [k, v] of Object.entries(raw)){
+                const key = String(k || '').trim();
+                if(!key) continue;
+                 const deltaJail = Math.round(Number(v?.deltaJail ?? v?.jailDelta ?? 0));
+                 const deltaFine = Math.round(Number(v?.deltaFine ?? v?.fineDelta ?? 0));
+                 const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
+                 const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
+                 const dispositionAt = String(v?.dispositionAt || '').trim();
+                 const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
+                 const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
+                 out[key] = {
+                   deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
+                   deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
+                   ...(disposition ? { disposition } : {}),
+                   ...(dispositionAt ? { dispositionAt } : {}),
+                   ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}),
+                   ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}),
+                 };
+              }
+            }
+
+            // Avoid "false diffs": editor ensures defaults for all criminals.
+            for(const name of criminals){
+              if(out[name]) continue;
+              out[name] = { deltaJail: 0, deltaFine: 0 };
+            }
+
+            return out;
+          })();
+
           return {
-            criminals: normalizeStringArray(a?.criminals),
+            criminals,
             officers: normalizeStringArray(a?.officers),
             title,
             type,
@@ -3288,6 +4338,8 @@
             location: String(a?.location || '').trim(),
             gps: String(a?.gps || '').trim(),
             chargesV2,
+            chargesByCriminal,
+            sentencingByCriminal,
             relatedPaperwork: normalizeStringArray(a?.relatedPaperwork),
             // Back-compat: store both fields in session snapshot so history comparisons work.
             notes: String(a?.notes || '').trim(),
@@ -3337,13 +4389,15 @@
             const labelMap = (dataKey === 'arrests')
                   ? {
                     criminals: 'criminals',
-                    officers: 'arresting officers',
+                     officers: 'officers involved',
                     title: 'title',
                     type: 'type',
                     status: 'status',
                     location: 'location',
                     gps: 'gps',
                     chargesV2: 'charges',
+                    chargesByCriminal: 'charges',
+                    sentencingByCriminal: 'sentencing',
                     relatedPaperwork: 'related paperwork',
                     notes: 'report body',
                     notesHtml: 'report body',
@@ -3456,10 +4510,12 @@
               </div>
 
               <div class="mdtFormActions">
-                <button type="button" class="mdtBtn" data-ncpd-report-save="${r.id}">SAVE NOW</button>
-                <button type="button" class="mdtBtn" data-ncpd-report-cancel="${r.id}">CANCEL</button>
-                <button type="button" class="mdtBtn" data-open-history="ncpdReports" data-open-history-id="${r.id}">HISTORY</button>
-              </div>
+                 <button type="button" class="mdtBtn" data-ncpd-report-save="${r.id}">SAVE NOW</button>
+                 <button type="button" class="mdtBtn" data-edit-undo>UNDO</button>
+                 <button type="button" class="mdtBtn" data-edit-redo>REDO</button>
+                 <button type="button" class="mdtBtn" data-ncpd-report-cancel="${r.id}">CANCEL</button>
+                 <button type="button" class="mdtBtn" data-open-history="ncpdReports" data-open-history-id="${r.id}">HISTORY</button>
+               </div>
             </div>
           `;
         }
@@ -3475,21 +4531,51 @@
               beginEditSession('ncpdReports', id);
               viewHost.innerHTML = renderNcpdReportEdit(report);
               bindAllInlineHandlers();
-              bindPicker('ncpdReports', 'suspects', { type: 'citizen', unknownBtnSelector: '[data-add-unknown-suspect]' });
-              bindPicker('ncpdReports', 'officers', { type: 'officer' });
+               bindPicker('ncpdReports', 'suspects', { type: 'citizen', unique: true, unknownBtnSelector: '[data-add-unknown-suspect]' });
+               bindPicker('ncpdReports', 'officers', { type: 'officer', unique: true });
+
               bindNcpdReportEdit();
               startNcpdAutosave(id);
+
+              // In-editor undo/redo tracking.
+              startEditHistoryTracking('ncpdReports', id);
+              bindEditHistoryKeyboardShortcuts();
             };
           });
 
-          // Save now
-          viewHost.querySelectorAll('[data-ncpd-report-save]').forEach(btn => {
-            btn.onclick = () => {
-              const id = Number(btn.dataset.ncpdReportSave);
-              if(Number.isNaN(id)) return;
-              saveNcpdReportEdits(id, { manual: true });
-            };
-          });
+           // Save now
+           viewHost.querySelectorAll('[data-ncpd-report-save]').forEach(btn => {
+             btn.onclick = () => {
+               const id = Number(btn.dataset.ncpdReportSave);
+               if(Number.isNaN(id)) return;
+               saveNcpdReportEdits(id, { manual: true });
+             };
+           });
+
+           // Undo/redo buttons
+           viewHost.querySelectorAll('[data-ncpd-report-edit] [data-edit-undo]').forEach(btn => {
+             btn.onclick = () => {
+               const wrap = btn.closest('[data-ncpd-report-edit]');
+               const id = Number(wrap?.getAttribute('data-ncpd-report-edit'));
+               if(Number.isNaN(id)) return;
+               editUndo('ncpdReports', id);
+             };
+           });
+           viewHost.querySelectorAll('[data-ncpd-report-edit] [data-edit-redo]').forEach(btn => {
+             btn.onclick = () => {
+               const wrap = btn.closest('[data-ncpd-report-edit]');
+               const id = Number(wrap?.getAttribute('data-ncpd-report-edit'));
+               if(Number.isNaN(id)) return;
+               editRedo('ncpdReports', id);
+             };
+           });
+
+           // Ensure buttons reflect current stacks.
+           {
+             const wrap = viewHost.querySelector('[data-ncpd-report-edit]');
+             const id = Number(wrap?.getAttribute('data-ncpd-report-edit'));
+             if(!Number.isNaN(id)) syncEditHistoryButtons('ncpdReports', id);
+           }
 
           // Cancel
           viewHost.querySelectorAll('[data-ncpd-report-cancel]').forEach(btn => {
@@ -3497,6 +4583,7 @@
               const id = Number(btn.dataset.ncpdReportCancel);
               if(Number.isNaN(id)) return;
               stopNcpdAutosave();
+              stopEditHistoryTracking('ncpdReports', id);
               commitEditSession('ncpdReports', id);
               navigateToDetail('ncpdReports', id);
             };
@@ -3569,8 +4656,9 @@
             location: read('location'),
             gps: read('gps'),
             officer: read('officer'),
-            officers: readJsonArr('officers'),
-            suspects: readJsonArr('suspects'),
+             officers: dedupeStrings(readJsonArr('officers')),
+             suspects: dedupeStrings(readJsonArr('suspects')),
+
             summary: read('summary'),
           };
 
@@ -3610,21 +4698,83 @@
               return [];
             }
           };
+          const readJsonObj = (name) => {
+            try{
+              const raw = wrap.querySelector(`[data-field="${name}"]`)?.value || '{}';
+              const parsed = JSON.parse(raw);
+              return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+            }catch{
+              return {};
+            }
+          };
+
+           const criminals = dedupeStrings(normalizeStringArray(readJsonArr('criminals')));
+
 
           const chargesV2 = normalizeChargesV2(readJsonArr('chargesV2'));
+          const chargesByCriminalRaw = readJsonObj('chargesByCriminal');
+          const chargesByCriminal = (() => {
+            const out = {};
+            for(const [k, v] of Object.entries(chargesByCriminalRaw || {})){
+              const key = String(k || '').trim();
+              if(!key) continue;
+              out[key] = normalizeChargesV2(v);
+            }
+            return out;
+          })();
+
+          const sentencingByCriminalRaw = readJsonObj('sentencingByCriminal');
+          const sentencingByCriminal = (() => {
+               const out = {};
+               for(const [k, v] of Object.entries(sentencingByCriminalRaw || {})){
+                 const key = String(k || '').trim();
+                 if(!key) continue;
+                 const deltaJail = Math.round(Number(v?.deltaJail ?? v?.jailDelta ?? 0));
+                 const deltaFine = Math.round(Number(v?.deltaFine ?? v?.fineDelta ?? 0));
+                  const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
+                  const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
+                  const dispositionAt = String(v?.dispositionAt || '').trim();
+                  const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
+                  const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
+                  out[key] = {
+                    deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
+                    deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
+                    ...(disposition ? { disposition } : {}),
+                    ...(dispositionAt ? { dispositionAt } : {}),
+                    ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}),
+                    ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}),
+                  };
+               }
+
+
+            // Keep defaults consistent with editor behavior.
+            for(const name of criminals){
+              if(out[name]) continue;
+              out[name] = { deltaJail: 0, deltaFine: 0 };
+            }
+
+            return out;
+          })();
+
           const notesHtml = String(read('notesHtml') || '');
 
           const patch = {
-            criminals: normalizeStringArray(readJsonArr('criminals')),
-            officers: normalizeStringArray(readJsonArr('officers')),
+            criminals,
+             officers: dedupeStrings(normalizeStringArray(readJsonArr('officers'))),
+
             title: read('title'),
             type: read('type'),
             status: read('status') || 'Ongoing',
             location: read('location'),
             gps: read('gps'),
+
+            chargesByCriminal,
+            sentencingByCriminal,
+
+            // Back-compat (global charges mirrors currently selected target)
             chargesV2,
-            // Back-compat: keep old flat list too.
             charges: flattenChargesV2(chargesV2),
+
             relatedPaperwork: normalizeStringArray(readJsonArr('relatedPaperwork')),
             notesHtml,
             // notes remains as a plain-text fallback for older displays.
@@ -3892,7 +5042,7 @@
                   <input type="hidden" data-field="gps" value="${escapeHtml(a.gps || '')}" />
                 </label>
 
-                <label class="mdtFormRow"><span class="k">ARRESTING OFFICER</span><input class="mdtInput" data-field="arrestingOfficer" value="${escapeHtml(officerLabel)}" /></label>
+                <label class="mdtFormRow"><span class="k">OFFICERS INVOLVED</span><input class="mdtInput" data-field="arrestingOfficer" value="${escapeHtml(officerLabel)}" /></label>
 
                 ${renderPicker('CHARGES', 'charges', { placeholder: 'Type charge and hit enter / click suggestion...', chips: charges, buttonHtml: '' })}
 
@@ -3921,8 +5071,116 @@
 
           const chargesFieldV2 = wrap.querySelector('[data-field="chargesV2"]');
           const chargesFieldLegacy = wrap.querySelector('[data-field="charges"]');
+          const chargesByCriminalField = wrap.querySelector('[data-field="chargesByCriminal"]');
+          const chargeTargetSelect = wrap.querySelector('[data-charge-target]');
+
+          // Thin header controls (Type/Status as tiny dropdown buttons)
+          const miniTypeSelect = wrap.querySelector('[data-mini-source="type"]');
+          const miniStatusSelect = wrap.querySelector('[data-mini-source="status"]');
+          const miniTypeBtn = wrap.querySelector('[data-mini-select="type"]');
+          const miniStatusBtn = wrap.querySelector('[data-mini-select="status"]');
+
+          const syncMiniHeaderBtnText = () => {
+            if(miniTypeBtn && miniTypeSelect){
+              const v = String(miniTypeSelect.value || '').trim() || 'Type';
+              miniTypeBtn.textContent = `${v} ▾`;
+              const vLc = v.toLowerCase();
+              miniTypeBtn.classList.remove('mdtBadgeAlert','mdtBadgeWarn','mdtBadgeInfo');
+              // Color code: Arrest=Info, Warrant=Alert, BOLO=Warn
+              if(vLc.includes('warrant')) miniTypeBtn.classList.add('mdtBadgeAlert');
+              else if(vLc.includes('bolo')) miniTypeBtn.classList.add('mdtBadgeWarn');
+              else miniTypeBtn.classList.add('mdtBadgeInfo');
+            }
+            if(miniStatusBtn && miniStatusSelect){
+              const v = String(miniStatusSelect.value || '').trim() || 'Status';
+              miniStatusBtn.textContent = `${v} ▾`;
+              const vLc = v.toLowerCase();
+              miniStatusBtn.classList.remove('mdtBadgeAlert','mdtBadgeWarn','mdtBadgeInfo','mdtBadgeOk');
+              // Color code: Ongoing=Info, Submitted=Warn, Processed=Ok, Closed=Alert
+              if(vLc.includes('processed')) miniStatusBtn.classList.add('mdtBadgeOk');
+              else if(vLc.includes('submitted')) miniStatusBtn.classList.add('mdtBadgeWarn');
+              else if(vLc.includes('closed')) miniStatusBtn.classList.add('mdtBadgeAlert');
+              else miniStatusBtn.classList.add('mdtBadgeInfo');
+            }
+          };
+
+          const openMiniDropdown = (btn, select) => {
+            if(!btn || !select) return;
+
+            // Clean any previous.
+            try{ document.querySelectorAll('[data-mini-dd]').forEach(x => x.remove()); }catch{}
+
+            const rect = btn.getBoundingClientRect();
+            const dd = document.createElement('div');
+            dd.setAttribute('data-mini-dd', '1');
+            dd.style.cssText = `position:fixed; left:${Math.round(rect.left)}px; top:${Math.round(rect.bottom + 6)}px; min-width:${Math.max(160, Math.round(rect.width))}px; background:rgba(10,10,14,.98); border:1px solid var(--mdt-border-strong); box-shadow:0 0 16px var(--mdt-glow-strong); padding:6px; z-index:10000;`;
+
+              const options = Array.from(select.querySelectorAll('option')).map(o => ({ value: o.value, label: o.textContent }));
+              const kind = String(select.getAttribute('data-mini-source') || '').toLowerCase();
+              dd.innerHTML = options.map(o => {
+                const on = String(o.value) === String(select.value);
+                const vLc = String(o.value || '').toLowerCase();
+
+                let badge = 'mdtBadgeInfo';
+                if(kind === 'type'){
+                  if(vLc.includes('warrant')) badge = 'mdtBadgeAlert';
+                  else if(vLc.includes('bolo')) badge = 'mdtBadgeWarn';
+                  else badge = 'mdtBadgeInfo';
+                }
+                if(kind === 'status'){
+                  if(vLc.includes('processed')) badge = 'mdtBadgeOk';
+                  else if(vLc.includes('submitted')) badge = 'mdtBadgeWarn';
+                  else if(vLc.includes('closed')) badge = 'mdtBadgeAlert';
+                  else badge = 'mdtBadgeInfo';
+                }
+
+                return `<button type="button" class="mdtBtn ${badge}" data-mini-dd-opt="${escapeHtml(o.value)}" style="width:100%; text-align:left; justify-content:flex-start; height:32px; margin:4px 0; opacity:${on ? '1' : '.9'};">${escapeHtml(o.label)}</button>`;
+              }).join('');
+
+
+            document.body.appendChild(dd);
+
+            const close = () => {
+              try{ dd.remove(); }catch{}
+              window.removeEventListener('mousedown', onDown, true);
+              window.removeEventListener('keydown', onKey, true);
+            };
+
+            const onDown = (e) => {
+              if(e.target === btn || btn.contains(e.target)) return;
+              if(dd.contains(e.target)) return;
+              close();
+            };
+
+            const onKey = (e) => {
+              if(e.key === 'Escape') close();
+            };
+
+            window.addEventListener('mousedown', onDown, true);
+            window.addEventListener('keydown', onKey, true);
+
+            dd.querySelectorAll('[data-mini-dd-opt]').forEach(x => {
+              x.onclick = () => {
+                const v = x.dataset.miniDdOpt;
+                select.value = v;
+                // Trigger existing data-field listeners.
+                try{ select.dispatchEvent(new Event('change', { bubbles: true })); }catch{}
+                syncMiniHeaderBtnText();
+                close();
+              };
+            });
+          };
+
+          miniTypeBtn && miniTypeSelect && (miniTypeBtn.onclick = () => openMiniDropdown(miniTypeBtn, miniTypeSelect));
+          miniStatusBtn && miniStatusSelect && (miniStatusBtn.onclick = () => openMiniDropdown(miniStatusBtn, miniStatusSelect));
+          (miniTypeSelect || miniStatusSelect) && syncMiniHeaderBtnText();
+
 
           const migrateChargesIfNeeded = () => {
+            // Prefer per-criminal store if present.
+            if(chargesByCriminalField && String(chargesByCriminalField.value || '').trim()) return;
+
+            // Otherwise keep the prior v2 migration, which we then attach to the primary criminal.
             if(chargesFieldV2 && String(chargesFieldV2.value || '').trim()) return;
             if(!chargesFieldLegacy) return;
             try{
@@ -3930,27 +5188,123 @@
               const v2 = chargesV2FromFlat(flat);
               if(chargesFieldV2) chargesFieldV2.value = JSON.stringify(v2);
             }catch{}
+
+            // Attach to first criminal so older records show correctly.
+            try{
+              if(!chargesByCriminalField) return;
+              const primary = (() => {
+               const selected = String(chargeTargetSelect?.value || '').trim();
+               if(selected && !isUnknownPlaceholderCriminalName(selected)) return selected;
+               try{
+                 const list = normalizeStringArray(JSON.parse(wrap.querySelector('[data-field="criminals"]')?.value || '[]'))
+                   .map(s => String(s || '').trim())
+                   .filter(Boolean)
+                   .filter(n => !isUnknownPlaceholderCriminalName(n));
+                 return String(list[0] || '').trim() || 'Unknown';
+               }catch{
+                 return 'Unknown';
+               }
+             })();
+              const v2 = (() => { try{ return normalizeChargesV2(JSON.parse(chargesFieldV2?.value || '[]')); }catch{ return []; } })();
+              if(!v2.length) return;
+              chargesByCriminalField.value = JSON.stringify({ [primary]: v2 });
+            }catch{}
           };
 
-          const getChargesV2 = () => {
+          const getChargesByCriminal = () => {
             migrateChargesIfNeeded();
-            try{ return normalizeChargesV2(JSON.parse(chargesFieldV2?.value || '[]')); }catch{ return []; }
+            try{
+              const raw = JSON.parse(chargesByCriminalField?.value || '{}');
+              if(!raw || Array.isArray(raw) || typeof raw !== 'object') return {};
+              const out = {};
+              for(const [k, v] of Object.entries(raw)){
+                const key = String(k || '').trim();
+                if(!key) continue;
+                out[key] = normalizeChargesV2(v);
+              }
+              return out;
+            }catch{
+              return {};
+            }
           };
+
+           const setChargesByCriminal = (obj) => {
+             // Ensure sentencing helpers are in place before any calls.
+
+            const raw = (obj && typeof obj === 'object' && !Array.isArray(obj)) ? obj : {};
+            const out = {};
+            for(const [k, v] of Object.entries(raw)){
+              const key = String(k || '').trim();
+              if(!key) continue;
+              out[key] = normalizeChargesV2(v);
+            }
+            if(chargesByCriminalField) chargesByCriminalField.value = JSON.stringify(out);
+
+            // Keep legacy/global fields synced to the currently selected target.
+             const currentTarget = String(chargeTargetSelect?.value || '').trim();
+             const list = (!currentTarget || isUnknownPlaceholderCriminalName(currentTarget))
+               ? []
+               : normalizeChargesV2(out[currentTarget] || []);
+
+            if(chargesFieldV2) chargesFieldV2.value = JSON.stringify(list);
+            if(chargesFieldLegacy) chargesFieldLegacy.value = JSON.stringify(flattenChargesV2(list));
+
+            // Recompute default sentencing totals for any new criminals.
+            try{ renderSentencing(); }catch{}
+          };
+
+
+           const getChargeTarget = () => {
+             const t = String(chargeTargetSelect?.value || '').trim();
+             if(t && !isUnknownPlaceholderCriminalName(t)) return t;
+             // Fallback to first *known* criminal.
+             try{
+               const list = normalizeStringArray(JSON.parse(wrap.querySelector('[data-field="criminals"]')?.value || '[]'))
+                 .map(s => String(s || '').trim())
+                 .filter(Boolean)
+                 .filter(n => !isUnknownPlaceholderCriminalName(n));
+               return String(list[0] || '').trim() || '';
+             }catch{
+               return '';
+             }
+           };
+
+
+           const getChargesV2 = () => {
+             const by = getChargesByCriminal();
+             const tgt = getChargeTarget();
+             if(!tgt) return [];
+             return normalizeChargesV2(by[tgt] || []);
+           };
+
 
           const setChargesV2 = (items) => {
-            const normalized = normalizeChargesV2(items);
-            if(chargesFieldV2) chargesFieldV2.value = JSON.stringify(normalized);
-            if(chargesFieldLegacy) chargesFieldLegacy.value = JSON.stringify(flattenChargesV2(normalized));
-          };
+             const tgt = getChargeTarget();
+             if(!tgt) return;
+             const by = getChargesByCriminal();
+             by[tgt] = normalizeChargesV2(items);
+             setChargesByCriminal(by);
+             try{ renderSentencing(); }catch{}
+           };
 
-          const renderChargesPanelFromEditor = (items) => {
-            const totalsHost = wrap.querySelector('[data-charges-totals]');
-            const listHost = wrap.querySelector('[data-charges-list]');
-            if(!totalsHost || !listHost) return;
 
-            const normalized = normalizeChargesV2(items);
+
+           const renderChargesPanelFromEditor = (items) => {
+             const totalsHost = wrap.querySelector('[data-charges-totals]');
+             const listHost = wrap.querySelector('[data-charges-list]');
+             if(!totalsHost || !listHost) return;
+
+             const target = getChargeTarget();
+             if(!target){
+               totalsHost.innerHTML = '';
+               listHost.innerHTML = `<div class="mdtDetailItem mdtItemNone">Identify a criminal before adding charges.</div>`;
+               return;
+             }
+ 
+             const normalized = normalizeChargesV2(items);
             const totals = computeChargeTotals(normalized);
-            totalsHost.innerHTML = `TOTAL: <span class="mdtMeta">${escapeHtml(formatJailMonths(totals.jailMonths))}</span> • <span class="mdtMeta">${escapeHtml(formatMoney(totals.fine))}</span>`;
+            const jailText = formatJailMonthsRange({ min: totals.jailMinMonths, max: totals.jailMaxMonths });
+            totalsHost.innerHTML = `TOTAL: <span class="mdtMeta">${escapeHtml(jailText)}</span> • <span class="mdtMeta">${escapeHtml(formatMoney(totals.fine))}</span>`;
 
             if(!normalized.length){
               listHost.innerHTML = `<div class="mdtDetailItem mdtItemNone">No charges</div>`;
@@ -3958,19 +5312,20 @@
             }
 
             listHost.innerHTML = normalized.map(it => {
-              const per = computeChargeTotals([it]);
-              const label = chargeLabelFromToken(it.token);
-              return `
-                <div class="mdtDetailRow" style="align-items:center; gap:10px;">
-                  <span class="mdtDetailKey" style="flex:1;">${escapeHtml(label)} <span style="opacity:.75;">x${it.count}</span></span>
-                  <span class="mdtDetailVal" style="white-space:nowrap; opacity:.85;">${escapeHtml(formatJailMonths(per.jailMonths))} • ${escapeHtml(formatMoney(per.fine))}</span>
-                  <div style="display:flex; gap:6px;">
-                    <button type="button" class="mdtBtn" data-charge-inc="${escapeHtml(it.token)}" title="Increase" style="min-width:30px; height:30px; padding:0;">+</button>
-                    <button type="button" class="mdtBtn" data-charge-dec="${escapeHtml(it.token)}" title="Decrease" style="min-width:30px; height:30px; padding:0;">−</button>
-                    <button type="button" class="mdtBtn" data-charge-remove="${escapeHtml(it.token)}" title="Remove charge" style="min-width:30px; height:30px; padding:0;">X</button>
-                  </div>
-                </div>
-              `;
+                  const per = computeChargeTotals([it]);
+                  const label = chargeLabelFromToken(it.token);
+                  const jailText = formatJailMonthsRange({ min: per.jailMinMonths, max: per.jailMaxMonths });
+                  return `
+                    <div class="mdtDetailRow" style="align-items:center; gap:10px;">
+                      <span class="mdtDetailKey" style="flex:1;">${escapeHtml(label)} <span style="opacity:.75;">x${it.count}</span></span>
+                      <span class="mdtDetailVal" style="white-space:nowrap; opacity:.85;">${escapeHtml(jailText)} • ${escapeHtml(formatMoney(per.fine))}</span>
+                      <div style="display:flex; gap:6px;">
+                        <button type="button" class="mdtBtn" data-charge-inc="${escapeHtml(it.token)}" title="Increase" style="min-width:30px; height:30px; padding:0;">+</button>
+                        <button type="button" class="mdtBtn" data-charge-dec="${escapeHtml(it.token)}" title="Decrease" style="min-width:30px; height:30px; padding:0;">−</button>
+                        <button type="button" class="mdtBtn" data-charge-remove="${escapeHtml(it.token)}" title="Remove charge" style="min-width:30px; height:30px; padding:0;">X</button>
+                      </div>
+                    </div>
+                  `;
             }).join('');
 
             listHost.querySelectorAll('[data-charge-inc]').forEach(btn => {
@@ -3979,6 +5334,7 @@
                 const next = chargesV2Adjust(getChargesV2(), tok, +1);
                 setChargesV2(next);
                 renderChargesPanelFromEditor(next);
+                refreshPenalOverlayCurrentCharges();
               };
             });
 
@@ -3992,6 +5348,7 @@
                 const next = chargesV2Adjust(cur, tok, -1);
                 setChargesV2(next);
                 renderChargesPanelFromEditor(next);
+                refreshPenalOverlayCurrentCharges();
               };
             });
 
@@ -4001,25 +5358,152 @@
                 const next = chargesV2Remove(getChargesV2(), tok);
                 setChargesV2(next);
                 renderChargesPanelFromEditor(next);
+                refreshPenalOverlayCurrentCharges();
               };
             });
+
           };
 
-          // initial render
-          renderChargesPanelFromEditor(getChargesV2());
+           const updateChargesUiEnabledState = () => {
+             const target = getChargeTarget();
+             const enabled = Boolean(target);
 
-          bindPicker('arrests', 'criminals', {
-            type: 'citizen',
-            openOnInput: true,
-            disableEnterAdd: true,
-            chipLinkTarget: 'citizens',
-          });
+             const openPenalBtn = wrap.querySelector('[data-open-penal-overlay]');
+             if(openPenalBtn) openPenalBtn.disabled = !enabled;
 
-          bindPicker('arrests', 'officers', {
-            type: 'officer',
-            openOnInput: true,
-            disableEnterAdd: true,
-          });
+             // Disable the add-charge picker input when there's no target.
+             const chargePicker = wrap.querySelector('.mdtPicker[data-picker="chargesV2"]');
+             const chargeInput = chargePicker ? chargePicker.querySelector('[data-picker-input]') : null;
+             if(chargeInput) chargeInput.disabled = !enabled;
+
+             // The +/- buttons are created by renderChargesPanelFromEditor; it already guards.
+           };
+
+           const renderChargesPanel = () => {
+             renderChargesPanelFromEditor(getChargesV2());
+             updateChargesUiEnabledState();
+           };
+
+          // charge target select
+           chargeTargetSelect && chargeTargetSelect.addEventListener('change', () => {
+             // When switching target, sync legacy fields so autosave captures good data.
+             setChargesByCriminal(getChargesByCriminal());
+             renderChargesPanel();
+             refreshPenalOverlayCurrentCharges();
+ 
+             // Refresh the hidden picker backing store so the "ADD CHARGE" picker
+             // reflects the currently selected target.
+             try{ wrap.querySelector('[data-field="chargesV2"]') && (wrap.querySelector('[data-field="chargesV2"]').value = JSON.stringify(getChargesV2())); }catch{}
+             bindPicker('arrests', 'chargesV2', {
+               type: 'penal',
+               openOnInput: true,
+               disableEnterAdd: true,
+               keepResultsOpen: true,
+               onBeforeAdd: (arr, val) => {
+                 const tok = normalizeChargeToken(val);
+                 if(!tok) return arr;
+                 return chargesV2Adjust(normalizeChargesV2(arr), tok, +1);
+               },
+               onChange: (arr) => {
+                 setChargesV2(arr);
+                 renderChargesPanel();
+                 refreshPenalOverlayCurrentCharges();
+               },
+             });
+             updateChargesUiEnabledState();
+           });
+
+
+           // initial render
+           renderChargesPanel();
+           // Sentencing helpers are declared later in this function; defer first render.
+           setTimeout(() => { try{ renderSentencing(); }catch{} }, 0);
+
+           const getCriminalsList = () => {
+             try{
+               const raw = JSON.parse(wrap.querySelector('[data-field="criminals"]')?.value || '[]');
+               return normalizeStringArray(raw)
+                 .map(s => String(s || '').trim())
+                 .filter(Boolean)
+                 .filter(n => !isUnknownPlaceholderCriminalName(n));
+             }catch{
+               return [];
+             }
+           };
+
+
+           const refreshChargeTargetsSelectOptions = (opts = {}) => {
+             if(!chargeTargetSelect) return;
+             const keep = (opts.keepSelection !== false);
+             const dispatch = (opts.dispatchChange === true);
+
+             const prev = keep ? String(chargeTargetSelect.value || '').trim() : '';
+             const list = getCriminalsList();
+             const chargeKeys = Object.keys(getChargesByCriminal && getChargesByCriminal() || {})
+               .filter(k => !isUnknownPlaceholderCriminalName(k));
+
+             const targets = list.length ? list : chargeKeys;
+
+
+             chargeTargetSelect.innerHTML = '';
+             if(!targets.length){
+               const opt = document.createElement('option');
+               opt.value = '';
+               opt.textContent = '(No identified criminals)';
+               chargeTargetSelect.appendChild(opt);
+             }else{
+               for(const n of targets){
+                 const opt = document.createElement('option');
+                 opt.value = n;
+                 opt.textContent = n;
+                 chargeTargetSelect.appendChild(opt);
+               }
+             }
+
+
+             const next = (keep && prev && targets.includes(prev)) ? prev : (targets[0] || '');
+             chargeTargetSelect.value = next;
+
+             if(dispatch){
+               try{ chargeTargetSelect.dispatchEvent(new Event('change', { bubbles:true })); }catch{}
+             }
+           };
+
+           refreshChargeTargetsSelectOptions({ keepSelection:true, dispatchChange:false });
+
+            bindPicker('arrests', 'criminals', {
+              type: 'citizen',
+              unique: true,
+              openOnInput: true,
+              disableEnterAdd: true,
+              chipLinkTarget: 'citizens',
+              unknownBtnSelector: '[data-add-unknown-criminal]',
+              unknownPrefix: 'Unknown',
+             onChange: () => {
+                 refreshChargeTargetsSelectOptions({ keepSelection:true, dispatchChange:true });
+                 try{ renderSentencing(); }catch{}
+                 updateChargesUiEnabledState();
+               },
+            });
+
+
+           // If something else changes the hidden field directly, still refresh.
+           const criminalsField = wrap.querySelector('[data-field="criminals"]');
+           criminalsField && criminalsField.addEventListener('change', () => {
+              refreshChargeTargetsSelectOptions({ keepSelection:true, dispatchChange:true });
+              try{ renderSentencing(); }catch{}
+              updateChargesUiEnabledState();
+            });
+
+
+
+           bindPicker('arrests', 'officers', {
+             type: 'officer',
+             unique: true,
+             openOnInput: true,
+             disableEnterAdd: true,
+           });
+
 
           bindPicker('arrests', 'chargesV2', {
             type: 'penal',
@@ -4070,30 +5554,830 @@
           });
           syncRichToFields();
 
+          const richSelectionNode = () => {
+            try{
+              const sel = window.getSelection && window.getSelection();
+              if(!sel || sel.rangeCount === 0) return null;
+              const n = sel.getRangeAt(0).startContainer;
+              return (n && n.nodeType === Node.ELEMENT_NODE) ? n : n?.parentElement;
+            }catch{
+              return null;
+            }
+          };
+
+          const closestWithinEditor = (node, pred) => {
+            let cur = node;
+            while(cur && cur !== richEditor){
+              if(cur.nodeType === Node.ELEMENT_NODE && pred(cur)) return cur;
+              cur = cur.parentElement;
+            }
+            return null;
+          };
+
+          const unwrap = (el) => {
+            if(!el || !el.parentNode) return;
+            const frag = document.createDocumentFragment();
+            while(el.firstChild) frag.appendChild(el.firstChild);
+            el.replaceWith(frag);
+          };
+
+          const sanitizeAndSync = () => {
+            if(!richEditor || !notesHtmlField) return;
+            const cleaned = sanitizeRichHtml(String(richEditor.innerHTML || ''));
+            if(cleaned !== String(richEditor.innerHTML || '')){
+              richEditor.innerHTML = cleaned;
+            }
+            syncRichToFields();
+          };
+
+          const exec = (cmd, value = null) => {
+            try{ richEditor && richEditor.focus(); }catch{}
+            try{ document.execCommand(cmd, false, value); }catch{}
+          };
+
+          const formatBlock = (tagName) => {
+            let t = String(tagName || '').trim().toLowerCase();
+            if(!t) return;
+
+            // Accept either "p" or "<p>".
+            t = t.replace(/^</, '').replace(/>$/, '').trim();
+            if(!t) return;
+
+            // Most browsers expect the value in "<tag>" form.
+            exec('formatBlock', `<${t}>`);
+          };
+
+          const unwrapBlockquoteAtSelection = () => {
+            const node = richSelectionNode();
+            const bq = closestWithinEditor(node, el => el.tagName === 'BLOCKQUOTE');
+            if(bq) unwrap(bq);
+          };
+
+          const unwrapListAtSelection = () => {
+            const node = richSelectionNode();
+            const list = closestWithinEditor(node, el => (el.tagName === 'UL' || el.tagName === 'OL'));
+            if(!list) return;
+
+            const lis = Array.from(list.querySelectorAll(':scope > li'));
+            if(!lis.length){
+              unwrap(list);
+              return;
+            }
+
+            const frag = document.createDocumentFragment();
+            for(const li of lis){
+              const p = document.createElement('p');
+              p.innerHTML = String(li.innerHTML || '');
+              frag.appendChild(p);
+            }
+            list.replaceWith(frag);
+          };
+
+          const clearBlockAlignmentAtSelection = () => {
+            const node = richSelectionNode();
+            const block = closestWithinEditor(node, el => {
+              const t = el.tagName;
+              return t === 'P' || t === 'DIV' || t === 'LI' || t === 'BLOCKQUOTE' || /^H\d$/.test(t);
+            });
+            if(!block) return;
+
+            try{ block.style.textAlign = ''; }catch{}
+            // If style becomes empty, drop the attribute.
+            if(!String(block.getAttribute('style') || '').trim()) block.removeAttribute('style');
+            block.removeAttribute('align');
+          };
+
+          const setNormalBlock = () => {
+            // Convert headings / blockquotes back to normal paragraphs.
+            formatBlock('p');
+
+            // Some browsers keep blockquotes sticky; outdent usually removes the quote wrapper.
+            exec('outdent');
+
+            // Ensure we don't keep a surrounding <blockquote> around the current caret.
+            unwrapBlockquoteAtSelection();
+          };
+
+          const toggleHeading = () => {
+            const node = richSelectionNode();
+            const h = closestWithinEditor(node, el => /^H\d$/.test(el.tagName));
+            if(h) setNormalBlock();
+            else formatBlock('h2');
+          };
+
+          const toggleQuote = () => {
+            const node = richSelectionNode();
+            const bq = closestWithinEditor(node, el => el.tagName === 'BLOCKQUOTE');
+            if(bq){
+              setNormalBlock();
+              return;
+            }
+            formatBlock('blockquote');
+          };
+
+          const clearFormatting = () => {
+            // removeFormat does NOT clear block-level tags; explicitly reset blocks.
+            exec('removeFormat');
+            exec('unlink');
+
+            // Lists behave differently across browsers; unwrap to paragraphs.
+            unwrapListAtSelection();
+
+            setNormalBlock();
+            exec('justifyLeft');
+            clearBlockAlignmentAtSelection();
+
+            // A final pass after DOM changes helps remove leftover spans.
+            exec('removeFormat');
+          };
+
+          // Plain execCommand buttons (bold, lists, alignment, etc)
           wrap.querySelectorAll('[data-rich-cmd]').forEach(btn => {
             btn.onclick = () => {
               if(!richEditor) return;
               const cmd = btn.dataset.richCmd;
               const value = btn.dataset.richValue;
-              try{ richEditor.focus(); }catch{}
+              if(!cmd) return;
 
               // execCommand is deprecated but still supported in major browsers and fits this no-lib project.
-              try{
-                if(cmd === 'formatBlock' && value){
-                  document.execCommand('formatBlock', false, value);
-                }else{
-                  document.execCommand(cmd, false, value || null);
-                }
-              }catch{}
+               if(cmd === 'formatBlock' && value) formatBlock(value);
+               else exec(cmd, value || null);
 
-              syncRichToFields();
+              sanitizeAndSync();
             };
           });
 
-          // Penal code overlay for batch adding charges.
-          const ensurePenalOverlay = () => {
-            let overlay = wrap.querySelector('[data-penal-overlay]');
+          // Custom actions that need extra DOM cleanup.
+          wrap.querySelectorAll('[data-rich-action]').forEach(btn => {
+            btn.onclick = () => {
+              if(!richEditor) return;
+              const action = btn.dataset.richAction;
+              if(action === 'normal') setNormalBlock();
+              if(action === 'heading') toggleHeading();
+              if(action === 'quote') toggleQuote();
+              if(action === 'clear') clearFormatting();
+              sanitizeAndSync();
+            };
+          });
+
+          // Sentencing per criminal (editable totals + actions)
+          const sentencingHost = wrap.querySelector('[data-sentencing-list]');
+          const sentencingField = (() => {
+            let f = wrap.querySelector('[data-field="sentencingByCriminal"]');
+            if(f) return f;
+            // Create a hidden field for persistence via existing autosave.
+            f = document.createElement('input');
+            f.type = 'hidden';
+            f.setAttribute('data-field', 'sentencingByCriminal');
+            f.value = '{}';
+            wrap.appendChild(f);
+            return f;
+          })();
+
+          const getSentencingByCriminal = () => {
+            try{
+              const raw = JSON.parse(sentencingField?.value || '{}');
+              if(!raw || Array.isArray(raw) || typeof raw !== 'object') return {};
+              const out = {};
+              for(const [k, v] of Object.entries(raw)){
+                const key = String(k || '').trim();
+                if(!key) continue;
+                 // Current format: delta offsets.
+                 if(v && typeof v === 'object' && !Array.isArray(v) && (v.deltaJail != null || v.deltaFine != null || v.jailDelta != null || v.fineDelta != null)){
+                    const deltaJail = Math.round(Number(v?.deltaJail || v?.jailDelta || 0));
+                    const deltaFine = Math.round(Number(v?.deltaFine || v?.fineDelta || 0));
+                  const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
+                  const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
+                  const dispositionAt = String(v?.dispositionAt || '').trim();
+                  const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
+                  const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
+                  out[key] = {
+                    deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
+                    deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
+                    ...(disposition ? { disposition } : {}),
+                    ...(dispositionAt ? { dispositionAt } : {}),
+                    ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}),
+                    ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}),
+                  };
+                  }else{
+                    // Back-compat: older format stored absolute totals (jailMonths/fine).
+                    const jailMonths = Math.max(0, Math.round(Number(v?.jailMonths || 0)));
+                    const fine = Math.max(0, Math.round(Number(v?.fine || 0)));
+                     const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
+                     const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
+                     const dispositionAt = String(v?.dispositionAt || '').trim();
+                     const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
+                     const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
+                     out[key] = { deltaJail: 0, deltaFine: 0, __abs: { jailMonths, fine }, ...(disposition ? { disposition } : {}), ...(dispositionAt ? { dispositionAt } : {}), ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}), ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}) };
+                  }
+
+              }
+              return out;
+            }catch{
+              return {};
+            }
+          };
+
+                 const setSentencingByCriminal = (obj) => {
+             const raw = (obj && typeof obj === 'object' && !Array.isArray(obj)) ? obj : {};
+             const out = {};
+              for(const [k, v] of Object.entries(raw)){
+                const key = String(k || '').trim();
+                if(!key) continue;
+                  const deltaJail = Math.round(Number(v?.deltaJail || v?.jailDelta || 0));
+                  const deltaFine = Math.round(Number(v?.deltaFine || v?.fineDelta || 0));
+                  const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
+                  const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
+                  const dispositionAt = String(v?.dispositionAt || '').trim();
+                  const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
+                  const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
+                  out[key] = {
+                    deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
+                    deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
+                    ...(disposition ? { disposition } : {}),
+                    ...(dispositionAt ? { dispositionAt } : {}),
+                    ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}),
+                    ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}),
+                  };
+ 
+              }
+              if(sentencingField) sentencingField.value = JSON.stringify(out);
+           };
+
+           const ensureSentencingDefaults = () => {
+             const bySent = getSentencingByCriminal();
+             const byCharges = getChargesByCriminal();
+             let mutated = false;
+
+             const isEligible = (n) => {
+               const name = String(n || '').trim();
+               return Boolean(name) && !isUnknownPlaceholderCriminalName(name);
+             };
+
+
+             // Ensure defaults exist for any criminal in the picker list.
+             const criminals = (() => {
+               try{
+                 const raw = JSON.parse(wrap.querySelector('[data-field="criminals"]')?.value || '[]');
+                 return normalizeStringArray(raw).map(s => String(s || '').trim()).filter(Boolean);
+               }catch{
+                 return [];
+               }
+             })();
+
+             for(const name of criminals){
+               if(!isEligible(name)) continue;
+               if(bySent[name]) continue;
+               // Default: no delta offset from charges.
+               bySent[name] = { deltaJail: 0, deltaFine: 0 };
+               mutated = true;
+             }
+
+
+             // Also back-fill from any chargesByCriminal entries.
+             for(const [name, items] of Object.entries(byCharges)){
+               if(!isEligible(name)) continue;
+               if(bySent[name]) continue;
+               // Default: no delta offset from charges.
+               bySent[name] = { deltaJail: 0, deltaFine: 0 };
+               mutated = true;
+             }
+
+
+             if(mutated) setSentencingByCriminal(bySent);
+           };
+
+          const ensureConfirmOverlay = () => {
+            let overlay = document.querySelector('[data-confirm-overlay]');
             if(overlay) return overlay;
+
+            overlay = document.createElement('div');
+            overlay.setAttribute('data-confirm-overlay', '1');
+            overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:10001; display:none;';
+            overlay.innerHTML = `
+               <div data-confirm-card style="position:absolute; left:50%; top:20vh; transform:translateX(-50%); width:min(520px, 92vw); background:rgba(10,10,14,.96); border:1px solid var(--mdt-border-strong); box-shadow:0 0 24px var(--mdt-glow-strong); padding:14px;">
+                 <div class="mdtDetailSectionTitle" data-confirm-title style="margin:0 0 8px 0;">CONFIRM</div>
+                 <div class="mdtMeta" data-confirm-text style="opacity:.92; margin-bottom:10px;"></div>
+                 <div class="mdtMeta" data-confirm-totals style="opacity:.9; margin-bottom:14px;"></div>
+                 <div style="display:flex; justify-content:flex-end; gap:10px;">
+                   <button type="button" class="mdtBtn" data-confirm-cancel>CANCEL</button>
+                   <button type="button" class="mdtBtn" data-confirm-ok>CONFIRM</button>
+                 </div>
+               </div>
+            `;
+            document.body.appendChild(overlay);
+
+            overlay.onclick = (e) => {
+              if(e.target === overlay) overlay.style.display = 'none';
+            };
+
+            return overlay;
+          };
+
+           const openConfirm = ({ criminalName, action, jailMonths, fine, onConfirm }) => {
+             const act = String(action || '').trim();
+             const overlay = ensureConfirmOverlay();
+             const card = overlay.querySelector('[data-confirm-card]');
+             const titleHost = overlay.querySelector('[data-confirm-title]');
+             const textHost = overlay.querySelector('[data-confirm-text]');
+             const totalsHost = overlay.querySelector('[data-confirm-totals]');
+             const okBtn = overlay.querySelector('[data-confirm-ok]');
+             const cancelBtn = overlay.querySelector('[data-confirm-cancel]');
+
+             const name = String(criminalName || '').trim() || 'Unknown';
+             const isSip = act === 'sip';
+
+             // Darker fills for readability.
+             const theme = isSip
+               ? { title: 'CONFIRM', bg: 'rgba(110, 80, 0, .72)', border: 'rgba(255, 210, 64, .85)', shadow: 'rgba(255, 210, 64, .35)' }
+               : { title: 'CONFIRM', bg: 'rgba(85, 0, 15, .78)', border: 'rgba(255, 56, 84, .85)', shadow: 'rgba(255, 56, 84, .35)' };
+
+             if(titleHost) titleHost.textContent = theme.title;
+
+             const question = isSip
+               ? `Are you sure you want to let (${name}) serve in place?`
+               : `Are you sure you want to send (${name}) to prison?`;
+
+             const byCharges = getChargesByCriminal();
+             const items = normalizeChargesV2(byCharges[name] || []);
+             const chargeLines = items.length
+               ? items.map(it => {
+                   const label = chargeLabelFromToken(it.token);
+                   const cnt = Math.max(1, Math.round(Number(it.count || 1)));
+                   return `<div class="mdtDetailItem" style="margin:0; padding:2px 0;">${escapeHtml(label)} <span style="opacity:.75;">x${escapeHtml(String(cnt))}</span></div>`;
+                 }).join('')
+               : `<div class="mdtDetailItem mdtItemNone" style="margin:0; padding:2px 0;">No charges</div>`;
+
+             if(textHost){
+               textHost.innerHTML = `
+                 <div style="margin-bottom:8px; font-weight:700;">${escapeHtml(question)}</div>
+                 <div class="mdtMeta" style="opacity:.9; margin-bottom:6px;">Charges for ${escapeHtml(name)}:</div>
+                 <div style="border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.28); padding:8px; max-height:160px; overflow:auto;">${chargeLines}</div>
+               `;
+             }
+
+              if(totalsHost){
+                const jailText = formatJailMonthsRange({ min: jailMonths, max: jailMonths });
+                totalsHost.innerHTML = `Sentence to apply: <span class="mdtMeta">${escapeHtml(jailText)}</span> • <span class="mdtMeta">${escapeHtml(formatMoney(fine))}</span>`;
+              }
+             if(card){
+               card.style.background = theme.bg;
+               card.style.border = `1px solid ${theme.border}`;
+               card.style.boxShadow = `0 0 26px ${theme.shadow}`;
+             }
+             if(okBtn){
+               okBtn.textContent = 'CONFIRM';
+               okBtn.className = `mdtBtn ${isSip ? 'mdtBadgeWarn' : 'mdtBadgeAlert'}`;
+             }
+
+             overlay.style.display = '';
+
+             const close = () => { overlay.style.display = 'none'; };
+             cancelBtn && (cancelBtn.onclick = close);
+
+             okBtn && (okBtn.onclick = () => {
+               try{ typeof onConfirm === 'function' && onConfirm(); }catch{}
+               close();
+             });
+           };
+
+             const renderSentencing = () => {
+             if(!sentencingHost) return;
+             ensureSentencingDefaults();
+
+              const byCharges = getChargesByCriminal();
+              const bySent = getSentencingByCriminal();
+              const criminals = (() => {
+                try{
+                  const raw = JSON.parse(wrap.querySelector('[data-field="criminals"]')?.value || '[]');
+                  return normalizeStringArray(raw)
+                    .map(s => String(s || '').trim())
+                    .filter(Boolean)
+                    .filter(n => !isUnknownPlaceholderCriminalName(n));
+                }catch{
+                  return [];
+                }
+              })();
+              const list = (criminals.length ? criminals : Object.keys(byCharges))
+                .map(s => String(s || '').trim())
+                .filter(Boolean)
+                .filter(n => !isUnknownPlaceholderCriminalName(n));
+
+
+             // Ensure every listed criminal has a delta entry, and migrate old absolute totals -> delta.
+             {
+               let mutated = false;
+               const next = { ...bySent };
+               for(const name of list){
+                 const n = String(name || '').trim() || 'Unknown';
+                  if(!next[n]){
+                    next[n] = { deltaJail: 0, deltaFine: 0 };
+                    mutated = true;
+                    continue;
+                  }
+
+                  // Ensure keys exist even if record has extra fields.
+                  if(next[n].deltaJail == null) next[n].deltaJail = 0;
+                  if(next[n].deltaFine == null) next[n].deltaFine = 0;
+
+                 // If loader stored old absolute totals, convert to delta using current charges.
+                 const maybeAbs = next[n]?.__abs;
+                  if(maybeAbs && typeof maybeAbs === 'object'){
+                       const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
+                      const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                      const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+                      const jailMonths = Math.max(0, Math.round(Number(maybeAbs.jailMonths || 0)));
+                      const fine = Math.max(0, Math.round(Number(maybeAbs.fine || 0)));
+                    const prev = next[n] || {};
+                    next[n] = { ...prev, deltaJail: jailMonths - baseMonths, deltaFine: fine - baseFine };
+                    mutated = true;
+                  }
+               }
+               if(mutated) setSentencingByCriminal(next);
+             }
+
+             const bySentFresh = getSentencingByCriminal();
+
+
+
+
+            if(!list.length){
+              sentencingHost.innerHTML = `<div class="mdtDetailItem mdtItemNone">No criminals</div>`;
+              return;
+            }
+
+              const clampNum = (val, min, max) => {
+                const n = Number(val);
+                if(!Number.isFinite(n)) return min;
+                return Math.min(max, Math.max(min, n));
+              };
+
+              // Enforce sentencing caps: you can lower from charges, but never exceed them.
+              const normalizeDeltasToCaps = () => {
+                const by = getSentencingByCriminal();
+                let mutated = false;
+                for(const name of list){
+                  const n = String(name || '').trim() || 'Unknown';
+                    const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
+                    const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                    const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+                   const cur = by[n] || { deltaJail: 0, deltaFine: 0 };
+                   const disp = String(cur?.disposition || '').trim().toLowerCase();
+                   if(disp === 'prison' || disp === 'sip') continue;
+ 
+                   const jailFinal = clampNum(baseMonths + Number(cur.deltaJail || 0), 0, baseMonths);
+                   const fineFinal = clampNum(baseFine + Number(cur.deltaFine || 0), 0, baseFine);
+
+                  const nextDeltaJail = jailFinal - baseMonths;
+                  const nextDeltaFine = fineFinal - baseFine;
+
+                  if(nextDeltaJail !== Number(cur.deltaJail || 0) || nextDeltaFine !== Number(cur.deltaFine || 0)){
+                    by[n] = { ...cur, deltaJail: nextDeltaJail, deltaFine: nextDeltaFine };
+                    mutated = true;
+                  }
+                }
+                if(mutated) setSentencingByCriminal(by);
+                return getSentencingByCriminal();
+              };
+
+              const bySentCapped = normalizeDeltasToCaps();
+
+              sentencingHost.innerHTML = list.map(name => {
+                const n = String(name || '').trim() || 'Unknown';
+                  const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
+
+                  const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                  const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+
+                 const delta = bySentCapped[n] || { deltaJail: 0, deltaFine: 0 };
+
+                 const disp = String(delta?.disposition || '').trim().toLowerCase();
+                 const isLocked = (disp === 'prison' || disp === 'sip');
+
+                 const jailMonthsFinal = isLocked && Number.isFinite(Number(delta.lockedJailMonths))
+                   ? clampNum(Number(delta.lockedJailMonths), 0, baseMonths)
+                   : clampNum(baseMonths + Number(delta.deltaJail || 0), 0, baseMonths);
+
+                 const fineFinal = isLocked && Number.isFinite(Number(delta.lockedFine))
+                   ? clampNum(Number(delta.lockedFine), 0, baseFine)
+                   : clampNum(baseFine + Number(delta.deltaFine || 0), 0, baseFine);
+
+
+                const maxMonths = baseMonths;
+                const fineStep = baseFine >= 100 ? 100 : 1;
+                const maxFine = baseFine;
+
+
+                 const dispAt = String(delta?.dispositionAt || '').trim();
+                 const actionHtml = (() => {
+                   if(isLocked){
+
+                     const isSip = disp === 'sip';
+                     const label = isSip ? 'SERVED IN PLACE' : 'SENT TO PRISON';
+                     const when = dispAt ? ` • ${escapeHtml(shortDateTime(dispAt))}` : '';
+                     const bg = isSip ? 'rgba(255, 210, 64, .18)' : 'rgba(255, 56, 84, .18)';
+                     const bd = isSip ? 'rgba(255, 210, 64, .75)' : 'rgba(255, 56, 84, .75)';
+                     return `
+                       <div style="width:100%; text-align:right; padding:6px 10px; border:1px solid ${bd}; background:${bg}; font-size:12px; letter-spacing:.4px;">
+                         <span style="font-weight:700;">${label}</span>${when}
+                       </div>
+                     `;
+                   }
+
+                   const chargeList = byCharges[n] || [];
+                   const hasAnyCharges = Array.isArray(chargeList) && chargeList.length > 0;
+                   const canSip = hasAnyCharges;
+                   const canPrison = hasAnyCharges && baseMonths > 0;
+
+                   const sipTitle = canSip ? '' : 'Add at least one charge before sentencing.';
+                   const prisonTitle = !hasAnyCharges
+                     ? 'Add at least one charge before sentencing.'
+                     : (baseMonths <= 0 ? 'Requires at least one charge that carries jail time.' : '');
+
+                   return `
+                     <button type="button" class="mdtBtn mdtBadgeAlert" data-action-prison="${escapeHtml(n)}" ${canPrison ? '' : 'disabled'} title="${escapeHtml(prisonTitle)}" style="height:28px; padding:0 8px; font-size:12px;">SEND TO PRISON</button>
+                     <button type="button" class="mdtBtn mdtBadgeWarn" data-action-sip="${escapeHtml(n)}" ${canSip ? '' : 'disabled'} title="${escapeHtml(sipTitle)}" style="height:28px; padding:0 8px; font-size:12px;">SERVE IN PLACE</button>
+                   `;
+                 })();
+
+
+                return `
+                  <div class="mdtDetailRow" style="align-items:flex-start; gap:10px;">
+                    <div style="flex:1; min-width:150px;">
+                       <div class="mdtDetailKey" style="font-size:12px;">${escapeHtml(n)}</div>
+                        <div class="mdtMeta" style="opacity:.8; font-size:12px; margin-top:4px;">From charges: ${escapeHtml(formatJailMonthsRange({ min: chargesTotals.jailMinMonths, max: chargesTotals.jailMaxMonths }))} • ${escapeHtml(formatMoney(chargesTotals.fine))}</div>
+ 
+                    </div>
+                    <div style="display:grid; gap:10px; min-width:260px;">
+                      <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+                        <span class="mdtMeta" style="opacity:.85; font-size:12px;">Time</span>
+                          <input class="mdtInput" data-sentence-months="${escapeHtml(n)}" value="${escapeHtml(String(jailMonthsFinal))}" inputmode="numeric" ${isLocked ? 'disabled' : ''} style="width:86px; height:28px; padding:0 8px; font-size:12px;" />
+                            <input class="mdtRange" type="range" data-sentence-months-slider="${escapeHtml(n)}" min="0" max="${escapeHtml(String(maxMonths))}" step="1" value="${escapeHtml(String(jailMonthsFinal))}" ${isLocked ? 'disabled' : ''} style="width:140px;" />
+
+
+ 
+                        <span class="mdtMeta" style="opacity:.75; font-size:12px;">mo</span>
+                      </div>
+                      <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+                        <span class="mdtMeta" style="opacity:.85; font-size:12px;">Fine</span>
+                          <input class="mdtInput" data-sentence-fine="${escapeHtml(n)}" value="${escapeHtml(String(fineFinal))}" inputmode="numeric" ${isLocked ? 'disabled' : ''} style="width:110px; height:28px; padding:0 8px; font-size:12px;" />
+                            <input class="mdtRange" type="range" data-sentence-fine-slider="${escapeHtml(n)}" min="0" max="${escapeHtml(String(maxFine))}" step="${escapeHtml(String(fineStep))}" value="${escapeHtml(String(fineFinal))}" ${isLocked ? 'disabled' : ''} style="width:140px;" />
+
+
+ 
+                      </div>
+                       <div data-sentence-actions="${escapeHtml(n)}" style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+                         ${actionHtml}
+                       </div>
+ 
+                    </div>
+                  </div>
+                `;
+             }).join('');
+
+
+                const setSentenceDeltaFromFinal = (name, { jailMonthsFinal, fineFinal }) => {
+                 const n = String(name || '').trim();
+                 if(!n) return;
+
+                 const curRec = getSentencingByCriminal()[n] || {};
+                 const curDisp = String(curRec?.disposition || '').trim().toLowerCase();
+                 if(curDisp === 'prison' || curDisp === 'sip') return;
+  
+                 const byCharges = getChargesByCriminal();
+
+                 const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
+                 const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                 const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+ 
+                 const jail = clampNum(Math.round(Number(jailMonthsFinal ?? baseMonths)), 0, baseMonths);
+                 const fine = clampNum(Math.round(Number(fineFinal ?? baseFine)), 0, baseFine);
+ 
+ 
+                const deltaJail = jail - baseMonths;
+                const deltaFine = fine - baseFine;
+ 
+                const by = getSentencingByCriminal();
+                const curSent = by[n] || {};
+                by[n] = {
+                  ...curSent,
+                  deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
+                  deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
+                };
+                setSentencingByCriminal(by);
+              };
+
+
+               const setSentenceDisposition = (name, disposition) => {
+                 const n = String(name || '').trim();
+                 const d = String(disposition || '').trim().toLowerCase();
+                 if(!n) return;
+                 if(d !== 'prison' && d !== 'sip') return;
+                  const by = getSentencingByCriminal();
+                  const cur = by[n] || { deltaJail: 0, deltaFine: 0 };
+
+                  // Freeze sentence totals at the moment of confirmation.
+                  const byCharges = getChargesByCriminal();
+                   const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
+                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+                   const lockedJailMonths = clampNum(baseMonths + Number(cur.deltaJail || 0), 0, baseMonths);
+                   const lockedFine = clampNum(baseFine + Number(cur.deltaFine || 0), 0, baseFine);
+
+                   // Guard: cannot sentence without charges; cannot prison without time.
+                   const chargeList = byCharges[n] || [];
+                   const hasAnyCharges = Array.isArray(chargeList) && chargeList.length > 0;
+                   if(!hasAnyCharges) return;
+                   if(d === 'prison' && baseMonths <= 0) return;
+ 
+                   by[n] = { ...cur, disposition: d, dispositionAt: new Date().toISOString(), lockedJailMonths, lockedFine };
+
+                  setSentencingByCriminal(by);
+
+ 
+                 // Trigger the existing autosave system (hidden field change).
+                 try{
+                   sentencingField.dispatchEvent(new Event('change', { bubbles: true }));
+                 }catch{}
+ 
+                 // Also save immediately so the disposition can't be lost to timing.
+                 try{ saveArrestEdits(id, { manual: true }); }catch{}
+               };
+
+             const syncInputsFor = (name, { jailMonths, fine }) => {
+               const n = String(name || '').trim();
+               if(!n) return;
+               const mInp = sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(n)}"]`);
+               const mSl = sentencingHost.querySelector(`[data-sentence-months-slider="${CSS.escape(n)}"]`);
+               const fInp = sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(n)}"]`);
+               const fSl = sentencingHost.querySelector(`[data-sentence-fine-slider="${CSS.escape(n)}"]`);
+               if(mInp) mInp.value = String(jailMonths ?? '0');
+               if(mSl) mSl.value = String(jailMonths ?? '0');
+               if(fInp) fInp.value = String(fine ?? '0');
+               if(fSl) fSl.value = String(fine ?? '0');
+             };
+
+             sentencingHost.querySelectorAll('[data-sentence-months]').forEach(inp => {
+               inp.oninput = () => {
+                  const name = String(inp.dataset.sentenceMonths || '').trim();
+                   const byCharges = getChargesByCriminal();
+                   const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
+                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+
+                   const jailMonthsFinal = clampNum(Math.round(Number(inp.value || 0)), 0, baseMonths);
+
+                  // Keep current fine input/sliders as-is (but clamp to charges max).
+                  const fineCurRaw = Math.round(Number(String(sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(name)}"]`)?.value || '0').replace(/,/g, '') || 0));
+                  const fineCur = clampNum(fineCurRaw, 0, baseFine);
+
+                  setSentenceDeltaFromFinal(name, { jailMonthsFinal, fineFinal: fineCur });
+                  syncInputsFor(name, { jailMonths: jailMonthsFinal, fine: fineCur });
+               };
+             });
+
+             sentencingHost.querySelectorAll('[data-sentence-months-slider]').forEach(sl => {
+               sl.oninput = () => {
+                  const name = String(sl.dataset.sentenceMonthsSlider || '').trim();
+                   const byCharges = getChargesByCriminal();
+                   const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
+                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+
+                   const jailMonthsFinal = clampNum(Math.round(Number(sl.value || 0)), 0, baseMonths);
+
+                  const fineCurRaw = Math.round(Number(String(sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(name)}"]`)?.value || '0').replace(/,/g, '') || 0));
+                  const fineCur = clampNum(fineCurRaw, 0, baseFine);
+
+                  setSentenceDeltaFromFinal(name, { jailMonthsFinal, fineFinal: fineCur });
+                  syncInputsFor(name, { jailMonths: jailMonthsFinal, fine: fineCur });
+               };
+             });
+
+             sentencingHost.querySelectorAll('[data-sentence-fine]').forEach(inp => {
+               inp.oninput = () => {
+                 const name = String(inp.dataset.sentenceFine || '').trim();
+                   const byCharges = getChargesByCriminal();
+                   const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
+                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+
+                   const fineFinal = clampNum(Math.round(Number(String(inp.value || '').replace(/,/g, '') || 0)), 0, baseFine);
+                   const jailCurRaw = Math.round(Number(sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(name)}"]`)?.value || 0));
+                   const jailCur = clampNum(jailCurRaw, 0, baseMonths);
+
+                  setSentenceDeltaFromFinal(name, { jailMonthsFinal: jailCur, fineFinal });
+                  syncInputsFor(name, { jailMonths: jailCur, fine: fineFinal });
+               };
+             });
+
+             sentencingHost.querySelectorAll('[data-sentence-fine-slider]').forEach(sl => {
+               sl.oninput = () => {
+                  const name = String(sl.dataset.sentenceFineSlider || '').trim();
+                   const byCharges = getChargesByCriminal();
+                   const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
+                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+
+                   const fineFinal = clampNum(Math.round(Number(sl.value || 0)), 0, baseFine);
+
+                  const jailCurRaw = Math.round(Number(sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(name)}"]`)?.value || 0));
+                  const jailCur = clampNum(jailCurRaw, 0, baseMonths);
+
+                  setSentenceDeltaFromFinal(name, { jailMonthsFinal: jailCur, fineFinal });
+                  syncInputsFor(name, { jailMonths: jailCur, fine: fineFinal });
+               };
+             });
+
+
+
+
+             sentencingHost.querySelectorAll('[data-action-autosync]').forEach(btn => {
+               btn.onclick = () => {
+                 const name = String(btn.dataset.actionAutosync || '').trim() || 'Unknown';
+                 const by = getSentencingByCriminal();
+                 const cur = by[name] || { jailMonths: 0, fine: 0, manual: false };
+                 by[name] = { ...cur, manual: false };
+                 setSentencingByCriminal(by);
+                 // Re-render so auto-sync totals apply immediately.
+                 try{ renderSentencing(); }catch{}
+               };
+             });
+
+               sentencingHost.querySelectorAll('[data-action-prison]').forEach(btn => {
+                 btn.onclick = () => {
+                   const name = String(btn.dataset.actionPrison || '').trim() || 'Unknown';
+                   const byCharges = getChargesByCriminal();
+                   const chargeList = byCharges[name] || [];
+                   if(!Array.isArray(chargeList) || chargeList.length < 1) return;
+ 
+                    const chargesTotals = computeChargeTotals(normalizeChargesV2(chargeList));
+                    const delta = getSentencingByCriminal()[name] || { deltaJail: 0, deltaFine: 0 };
+                    const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                    if(baseMonths <= 0) return;
+                    const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+                   const jailMonths = clampNum(Math.round(baseMonths + Number(delta.deltaJail || 0)), 0, baseMonths);
+                   const fine = clampNum(Math.round(baseFine + Number(delta.deltaFine || 0)), 0, baseFine);
+                   openConfirm({
+                     criminalName: name,
+                     action: 'prison',
+                     jailMonths,
+                     fine,
+                     onConfirm: () => {
+                       setSentenceDisposition(name, 'prison');
+                       try{ renderSentencing(); }catch{}
+                     }
+                   });
+                 };
+               });
+
+  
+               sentencingHost.querySelectorAll('[data-action-sip]').forEach(btn => {
+                 btn.onclick = () => {
+                   const name = String(btn.dataset.actionSip || '').trim() || 'Unknown';
+                   const byCharges = getChargesByCriminal();
+                   const chargeList = byCharges[name] || [];
+                   if(!Array.isArray(chargeList) || chargeList.length < 1) return;
+ 
+                    const chargesTotals = computeChargeTotals(normalizeChargesV2(chargeList));
+                    const delta = getSentencingByCriminal()[name] || { deltaJail: 0, deltaFine: 0 };
+                    const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                    const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+                   const jailMonths = clampNum(Math.round(baseMonths + Number(delta.deltaJail || 0)), 0, baseMonths);
+                   const fine = clampNum(Math.round(baseFine + Number(delta.deltaFine || 0)), 0, baseFine);
+                   openConfirm({
+                     criminalName: name,
+                     action: 'sip',
+                     jailMonths,
+                     fine,
+                     onConfirm: () => {
+                       setSentenceDisposition(name, 'sip');
+                       try{ renderSentencing(); }catch{}
+                     }
+                   });
+                 };
+               });
+
+
+          };
+
+          // Penal code overlay (live-linked alternate editor for charges).
+          let penalOverlayRef = null;
+
+          const refreshPenalOverlayCurrentCharges = () => {
+            const overlay = penalOverlayRef;
+            if(!overlay) return;
+            if(String(overlay.style.display || '') === 'none') return;
+            try{ overlay.__mdtRefreshCurrentCharges && overlay.__mdtRefreshCurrentCharges(); }catch{}
+          };
+
+          const ensurePenalOverlay = () => {
+            // NOTE: appended to document.body, so query from document.
+            let overlay = (penalOverlayRef && penalOverlayRef.isConnected) ? penalOverlayRef : document.querySelector('[data-penal-overlay]');
+            if(overlay){
+              penalOverlayRef = overlay;
+              return overlay;
+            }
 
             overlay = document.createElement('div');
             overlay.setAttribute('data-penal-overlay', '1');
@@ -4101,7 +6385,7 @@
             overlay.innerHTML = `
               <div style="position:absolute; inset:6vh 6vw; background:rgba(10,10,14,.96); border:1px solid var(--mdt-border-strong); box-shadow:0 0 24px var(--mdt-glow-strong); padding:12px; overflow:hidden; display:flex; flex-direction:column;">
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                  <div class="mdtDetailSectionTitle" style="margin:0;">PENAL CODE</div>
+                  <div class="mdtDetailSectionTitle" style="margin:0;" data-penal-title>PENAL CODE</div>
                   <button type="button" class="mdtBtn" data-penal-close>CLOSE</button>
                 </div>
 
@@ -4114,73 +6398,107 @@
 
                 <div style="display:flex; gap:10px; margin-top:10px;">
                   <input class="mdtInput" data-penal-search placeholder="Search code/title..." style="flex:1;" />
-                  <button type="button" class="mdtBtn" data-penal-add-selected>ADD SELECTED</button>
                 </div>
+
                 <div style="display:flex; gap:10px; margin-top:10px; overflow:hidden; flex:1;">
                   <div style="flex:1; overflow:auto; border:1px solid var(--mdt-border); padding:8px;" data-penal-list></div>
-                  <div style="width:320px; max-width:35%; overflow:auto; border:1px solid var(--mdt-border); padding:8px;" data-penal-selected>
-                    <div class="mdtDetailSectionTitle" style="margin-top:0;">SELECTED</div>
-                    <div data-penal-selected-list></div>
+
+                  <div style="width:360px; max-width:38%; overflow:auto; border:1px solid var(--mdt-border); padding:8px;">
+                    <div class="mdtDetailSectionTitle" style="margin-top:0;">CURRENT CHARGES</div>
+                    <div class="mdtMeta" data-penal-current-target style="margin:-6px 0 10px 0; opacity:.85;"></div>
+                    <div class="mdtMeta" data-penal-current-totals style="margin-bottom:10px;"></div>
+                    <div data-penal-current-list></div>
                   </div>
                 </div>
               </div>
             `;
             document.body.appendChild(overlay);
+            penalOverlayRef = overlay;
             return overlay;
           };
 
           const openPenalOverlay = () => {
+            const target = getChargeTarget();
+            if(!target) return;
             const overlay = ensurePenalOverlay();
             const listHost = overlay.querySelector('[data-penal-list]');
             const searchInput = overlay.querySelector('[data-penal-search]');
-            const selectedHost = overlay.querySelector('[data-penal-selected-list]');
+            const currentTargetHost = overlay.querySelector('[data-penal-current-target]');
+            const currentTotalsHost = overlay.querySelector('[data-penal-current-totals]');
+            const currentListHost = overlay.querySelector('[data-penal-current-list]');
 
-            const selected = new Map();
             const penal = window.MDT_DATA?.penalCode || [];
             let activeFilter = 'all';
- 
-            // Preload with already-added charges.
-            for(const it of getChargesV2()){
-              const tok = normalizeChargeToken(it.token);
-              const id = isChargeToken(tok) ? Number(tok.match(/\d+/)?.[0]) : null;
-              if(id) selected.set(id, Math.max(1, Math.round(Number(it.count || 1))));
-            }
 
-            const renderSelected = () => {
-              if(!selectedHost) return;
-              const rows = Array.from(selected.entries());
-              if(!rows.length){
-                selectedHost.innerHTML = `<div class="mdtDetailItem mdtItemNone">Nothing selected</div>`;
+            const updateTitle = () => {
+              const titleEl = overlay.querySelector('[data-penal-title]');
+              if(!titleEl) return;
+              const target = getChargeTarget();
+              titleEl.textContent = target ? `PENAL CODE — Charges for: ${target}` : 'PENAL CODE';
+            };
+
+            const renderCurrentCharges = () => {
+              if(currentTargetHost) currentTargetHost.textContent = `Editing: ${getChargeTarget()}`;
+
+              const items = getChargesV2();
+              const totals = computeChargeTotals(items);
+              if(currentTotalsHost){
+                currentTotalsHost.innerHTML = `TOTAL: <span class="mdtMeta">${escapeHtml(formatJailMonths(totals.jailMonths))}</span> • <span class="mdtMeta">${escapeHtml(formatMoney(totals.fine))}</span>`;
+              }
+
+              if(!currentListHost) return;
+              if(!items.length){
+                currentListHost.innerHTML = `<div class="mdtDetailItem mdtItemNone">No charges</div>`;
                 return;
               }
-              selectedHost.innerHTML = rows.map(([id, count]) => {
-                const p = penal.find(x => x.id === id);
-                const label = p ? `${p.code} - ${p.title}` : `PENAL:${id}`;
+
+              currentListHost.innerHTML = items.map(it => {
+                const per = computeChargeTotals([it]);
+                const label = chargeLabelFromToken(it.token);
                 return `
                   <div class="mdtDetailRow" style="align-items:center; gap:10px;">
-                    <span class="mdtDetailKey" style="flex:1;">${escapeHtml(label)} <span style="opacity:.75;">x${count}</span></span>
+                    <span class="mdtDetailKey" style="flex:1;">${escapeHtml(label)} <span style="opacity:.75;">x${it.count}</span></span>
+                    <span class="mdtDetailVal" style="white-space:nowrap; opacity:.85;">${escapeHtml(formatJailMonths(per.jailMonths))} • ${escapeHtml(formatMoney(per.fine))}</span>
                     <div style="display:flex; gap:6px;">
-                      <button type="button" class="mdtBtn" data-penal-inc="${id}" style="min-width:30px; height:30px; padding:0;">+</button>
-                      <button type="button" class="mdtBtn" data-penal-dec="${id}" style="min-width:30px; height:30px; padding:0;">−</button>
+                      <button type="button" class="mdtBtn" data-penal-charge-inc="${escapeHtml(it.token)}" title="Increase" style="min-width:30px; height:30px; padding:0;">+</button>
+                      <button type="button" class="mdtBtn" data-penal-charge-dec="${escapeHtml(it.token)}" title="Decrease" style="min-width:30px; height:30px; padding:0;">−</button>
+                      <button type="button" class="mdtBtn" data-penal-charge-remove="${escapeHtml(it.token)}" title="Remove" style="min-width:30px; height:30px; padding:0;">X</button>
                     </div>
                   </div>
                 `;
               }).join('');
 
-              selectedHost.querySelectorAll('[data-penal-inc]').forEach(btn => {
+              currentListHost.querySelectorAll('[data-penal-charge-inc]').forEach(btn => {
                 btn.onclick = () => {
-                  const id = Number(btn.dataset.penalInc);
-                  selected.set(id, (selected.get(id) || 0) + 1);
-                  renderSelected();
+                  const tok = btn.dataset.penalChargeInc;
+                  const next = chargesV2Adjust(getChargesV2(), tok, +1);
+                  setChargesV2(next);
+                  renderChargesPanelFromEditor(next);
+                  renderCurrentCharges();
                 };
               });
-              selectedHost.querySelectorAll('[data-penal-dec]').forEach(btn => {
+
+              currentListHost.querySelectorAll('[data-penal-charge-dec]').forEach(btn => {
                 btn.onclick = () => {
-                  const id = Number(btn.dataset.penalDec);
-                  const next = (selected.get(id) || 0) - 1;
-                  if(next <= 0) selected.delete(id);
-                  else selected.set(id, next);
-                  renderSelected();
+                  const tok = btn.dataset.penalChargeDec;
+                  const cur = getChargesV2();
+                  const idx = cur.findIndex(x => normalizeChargeToken(x.token) === normalizeChargeToken(tok));
+                  if(idx === -1) return;
+                  if(Number(cur[idx].count || 1) <= 1) return;
+                  const next = chargesV2Adjust(cur, tok, -1);
+                  setChargesV2(next);
+                  renderChargesPanelFromEditor(next);
+                  renderCurrentCharges();
+                };
+              });
+
+              currentListHost.querySelectorAll('[data-penal-charge-remove]').forEach(btn => {
+                btn.onclick = () => {
+                  const tok = btn.dataset.penalChargeRemove;
+                  const next = chargesV2Remove(getChargesV2(), tok);
+                  setChargesV2(next);
+                  renderChargesPanelFromEditor(next);
+                  renderCurrentCharges();
                 };
               });
             };
@@ -4198,7 +6516,7 @@
                   if(!q) return true;
                   return `${p.code} ${p.title} ${p.category}`.toLowerCase().includes(q);
                 });
- 
+
               listHost.innerHTML = filtered.map(p => {
                 const cat = String(p.category || '').toLowerCase();
                 const badgeClass = cat.includes('felony') ? 'mdtBadgeAlert' : cat.includes('misdemeanor') ? 'mdtBadgeWarn' : 'mdtBadgeInfo';
@@ -4220,12 +6538,21 @@
               listHost.querySelectorAll('[data-penal-pick]').forEach(row => {
                 row.onclick = () => {
                   const id = Number(row.dataset.penalPick);
-                  selected.set(id, (selected.get(id) || 0) + 1);
-                  renderSelected();
+                  if(Number.isNaN(id)) return;
+                  const tok = `PENAL:${id}`;
+                  const next = chargesV2Adjust(getChargesV2(), tok, +1);
+                  setChargesV2(next);
+                  renderChargesPanelFromEditor(next);
+                  renderCurrentCharges();
                 };
               });
 
               bindCopyButtons();
+            };
+
+            overlay.__mdtRefreshCurrentCharges = () => {
+              updateTitle();
+              renderCurrentCharges();
             };
 
             overlay.style.display = '';
@@ -4240,9 +6567,11 @@
               };
             });
 
+            updateTitle();
             renderList();
-            renderSelected();
+            renderCurrentCharges();
             searchInput && (searchInput.oninput = renderList);
+            try{ searchInput && searchInput.focus && searchInput.focus(); }catch{}
 
             overlay.querySelector('[data-penal-close]') && (overlay.querySelector('[data-penal-close]').onclick = () => {
               overlay.style.display = 'none';
@@ -4251,21 +6580,15 @@
             overlay.onclick = (e) => {
               if(e.target === overlay) overlay.style.display = 'none';
             };
-
-            const addBtn = overlay.querySelector('[data-penal-add-selected]');
-            if(addBtn){
-              addBtn.onclick = () => {
-                const next = Array.from(selected.entries()).map(([id, count]) => ({ token: `PENAL:${id}`, count: Math.max(1, Math.round(count || 1)) }));
-                setChargesV2(next);
-                renderChargesPanelFromEditor(next);
-                overlay.style.display = 'none';
-              };
-            }
           };
 
-          wrap.querySelectorAll('[data-open-penal-overlay]').forEach(btn => {
-            btn.onclick = openPenalOverlay;
-          });
+
+           wrap.querySelectorAll('[data-open-penal-overlay]').forEach(btn => {
+             btn.onclick = openPenalOverlay;
+           });
+
+           // Ensure charge editing is disabled unless a target exists.
+           updateChargesUiEnabledState();
 
           // location helper
           wrap.querySelectorAll('[data-use-current-location]').forEach(btn => {
@@ -4289,13 +6612,25 @@
             });
           });
 
-          wrap.querySelectorAll('[data-arrest-save-live]').forEach(btn => {
+
+
+          // Undo/redo buttons
+          wrap.querySelectorAll('[data-edit-undo]').forEach(btn => {
             btn.onclick = () => {
-              const saveId = Number(btn.dataset.arrestSaveLive);
-              if(Number.isNaN(saveId)) return;
-              saveArrestEdits(saveId, { manual: true });
+              editUndo('arrests', id);
             };
           });
+          wrap.querySelectorAll('[data-edit-redo]').forEach(btn => {
+            btn.onclick = () => {
+              editRedo('arrests', id);
+            };
+          });
+
+          // Start history tracking once per edit render.
+          startEditHistoryTracking('arrests', id);
+          bindEditHistoryKeyboardShortcuts();
+          syncEditHistoryButtons('arrests', id);
+
 
           // History buttons
           wrap.querySelectorAll('[data-open-history]').forEach(btn => {
@@ -4306,6 +6641,41 @@
               openNewTab(`history_${dk}_${hid}`);
             };
           });
+
+          // Collapsible right-side panels (Sentencing/Charges)
+          {
+            const prefKey = `arrests:${id}:panelCollapsed`;
+            const collapsed = (() => {
+              try{ return JSON.parse(String(getRuntimeUiPref(prefKey, '{}') || '{}')) || {}; }catch{ return {}; }
+            })();
+
+            const setCollapsed = (panel, isCollapsed) => {
+              collapsed[panel] = Boolean(isCollapsed);
+              try{ setRuntimeUiPref(prefKey, JSON.stringify(collapsed)); }catch{}
+            };
+
+            const applyCollapsedUi = (panel) => {
+              const isCollapsed = Boolean(collapsed[panel]);
+              const section = wrap.querySelector(`[data-collapsible="${panel}"]`);
+              if(!section) return;
+              const body = section.querySelector(`[data-collapsible-body="${panel}"]`);
+              const btn = section.querySelector(`[data-toggle-collapsible="${panel}"]`);
+              if(body) body.style.display = isCollapsed ? 'none' : '';
+              if(btn) btn.textContent = isCollapsed ? 'SHOW' : 'HIDE';
+            };
+
+            ['sentencing','charges'].forEach(panel => applyCollapsedUi(panel));
+
+            wrap.querySelectorAll('[data-toggle-collapsible]').forEach(btn => {
+              btn.onclick = () => {
+                const panel = String(btn.dataset.toggleCollapsible || '').trim();
+                if(!panel) return;
+                const next = !Boolean(collapsed[panel]);
+                setCollapsed(panel, next);
+                applyCollapsedUi(panel);
+              };
+            });
+          }
 
           startArrestAutosave(id);
         }
@@ -4559,11 +6929,12 @@
             const id = Number(ncpdWrap.getAttribute('data-ncpd-report-edit'));
             if(!Number.isNaN(id)){
               // Ensure the latest keystrokes are persisted.
-              saveNcpdReportEdits(id, { manual: true });
-              stopNcpdAutosave();
-              commitEditSession('ncpdReports', id);
-              return;
-            }
+               saveNcpdReportEdits(id, { manual: true });
+               stopNcpdAutosave();
+               stopEditHistoryTracking('ncpdReports', id);
+               commitEditSession('ncpdReports', id);
+               return;
+             }
           }
 
           const arrestWrap = viewHost.querySelector('[data-arrest-live-edit]') || viewHost.querySelector('[data-arrest-edit-wrap]');
@@ -4571,10 +6942,11 @@
             const idAttr = arrestWrap.getAttribute('data-arrest-live-edit') || arrestWrap.getAttribute('data-arrest-edit-wrap');
             const id = Number(idAttr);
             if(!Number.isNaN(id)){
-              saveArrestEdits(id, { manual: true });
-              stopArrestAutosave();
-              commitEditSession('arrests', id);
-            }
+               saveArrestEdits(id, { manual: true });
+               stopArrestAutosave();
+               stopEditHistoryTracking('arrests', id);
+               commitEditSession('arrests', id);
+             }
           }
         }
 
@@ -4757,24 +7129,33 @@
                 }
 
                 // Strip all attributes except a small safe set.
-                const keep = new Set(['style']);
-                for(const attr of Array.from(el.attributes || [])){
-                  const name = attr.name.toLowerCase();
-                  if(!keep.has(name)) el.removeAttribute(attr.name);
-                }
+                 const keep = new Set(['style','align']);
+                 for(const attr of Array.from(el.attributes || [])){
+                   const name = attr.name.toLowerCase();
+                   if(!keep.has(name)) el.removeAttribute(attr.name);
+                 }
 
-                // If style remains, only allow a tiny subset.
-                const style = String(el.getAttribute('style') || '');
-                if(style){
-                  const safe = [];
-                  style.split(';').map(s => s.trim()).filter(Boolean).forEach(rule => {
-                    const [k, v] = rule.split(':').map(x => (x || '').trim().toLowerCase());
-                    if(!k || !v) return;
-                    if(k === 'text-align' && ['left','right','center','justify'].includes(v)) safe.push(`${k}:${v}`);
-                  });
-                  if(safe.length) el.setAttribute('style', safe.join(';'));
-                  else el.removeAttribute('style');
-                }
+                 // Convert legacy align="center" into text-align style.
+                 const align = String(el.getAttribute('align') || '').trim().toLowerCase();
+                 if(align && ['left','right','center','justify'].includes(align)){
+                   const existingStyle = String(el.getAttribute('style') || '').trim();
+                   const merged = existingStyle ? `${existingStyle}; text-align:${align}` : `text-align:${align}`;
+                   el.setAttribute('style', merged);
+                 }
+                 el.removeAttribute('align');
+ 
+                 // If style remains, only allow a tiny subset.
+                 const style = String(el.getAttribute('style') || '');
+                 if(style){
+                   const safe = [];
+                   style.split(';').map(s => s.trim()).filter(Boolean).forEach(rule => {
+                     const [k, v] = rule.split(':').map(x => (x || '').trim().toLowerCase());
+                     if(!k || !v) return;
+                     if(k === 'text-align' && ['left','right','center','justify'].includes(v)) safe.push(`${k}:${v}`);
+                   });
+                   if(safe.length) el.setAttribute('style', safe.join(';'));
+                   else el.removeAttribute('style');
+                 }
 
                 walk(el);
               }else if(child.nodeType === Node.COMMENT_NODE){
@@ -5008,16 +7389,100 @@
           });
         }
 
+        function ensureCitizenHistoryOverlay(){
+          let overlay = document.querySelector('[data-citizen-history-overlay]');
+          if(overlay) return overlay;
+
+          overlay = document.createElement('div');
+          overlay.setAttribute('data-citizen-history-overlay', '1');
+          overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:10001; display:none;';
+          overlay.innerHTML = `
+            <div data-citizen-history-card style="position:absolute; left:50%; top:10vh; transform:translateX(-50%); width:min(820px, 94vw); max-height:80vh; overflow:auto; background:rgba(10,10,14,.96); border:1px solid var(--mdt-border-strong); box-shadow:0 0 24px var(--mdt-glow-strong); padding:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                <div class="mdtDetailSectionTitle" data-citizen-history-title style="margin:0;">CRIMINAL HISTORY</div>
+                <button type="button" class="mdtBtn" data-citizen-history-close style="height:28px; padding:0 10px; font-size:11px;">CLOSE</button>
+              </div>
+              <div class="mdtMeta" data-citizen-history-subtitle style="opacity:.9; margin:6px 0 10px;"></div>
+              <div data-citizen-history-body></div>
+            </div>
+          `;
+
+          document.body.appendChild(overlay);
+
+          overlay.onclick = (e) => {
+            if(e.target === overlay) overlay.style.display = 'none';
+          };
+
+          overlay.querySelector('[data-citizen-history-close]') && (overlay.querySelector('[data-citizen-history-close]').onclick = () => {
+            overlay.style.display = 'none';
+          });
+
+          return overlay;
+        }
+
+        function openCitizenHistoryOverlay(citizenId){
+          const cid = Number(citizenId);
+          if(Number.isNaN(cid)) return;
+          const citizen = (window.MDT_DATA?.citizens || []).find(x => x.id === cid);
+          if(!citizen) return;
+
+          const overlay = ensureCitizenHistoryOverlay();
+          const titleHost = overlay.querySelector('[data-citizen-history-title]');
+          const subtitleHost = overlay.querySelector('[data-citizen-history-subtitle]');
+          const bodyHost = overlay.querySelector('[data-citizen-history-body]');
+
+          const fullName = `${citizen.firstName} ${citizen.lastName}`.trim();
+          const arrests = getArrestsForCitizen(citizen)
+            .filter(a => !isWarrantArrest(a) || isPersonServedInArrest(a, fullName));
+
+          if(titleHost) titleHost.textContent = `CRIMINAL HISTORY: ${fullName || ('CITIZEN #' + cid)}`;
+          if(subtitleHost) subtitleHost.textContent = arrests.length ? `${arrests.length} arrest record(s), newest first.` : 'No arrest records found.';
+
+          if(bodyHost){
+            if(!arrests.length){
+              bodyHost.innerHTML = `<div class="mdtDetailItem mdtItemNone">No arrest records.</div>`;
+            }else{
+              bodyHost.innerHTML = arrests.map(a => {
+                const header = `${a.arrestNum || ('#' + a.id)} • ${shortDate(a.date)} ${a.time || ''} • ${a.status || '—'}`;
+                const charges = chargeCountsFromArrestForPerson(a, fullName);
+                const chargesHtml = charges.length
+                  ? charges.map(ch => `<div class="mdtDetailItem" style="margin:0; padding:2px 0;">${escapeHtml(ch.label)} <span style="opacity:.8;">x${escapeHtml(String(ch.count))}</span></div>`).join('')
+                  : `<div class="mdtDetailItem mdtItemNone" style="margin:0; padding:2px 0;">No charges</div>`;
+
+                return `
+                  <div class="mdtDetailSection" style="margin:12px 0;">
+                     <div class="mdtDetailSectionTitle">${linkSpan(header, 'arrests', a.id, { newTab: true })}</div>
+                    <div class="mdtMeta" style="opacity:.85; margin-top:-2px;">Location: ${escapeHtml(a.location || '—')}</div>
+                    <div style="margin-top:8px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.22); padding:10px;">
+                      ${chargesHtml}
+                    </div>
+                  </div>
+                `;
+              }).join('');
+            }
+          }
+
+          overlay.style.display = '';
+
+          // Ensure links rendered inside work.
+          try{ bindLinkButtons(overlay); }catch{}
+        }
+
         function bindAllInlineHandlers(){
           bindViewButtons();
           bindCopyButtons();
           bindLinkButtons();
           bindCreateButtons();
           bindNotesEditors();
+
+          // Citizen criminal history popup.
+          viewHost.querySelectorAll('[data-open-citizen-history]').forEach(btn => {
+            btn.onclick = () => openCitizenHistoryOverlay(btn.dataset.openCitizenHistory);
+          });
         }
 
 
-      function initMdt(){
+       function initMdt(){
         if(state.initialized) return;
         state.initialized = true;
 
@@ -5033,9 +7498,20 @@
          modeToggle.querySelectorAll('.mdtModeBtn').forEach(btn => {
            btn.addEventListener('click', () => setMode(btn.dataset.mode));
          });
+
+         // Flush any in-flight edits even if the tab/window closes.
+         const flushEdits = () => {
+           try{ maybeCommitActiveEditSession(); }catch{}
+         };
+         window.addEventListener('beforeunload', flushEdits);
+         window.addEventListener('pagehide', flushEdits);
+         document.addEventListener('visibilitychange', () => {
+           if(document.visibilityState === 'hidden') flushEdits();
+         });
  
          syncNavButtons();
        }
+
 
 
       // Expose for the view switcher.
