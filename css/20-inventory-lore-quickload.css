@@ -76,6 +76,47 @@
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 24px var(--mdt-glow-strong, rgba(96,143,255,.12));
     }
 
+    /* Highlight arrests category as "finished" (subtle gold glint) */
+    .mdtCat.mdtCat--arrests{
+      border-color: rgba(255, 205, 85, .38);
+      color: rgba(255, 232, 170, .90);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 18px rgba(255, 200, 80, .10);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mdtCat.mdtCat--arrests:hover{
+      border-color: rgba(255, 210, 90, .68);
+      color: rgba(255, 242, 205, .98);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 26px rgba(255, 200, 80, .16);
+    }
+
+    .mdtCat.mdtCat--arrests::after{
+      content: '';
+      position: absolute;
+      inset: -2px;
+      background:
+        linear-gradient(
+          120deg,
+          rgba(255, 210, 90, 0) 0%,
+          rgba(255, 210, 90, .12) 22%,
+          rgba(255, 245, 200, .22) 32%,
+          rgba(255, 210, 90, .10) 42%,
+          rgba(255, 210, 90, 0) 60%
+        );
+      transform: translateX(-140%);
+      pointer-events: none;
+      animation: mdtGoldGlint 7.5s ease-in-out infinite;
+      mix-blend-mode: screen;
+      opacity: .9;
+    }
+
+    @keyframes mdtGoldGlint{
+      0%{ transform: translateX(-140%); }
+      14%{ transform: translateX(140%); }
+      100%{ transform: translateX(140%); }
+    }
+
     .mdtCatAdd{
       width: 26px;
       height: 26px;

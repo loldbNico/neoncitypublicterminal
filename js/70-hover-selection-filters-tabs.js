@@ -2127,8 +2127,8 @@
          for(const k of Object.keys(by)){
            if(String(k || '').trim().toLowerCase() !== target) continue;
             const disp = String(by[k]?.disposition || '').trim().toLowerCase();
-             // Sentencing dispositions: prison/sip finalize an arrest, hut does not.
-            return disp === 'finalized' || disp === 'prison' || disp === 'sip';
+                   // Sentencing dispositions: prison/sip finalize an arrest; HUT does not.
+             return disp === 'prison' || disp === 'sip' || disp === 'finalized';
          }
          return false;
        }
@@ -3808,12 +3808,10 @@
               const deltaJail = Math.round(Number(v?.deltaJail ?? v?.jailDelta ?? 0));
               const deltaFine = Math.round(Number(v?.deltaFine ?? v?.fineDelta ?? 0));
                   const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
-                  // New dispositions: `hut` and `finalized`. Legacy `prison`/`sip` save as `finalized`.
-                  const disposition = (dispositionRaw === 'hut')
-                    ? 'hut'
-                    : (dispositionRaw === 'finalized' || dispositionRaw === 'prison' || dispositionRaw === 'sip')
-                      ? 'finalized'
-                      : '';
+                  // Dispositions: `hut` (hold until trial), `finalized` (HUT totals locked), `prison`, `sip`.
+                  const disposition = (dispositionRaw === 'hut' || dispositionRaw === 'finalized' || dispositionRaw === 'prison' || dispositionRaw === 'sip')
+                    ? dispositionRaw
+                    : '';
                   const dispositionAt = String(v?.dispositionAt || '').trim();
                   const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
                   const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
@@ -6220,18 +6218,20 @@
                   const disp = String(delta?.disposition || '').trim().toLowerCase();
                   const hasHutCharge = isHutMonths(baseMonths);
 
-                   const isOnHut = disp === 'hut';
-                   const isFinalized = disp === 'finalized' || disp === 'prison' || disp === 'sip';
-                   const isLocked = isFinalized;
+                    const isOnHut = disp === 'hut';
+                    const isPrison = disp === 'prison';
+                    const isSip = disp === 'sip';
+                    const isFinalized = disp === 'finalized';
+                    const isLocked = isFinalized || isPrison || isSip;
 
 
-                  const jailMonthsFinalRaw = isFinalized && Number.isFinite(Number(delta.lockedJailMonths))
+                  const jailMonthsFinalRaw = isLocked && Number.isFinite(Number(delta.lockedJailMonths))
                     ? Number(delta.lockedJailMonths)
                     : (hasHutCharge
                       ? Math.max(0, Math.round(Number(delta.lockedJailMonths ?? 0)))
                       : (baseMonths + Number(delta.deltaJail || 0)));
 
-                  const fineFinalRaw = isFinalized && Number.isFinite(Number(delta.lockedFine))
+                  const fineFinalRaw = isLocked && Number.isFinite(Number(delta.lockedFine))
                     ? Number(delta.lockedFine)
                     : (hasHutCharge
                       ? Math.max(0, Math.round(Number(delta.lockedFine ?? 0)))
@@ -6250,14 +6250,15 @@
 
 
                   const dispAt = String(delta?.dispositionAt || '').trim();
-                  const actionHtml = (() => {
-                    if(isFinalized){
+                    const actionHtml = (() => {
+                    if(isLocked){
                       const when = dispAt ? ` • ${escapeHtml(shortDateTime(dispAt))}` : '';
-                      const bg = 'rgba(60,255,120,.12)';
-                      const bd = 'rgba(60,255,120,.45)';
+                      const bg = isSip ? 'rgba(255,175,60,.12)' : isPrison ? 'rgba(60,255,120,.12)' : 'rgba(60,255,120,.12)';
+                      const bd = isSip ? 'rgba(255,175,60,.45)' : isPrison ? 'rgba(60,255,120,.45)' : 'rgba(60,255,120,.45)';
+                      const label = isSip ? 'Served in place' : isPrison ? 'Sent to prison' : 'Finalized';
                       return `
                         <div style="width:100%; text-align:right; padding:6px 10px; border:1px solid ${bd}; background:${bg}; font-size:12px; letter-spacing:.4px;">
-                          <span style="font-weight:700;">FINALIZED</span>${when}
+                          <span style="font-weight:700;">${label}</span>${when}
                         </div>
                       `;
                     }
@@ -7884,7 +7885,7 @@
         for(const cat of CATEGORIES){
           const main = document.createElement('button');
           main.type = 'button';
-          main.className = 'mdtCat';
+          main.className = 'mdtCat' + (cat.key === 'arrests' ? ' mdtCat--arrests' : '');
           main.setAttribute('role', 'listitem');
           main.innerHTML = `<span>${escapeHtml(cat.label)}</span>`;
           main.addEventListener('click', () => navigateActiveTabTo(cat.key));
