@@ -59,16 +59,16 @@ window.MDT_DATA = {
 
   // ========== PROPERTIES ==========
   properties: [
-    { id: 1, address: '1420 Neon Core Ave, Apt 12B', type: 'Apartment', owner: 'Marcus Chen', value: '$450,000', taxStatus: 'Current', notes: 'Standard residential unit.' },
-    { id: 2, address: '88 Mirror Hills Dr', type: 'Single Family Home', owner: 'Williams Family Trust', value: '$1,200,000', taxStatus: 'Current', notes: 'Gated community.' },
-    { id: 3, address: '2200 South Side Blvd', type: 'Apartment', owner: 'South Side Properties LLC', value: '$180,000', taxStatus: 'Delinquent', notes: 'Known gang activity in area.' },
-    { id: 4, address: '445 Vespucci Beach Rd', type: 'Condo', owner: 'Elena Vasquez', value: '$680,000', taxStatus: 'Current', notes: 'Beachfront property.' },
-    { id: 5, address: '1200 Rockford Hills Estate', type: 'Mansion', owner: 'Morrison Industries', value: '$12,500,000', taxStatus: 'Current', notes: 'High security. Private road access.' },
-    { id: 6, address: '78 Little Seoul Plaza', type: 'Commercial', owner: 'Tanaka Ramen Group', value: '$920,000', taxStatus: 'Current', notes: 'Mixed use - restaurant ground floor.' },
-    { id: 7, address: '999 Pacific Bluffs Way', type: 'Single Family Home', owner: 'Derek Stone', value: '$2,100,000', taxStatus: 'Current', notes: 'Cliffside property. Security cameras.' },
-    { id: 8, address: '320 La Puerta St', type: 'Commercial', owner: 'Santos Auto LLC', value: '$540,000', taxStatus: 'Current', notes: 'Auto repair shop with residential above.' },
-    { id: 9, address: 'Warehouse 7, Neon City Ports', type: 'Industrial', owner: 'SecuroServ Holdings', value: '$3,200,000', taxStatus: 'Current', notes: 'RESTRICTED - SecuroServ property.' },
-    { id: 10, address: '600 Palomino Lands Ranch', type: 'Ranch', owner: 'Petrov Family', value: '$890,000', taxStatus: 'Current', notes: '40 acres. Livestock permitted.' }
+    { id: 1, address: '1420 Neon Core Ave, Apt 12B', type: 'Apartment', owner: 'Marcus Chen', value: '₡450,000', taxStatus: 'Current', notes: 'Standard residential unit.' },
+    { id: 2, address: '88 Mirror Hills Dr', type: 'Single Family Home', owner: 'Williams Family Trust', value: '₡1,200,000', taxStatus: 'Current', notes: 'Gated community.' },
+    { id: 3, address: '2200 South Side Blvd', type: 'Apartment', owner: 'South Side Properties LLC', value: '₡180,000', taxStatus: 'Delinquent', notes: 'Known gang activity in area.' },
+    { id: 4, address: '445 Vespucci Beach Rd', type: 'Condo', owner: 'Elena Vasquez', value: '₡680,000', taxStatus: 'Current', notes: 'Beachfront property.' },
+    { id: 5, address: '1200 Rockford Hills Estate', type: 'Mansion', owner: 'Morrison Industries', value: '₡12,500,000', taxStatus: 'Current', notes: 'High security. Private road access.' },
+    { id: 6, address: '78 Little Seoul Plaza', type: 'Commercial', owner: 'Tanaka Ramen Group', value: '₡920,000', taxStatus: 'Current', notes: 'Mixed use - restaurant ground floor.' },
+    { id: 7, address: '999 Pacific Bluffs Way', type: 'Single Family Home', owner: 'Derek Stone', value: '₡2,100,000', taxStatus: 'Current', notes: 'Cliffside property. Security cameras.' },
+    { id: 8, address: '320 La Puerta St', type: 'Commercial', owner: 'Santos Auto LLC', value: '₡540,000', taxStatus: 'Current', notes: 'Auto repair shop with residential above.' },
+    { id: 9, address: 'Warehouse 7, Neon City Ports', type: 'Industrial', owner: 'SecuroServ Holdings', value: '₡3,200,000', taxStatus: 'Current', notes: 'RESTRICTED - SecuroServ property.' },
+    { id: 10, address: '600 Palomino Lands Ranch', type: 'Ranch', owner: 'Petrov Family', value: '₡890,000', taxStatus: 'Current', notes: '40 acres. Livestock permitted.' }
   ],
 
   // ========== VEHICLES ==========
@@ -120,7 +120,7 @@ window.MDT_DATA = {
     { id: 3, caseNum: '2024-0102', type: 'Assault', date: '2024-02-14', time: '23:45', location: 'The Neon Lounge, Vespucci', officer: 'Ofc. Martinez', suspects: ['John Doe (unidentified)'], status: 'Open', summary: 'Bar fight. Victim transported to Pillbox. Suspect fled on foot.' },
     { id: 4, caseNum: '2024-0156', type: 'Vehicle Theft', date: '2024-02-22', time: '08:00', location: '2200 South Side Blvd', officer: 'Ofc. Johnson', suspects: ['Unknown'], status: 'Open', summary: 'Vehicle reported stolen. BOLO issued for plate SSB-2200.' },
     { id: 5, caseNum: '2024-0201', type: 'Domestic Disturbance', date: '2024-03-01', time: '19:22', location: '1800 Vinewood Hills Rd', officer: 'Ofc. Chen', suspects: [], status: 'Closed', summary: 'Noise complaint. Verbal dispute between roommates. No charges.' },
-    { id: 6, caseNum: '2024-0289', type: 'Armed Robbery', date: '2024-03-15', time: '21:08', location: '24/7 Store, Pacific Bluffs', officer: 'Det. Stone', suspects: ['Male, black mask, 6ft'], status: 'Open', summary: 'Store clerk held at gunpoint. $2,400 taken. Weapon: pistol.' },
+    { id: 6, caseNum: '2024-0289', type: 'Armed Robbery', date: '2024-03-15', time: '21:08', location: '24/7 Store, Pacific Bluffs', officer: 'Det. Stone', suspects: ['Male, black mask, 6ft'], status: 'Open', summary: 'Store clerk held at gunpoint. ₡2,400 taken. Weapon: pistol.' },
     { id: 7, caseNum: '2024-0334', type: 'Drug Possession', date: '2024-03-22', time: '16:40', location: 'South Side Park', officer: 'Ofc. Williams', suspects: ['Tyler Reed'], status: 'Pending', summary: 'Subject found with marijuana. Minor amount. Citation pending.' },
     { id: 8, caseNum: '2024-0412', type: 'Missing Person', date: '2024-04-02', time: '10:00', location: 'Reported at NCPD Central', officer: 'Det. Vasquez', suspects: [], status: 'Open', summary: 'Jessica Lane, 24, last seen Mirror Hills. No foul play suspected.' },
     { id: 9, caseNum: '2024-0501', type: 'Homicide', date: '2024-04-15', time: '02:33', location: 'Warehouse 12, Neon City Ports', officer: 'Det. Morrison', suspects: ['Unknown'], status: 'Open', summary: 'Body discovered. Male, 30s, GSW. Gang-related suspected.' },
@@ -156,45 +156,29 @@ window.MDT_DATA = {
   ],
 
   // ========== PENAL CODE ==========
-  penalCode: [
-    { id: 1, code: 'PC-001', title: 'First Degree Murder', category: 'Felony', fine: '$0', jailTime: '20-100 months', points: 0, description: 'Premeditated killing of another person.' },
-    { id: 2, code: 'PC-002', title: 'Second Degree Murder', category: 'Felony', fine: '$0', jailTime: '20-100 months', points: 0, description: 'Killing without premeditation but with malice.' },
-    { id: 3, code: 'PC-003', title: 'Manslaughter', category: 'Felony', fine: '$50,000', jailTime: '20-100 months', points: 0, description: 'Unintentional killing due to recklessness.' },
-    { id: 4, code: 'PC-010', title: 'Assault', category: 'Misdemeanor', fine: '$5,000', jailTime: '5-20 months', points: 0, description: 'Intentionally causing physical harm to another.' },
-    { id: 5, code: 'PC-011', title: 'Aggravated Assault', category: 'Felony', fine: '$15,000', jailTime: '20-100 months', points: 0, description: 'Assault with a deadly weapon or causing serious injury.' },
-    { id: 6, code: 'PC-020', title: 'Robbery', category: 'Felony', fine: '$25,000', jailTime: '20-100 months', points: 0, description: 'Taking property by force or threat.' },
-    { id: 7, code: 'PC-021', title: 'Armed Robbery', category: 'Felony', fine: '$50,000', jailTime: '20-100 months', points: 0, description: 'Robbery while armed with a weapon.' },
-    { id: 8, code: 'PC-030', title: 'Burglary', category: 'Felony', fine: '$10,000', jailTime: '20-100 months', points: 0, description: 'Unlawful entry with intent to commit a crime.' },
-    { id: 9, code: 'PC-040', title: 'Grand Theft Auto', category: 'Felony', fine: '$20,000', jailTime: '20-100 months', points: 0, description: 'Stealing a motor vehicle.' },
-    { id: 10, code: 'PC-041', title: 'Petty Theft', category: 'Misdemeanor', fine: '$1,000', jailTime: '5-20 months', points: 0, description: 'Theft of property valued under $500.' },
-    { id: 11, code: 'PC-050', title: 'Disorderly Conduct', category: 'Infraction', fine: '$500', jailTime: '0 months', points: 0, description: 'Public disturbance, minor non-violent offense.' },
-    { id: 12, code: 'PC-051', title: 'Loitering', category: 'Infraction', fine: '$250', jailTime: '0 months', points: 0, description: 'Remaining in a public place without purpose, after warning.' },
-    { id: 13, code: 'PC-052', title: 'Vandalism', category: 'Misdemeanor', fine: '$2,000', jailTime: '5-20 months', points: 0, description: 'Defacing or damaging property.' },
-    { id: 14, code: 'PC-053', title: 'Obstruction of Justice', category: 'Misdemeanor', fine: '$3,500', jailTime: '5-20 months', points: 0, description: 'Interfering with law enforcement duties.' },
-    { id: 15, code: 'PC-054', title: 'Bribery', category: 'Felony', fine: '$35,000', jailTime: '20-100 months', points: 0, description: 'Offering or receiving value to influence actions of officials.' },
-    { id: 16, code: 'PC-055', title: 'Perjury', category: 'Felony', fine: '$20,000', jailTime: '20-100 months', points: 0, description: 'Knowingly giving false testimony under oath.' }
-  ],
+  // Loaded from `js/11-data-penal-code.js`.
+  penalCode: [],
 
   // ========== STATE LAWS ==========
   stateLaws: [
-    { id: 1, code: 'SL-001', title: 'Speed Limit Violation', category: 'Infraction', fine: '$150-$500', points: 1, description: 'Exceeding posted speed limits.' },
-    { id: 2, code: 'SL-002', title: 'Reckless Driving', category: 'Misdemeanor', fine: '$1,000', points: 2, description: 'Driving with willful disregard for safety.' },
-    { id: 3, code: 'SL-003', title: 'DUI/DWI', category: 'Misdemeanor/Felony', fine: '$5,000-$15,000', points: 4, description: 'Operating vehicle under influence of alcohol/drugs.' },
-    { id: 4, code: 'SL-004', title: 'Driving Without License', category: 'Misdemeanor', fine: '$500', points: 2, description: 'Operating vehicle without valid license.' },
-    { id: 5, code: 'SL-005', title: 'Expired Registration', category: 'Infraction', fine: '$250', points: 0, description: 'Operating vehicle with expired registration.' },
-    { id: 6, code: 'SL-010', title: 'Weapons Permit Violation', category: 'Misdemeanor', fine: '$2,500', points: 0, description: 'Carrying weapon without proper permit.' },
-    { id: 7, code: 'SL-011', title: 'Illegal Discharge', category: 'Felony', fine: '$10,000', points: 0, description: 'Discharging firearm in prohibited area.' },
-    { id: 8, code: 'SL-020', title: 'Trespassing', category: 'Misdemeanor', fine: '$750', points: 0, description: 'Entering private property without permission.' },
-    { id: 9, code: 'SL-021', title: 'Restricted Area Violation', category: 'Felony', fine: '$25,000', points: 0, description: 'Unauthorized entry to restricted government/military area.' },
-    { id: 10, code: 'SL-030', title: 'Drug Possession', category: 'Misdemeanor/Felony', fine: '$1,000-$50,000', points: 0, description: 'Possession of controlled substances. Severity varies.' }
+    { id: 1, code: 'SL-001', title: 'Speed Limit Violation', category: 'Infraction', fine: '₡150-₡500', points: 1, description: 'Exceeding posted speed limits.' },
+    { id: 2, code: 'SL-002', title: 'Reckless Driving', category: 'Misdemeanor', fine: '₡1,000', points: 2, description: 'Driving with willful disregard for safety.' },
+    { id: 3, code: 'SL-003', title: 'DUI/DWI', category: 'Misdemeanor/Felony', fine: '₡5,000-₡15,000', points: 4, description: 'Operating vehicle under influence of alcohol/drugs.' },
+    { id: 4, code: 'SL-004', title: 'Driving Without License', category: 'Misdemeanor', fine: '₡500', points: 2, description: 'Operating vehicle without valid license.' },
+    { id: 5, code: 'SL-005', title: 'Expired Registration', category: 'Infraction', fine: '₡250', points: 0, description: 'Operating vehicle with expired registration.' },
+    { id: 6, code: 'SL-010', title: 'Weapons Permit Violation', category: 'Misdemeanor', fine: '₡2,500', points: 0, description: 'Carrying weapon without proper permit.' },
+    { id: 7, code: 'SL-011', title: 'Illegal Discharge', category: 'Felony', fine: '₡10,000', points: 0, description: 'Discharging firearm in prohibited area.' },
+    { id: 8, code: 'SL-020', title: 'Trespassing', category: 'Misdemeanor', fine: '₡750', points: 0, description: 'Entering private property without permission.' },
+    { id: 9, code: 'SL-021', title: 'Restricted Area Violation', category: 'Felony', fine: '₡25,000', points: 0, description: 'Unauthorized entry to restricted government/military area.' },
+    { id: 10, code: 'SL-030', title: 'Drug Possession', category: 'Misdemeanor/Felony', fine: '₡1,000-₡50,000', points: 0, description: 'Possession of controlled substances. Severity varies.' }
   ],
 
   // ========== WARRANTS (linked to citizens) ==========
   warrants: [
-    { id: 1, warrantNum: 'WAR-2024-0001', type: 'Arrest', citizenId: 9, citizenName: 'Tyler Reed', issuedDate: '2024-03-15', issuedBy: 'Judge M. Harrison', charges: ['Failure to Appear - Traffic Court'], status: 'Active', bail: '$2,500', notes: 'Subject missed scheduled traffic court date. Minor warrant.' },
-    { id: 2, warrantNum: 'WAR-2024-0002', type: 'Arrest', citizenId: 3, citizenName: 'Viktor Kozlov', issuedDate: '2024-04-20', issuedBy: 'Judge R. Chen', charges: ['Assault', 'Battery', 'Resisting Arrest'], status: 'Active', bail: '$50,000', notes: 'Subject is considered dangerous. Approach with caution. Known gang ties.' },
+    { id: 1, warrantNum: 'WAR-2024-0001', type: 'Arrest', citizenId: 9, citizenName: 'Tyler Reed', issuedDate: '2024-03-15', issuedBy: 'Judge M. Harrison', charges: ['Failure to Appear - Traffic Court'], status: 'Active', bail: '₡2,500', notes: 'Subject missed scheduled traffic court date. Minor warrant.' },
+    { id: 2, warrantNum: 'WAR-2024-0002', type: 'Arrest', citizenId: 3, citizenName: 'Viktor Kozlov', issuedDate: '2024-04-20', issuedBy: 'Judge R. Chen', charges: ['Assault', 'Battery', 'Resisting Arrest'], status: 'Active', bail: '₡50,000', notes: 'Subject is considered dangerous. Approach with caution. Known gang ties.' },
     { id: 3, warrantNum: 'WAR-2024-0003', type: 'Search', citizenId: null, citizenName: null, issuedDate: '2024-04-22', issuedBy: 'Judge L. Vasquez', charges: [], status: 'Active', bail: 'N/A', notes: 'Search warrant for 2200 South Side Blvd. Related to drug trafficking investigation.' },
-    { id: 4, warrantNum: 'WAR-2024-0004', type: 'Arrest', citizenId: null, citizenName: 'John Doe (Unknown Male)', issuedDate: '2024-03-16', issuedBy: 'Judge M. Harrison', charges: ['Armed Robbery'], status: 'Active', bail: '$100,000', notes: 'Suspect in 24/7 Store robbery. Case #2024-0289. Male, approximately 6ft, wore black mask.' },
+    { id: 4, warrantNum: 'WAR-2024-0004', type: 'Arrest', citizenId: null, citizenName: 'John Doe (Unknown Male)', issuedDate: '2024-03-16', issuedBy: 'Judge M. Harrison', charges: ['Armed Robbery'], status: 'Active', bail: '₡100,000', notes: 'Suspect in 24/7 Store robbery. Case #2024-0289. Male, approximately 6ft, wore black mask.' },
     { id: 5, warrantNum: 'WAR-2023-0156', type: 'Arrest', citizenId: 3, citizenName: 'Viktor Kozlov', issuedDate: '2023-11-08', issuedBy: 'Judge K. Patel', charges: ['DUI'], status: 'Served', bail: 'N/A', notes: 'Warrant served 2023-11-15. Subject arrested and processed.' }
   ],
 
@@ -214,6 +198,24 @@ window.MDT_DATA = {
     { id: 3, boloNum: 'BOLO-2024-0003', type: 'Person', issuedDate: '2024-04-02', issuedBy: 'Det. Vasquez', status: 'Active', priority: 'Medium', plate: null, vehicleDesc: null, suspectDesc: 'Female, 24 years old, 5\'6", blonde hair, last seen wearing blue dress.', citizenId: null, citizenName: 'Jessica Lane', relatedCase: '2024-0412', notes: 'Missing person. Last seen Mirror Hills area. No foul play suspected but welfare check requested.' },
     { id: 4, boloNum: 'BOLO-2024-0004', type: 'Vehicle', issuedDate: '2024-04-25', issuedBy: 'Ofc. Taylor', status: 'Active', priority: 'Low', plate: 'VWH-1800', vehicleDesc: '2023 Obey Tailgater, Gray', suspectDesc: null, citizenId: 9, citizenName: 'Tyler Reed', relatedCase: null, notes: 'Vehicle registration suspended. Multiple unpaid citations. Stop and cite if observed.' },
     { id: 5, boloNum: 'BOLO-2024-0005', type: 'Weapon', issuedDate: '2024-02-10', issuedBy: 'Det. Park', status: 'Active', priority: 'High', plate: null, vehicleDesc: null, suspectDesc: 'Hawk & Little Pistol .50, Serial: WPN-00004', citizenId: null, citizenName: null, relatedCase: '2024-0892', notes: 'Stolen firearm. If recovered, secure and notify Det. Park immediately.' }
+  ],
+
+  // ========== SCANNER PHOTOS (template evidence) ==========
+  // Used by Arrest Live Editor → EVIDENCE → Scanner Photos tab.
+  // These are just seed placeholders and should point to local assets.
+  scannerPhotos: [
+    { id: 1, label: 'Traffic Cam Still — Neon Core Ave', src: './FINAL ROADS.webp', takenAt: '2024-03-22 16:51', takenBy: 'Scanner Unit', tags: ['traffic','street'] },
+    { id: 2, label: 'Aerial Sweep — Harbor Perimeter', src: './FINAL OCEAN.webp', takenAt: '2024-04-15 02:21', takenBy: 'Scanner Unit', tags: ['aerial','ports'] },
+    { id: 3, label: 'Zone Snapshot — South Side', src: './SS2.png', takenAt: '2024-04-15 02:24', takenBy: 'Scanner Unit', tags: ['zone','south-side'] },
+    { id: 4, label: 'Zone Snapshot — Downtown Core', src: './NEON_CORE.png', takenAt: '2024-01-15 14:39', takenBy: 'Scanner Unit', tags: ['zone','downtown'] },
+    { id: 5, label: 'Checkpoint Capture — Ports Gate', src: './NEON_CITY_PORTS.png', takenAt: '2024-02-22 08:11', takenBy: 'Scanner Unit', tags: ['checkpoint','ports'] },
+    { id: 6, label: 'Restricted Scan — APEX HQ Exterior', src: './APEX_HQ.png', takenAt: '2024-04-20 20:55', takenBy: 'Scanner Unit', tags: ['restricted','apex'] },
+    { id: 7, label: 'Restricted Scan — Merryweather Base', src: './MERRYWEATHER_BASE.png', takenAt: '2024-04-20 21:01', takenBy: 'Scanner Unit', tags: ['restricted','merryweather'] },
+    { id: 8, label: 'Facility Scan — Humane Labs Access Road', src: './HUMANE_LABS.png', takenAt: '2024-04-12 10:18', takenBy: 'Scanner Unit', tags: ['facility','labs'] },
+    { id: 9, label: 'Neighborhood Scan — Little Seoul Plaza', src: './LITTLE_SOEUL.png', takenAt: '2024-01-28 03:08', takenBy: 'Scanner Unit', tags: ['neighborhood'] },
+    { id: 10, label: 'Neighborhood Scan — Mirror Hills', src: './MIRROR_HILLS.png', takenAt: '2024-04-02 09:54', takenBy: 'Scanner Unit', tags: ['neighborhood'] },
+    { id: 11, label: 'Neighborhood Scan — Rockford Hills', src: './ROCKFORD_HILLS.png', takenAt: '2024-04-28 01:03', takenBy: 'Scanner Unit', tags: ['neighborhood'] },
+    { id: 12, label: 'Facility Scan — Prison Exterior', src: './NEON_CITY_PRISON.png', takenAt: '2024-04-25 11:10', takenBy: 'Scanner Unit', tags: ['facility','prison'] },
   ],
 
   // ========== AMBULANCE CALLS (for Medical mode) ==========
@@ -240,18 +242,18 @@ window.MDT_DATA = {
 
   // ========== TAX RECORDS (for City Council mode) ==========
   taxRecords: [
-    { id: 1, taxId: 'TAX-2024-0001', propertyId: 3, address: '2200 South Side Blvd', owner: 'South Side Properties LLC', assessedValue: '$180,000', taxDue: '$4,500', taxPaid: '$0', status: 'Delinquent', dueDate: '2024-03-01', notes: 'Multiple notices sent. Lien proceedings initiated.' },
-    { id: 2, taxId: 'TAX-2024-0002', propertyId: 5, address: '1200 Rockford Hills Estate', owner: 'Morrison Industries', assessedValue: '$12,500,000', taxDue: '$312,500', taxPaid: '$312,500', status: 'Paid', dueDate: '2024-03-01', notes: 'Paid in full.' },
-    { id: 3, taxId: 'TAX-2024-0003', propertyId: 6, address: '78 Little Seoul Plaza', owner: 'Yuki Tanaka', assessedValue: '$920,000', taxDue: '$23,000', taxPaid: '$23,000', status: 'Paid', dueDate: '2024-03-01', notes: 'Commercial property tax paid.' },
-    { id: 4, taxId: 'TAX-2024-0004', propertyId: 8, address: '320 La Puerta St', owner: 'Santos Auto LLC', assessedValue: '$540,000', taxDue: '$13,500', taxPaid: '$13,500', status: 'Paid', dueDate: '2024-03-01', notes: 'Mixed use commercial/residential.' },
-    { id: 5, taxId: 'TAX-2024-0005', propertyId: 9, address: 'Warehouse 7, Neon City Ports', owner: 'SecuroServ Holdings', assessedValue: '$3,200,000', taxDue: '$80,000', taxPaid: '$80,000', status: 'Paid', dueDate: '2024-03-01', notes: 'Industrial zone. RESTRICTED access.' }
+    { id: 1, taxId: 'TAX-2024-0001', propertyId: 3, address: '2200 South Side Blvd', owner: 'South Side Properties LLC', assessedValue: '₡180,000', taxDue: '₡4,500', taxPaid: '₡0', status: 'Delinquent', dueDate: '2024-03-01', notes: 'Multiple notices sent. Lien proceedings initiated.' },
+    { id: 2, taxId: 'TAX-2024-0002', propertyId: 5, address: '1200 Rockford Hills Estate', owner: 'Morrison Industries', assessedValue: '₡12,500,000', taxDue: '₡312,500', taxPaid: '₡312,500', status: 'Paid', dueDate: '2024-03-01', notes: 'Paid in full.' },
+    { id: 3, taxId: 'TAX-2024-0003', propertyId: 6, address: '78 Little Seoul Plaza', owner: 'Yuki Tanaka', assessedValue: '₡920,000', taxDue: '₡23,000', taxPaid: '₡23,000', status: 'Paid', dueDate: '2024-03-01', notes: 'Commercial property tax paid.' },
+    { id: 4, taxId: 'TAX-2024-0004', propertyId: 8, address: '320 La Puerta St', owner: 'Santos Auto LLC', assessedValue: '₡540,000', taxDue: '₡13,500', taxPaid: '₡13,500', status: 'Paid', dueDate: '2024-03-01', notes: 'Mixed use commercial/residential.' },
+    { id: 5, taxId: 'TAX-2024-0005', propertyId: 9, address: 'Warehouse 7, Neon City Ports', owner: 'SecuroServ Holdings', assessedValue: '₡3,200,000', taxDue: '₡80,000', taxPaid: '₡80,000', status: 'Paid', dueDate: '2024-03-01', notes: 'Industrial zone. RESTRICTED access.' }
   ],
 
   // ========== CODE VIOLATIONS (for City Council mode) ==========
   codeViolations: [
-    { id: 1, violationNum: 'CV-2024-0001', type: 'Zoning', location: '320 La Puerta St', reportedDate: '2024-01-05', reportedBy: 'Anonymous', status: 'Resolved', fine: '$500', notes: 'Operating outside permitted hours. Warning issued, compliance achieved.' },
-    { id: 2, violationNum: 'CV-2024-0012', type: 'Noise', location: '2200 South Side Blvd', reportedDate: '2024-02-15', reportedBy: 'Multiple Residents', status: 'Ongoing', fine: '$1,000', notes: 'Repeated noise complaints. Multiple warnings. Fine issued.' },
-    { id: 3, violationNum: 'CV-2024-0034', type: 'Health', location: '78 Little Seoul Plaza', reportedDate: '2024-02-02', reportedBy: 'Routine Inspection', status: 'Resolved', fine: '$0', notes: 'Minor issues corrected during inspection. No fine.' },
+    { id: 1, violationNum: 'CV-2024-0001', type: 'Zoning', location: '320 La Puerta St', reportedDate: '2024-01-05', reportedBy: 'Anonymous', status: 'Resolved', fine: '₡500', notes: 'Operating outside permitted hours. Warning issued, compliance achieved.' },
+    { id: 2, violationNum: 'CV-2024-0012', type: 'Noise', location: '2200 South Side Blvd', reportedDate: '2024-02-15', reportedBy: 'Multiple Residents', status: 'Ongoing', fine: '₡1,000', notes: 'Repeated noise complaints. Multiple warnings. Fine issued.' },
+    { id: 3, violationNum: 'CV-2024-0034', type: 'Health', location: '78 Little Seoul Plaza', reportedDate: '2024-02-02', reportedBy: 'Routine Inspection', status: 'Resolved', fine: '₡0', notes: 'Minor issues corrected during inspection. No fine.' },
     { id: 4, violationNum: 'CV-2024-0056', type: 'Environmental', location: 'Neon City Ports', reportedDate: '2024-03-08', reportedBy: 'Green NC Coalition', status: 'Under Investigation', fine: 'TBD', notes: 'Alleged chemical dumping. EPA investigation ongoing.' },
     { id: 5, violationNum: 'CV-2024-0078', type: 'Building', location: '1500 South Side Industrial', reportedDate: '2024-01-15', reportedBy: 'City Inspector', status: 'Condemned', fine: 'N/A', notes: 'Structural failure. Building condemned. Demolition scheduled.' }
   ],

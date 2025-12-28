@@ -1344,7 +1344,10 @@
           case 'penal_code':
             html = renderSearchPage('penalCode', 'Penal Code', ['id','code','title','category','fine','jailTime'],
               item => `${item.code} - ${item.title}`,
-              item => `${item.category} | Fine: ${item.fine} | Jail: ${item.jailTime}`);
+              item => {
+                const jailDisp = formatJailMonths(parseJailMonths(item.jailTime));
+                return `${item.category} | Fine: ${item.fine} | Jail: ${jailDisp}`;
+              });
             break;
           case 'state_laws':
             html = renderSearchPage('stateLaws', 'State Laws', ['id','code','title','category','fine','points'],
@@ -1745,27 +1748,28 @@
            `;
          }
 
-         function renderPenalRow(p){
-          const cat = String(p.category || '').toLowerCase();
-          const badgeClass = cat.includes('felony') ? 'mdtBadgeAlert' : cat.includes('misdemeanor') ? 'mdtBadgeWarn' : 'mdtBadgeInfo';
-
-          return `
-            <div class="mdtPenalRow" data-id="${p.id}" data-key="penalCode">
-              <div class="mdtPenalMain">
-                 <div class="mdtPenalCode">${escapeHtml(p.code)} ${copyBtn(p.code, 'COPY CODE')}</div>
-                 <div class="mdtPenalTitle">${escapeHtml(p.title)}</div>
-                <div class="mdtPenalMeta">
-                  <span class="mdtBadge ${badgeClass}">${escapeHtml(p.category)}</span>
-                  <span class="mdtMeta">Fine: ${escapeHtml(p.fine)}</span>
-                  <span class="mdtMeta">Jail: ${escapeHtml(p.jailTime)}</span>
-                </div>
-              </div>
-               <div class="mdtPenalActions">
-                 <button type="button" class="mdtResultView" data-id="${p.id}" data-key="penalCode">VIEW</button>
+        function renderPenalRow(p){
+           const cat = String(p.category || '').toLowerCase();
+           const badgeClass = cat.includes('felony') ? 'mdtBadgeAlert' : cat.includes('misdemeanor') ? 'mdtBadgeWarn' : 'mdtBadgeInfo';
+           const jailDisp = formatJailMonths(parseJailMonths(p.jailTime));
+ 
+           return `
+             <div class="mdtPenalRow" data-id="${p.id}" data-key="penalCode">
+               <div class="mdtPenalMain">
+                  <div class="mdtPenalCode">${escapeHtml(p.code)} ${copyBtn(p.code, 'COPY CODE')}</div>
+                  <div class="mdtPenalTitle">${escapeHtml(p.title)}</div>
+                 <div class="mdtPenalMeta">
+                   <span class="mdtBadge ${badgeClass}">${escapeHtml(p.category)}</span>
+                   <span class="mdtMeta">Fine: ${escapeHtml(p.fine)}</span>
+                   <span class="mdtMeta">Jail: ${escapeHtml(jailDisp)}</span>
+                 </div>
                </div>
-            </div>
-          `;
-        }
+                <div class="mdtPenalActions">
+                  <button type="button" class="mdtResultView" data-id="${p.id}" data-key="penalCode">VIEW</button>
+                </div>
+             </div>
+           `;
+         }
         
         function bindSearchHandlers(pageKey){
           const input = document.getElementById('mdtSearchInput');
@@ -1967,7 +1971,12 @@
             },
             penalCode: {
               primary: item => `${item.code} - ${item.title}`,
-              secondary: item => `${item.category} | Fine: ${item.fine} | Jail: ${item.jailTime}`
+              secondary: item => {
+                const jailDisp = formatJailMonths(parseJailMonths(item.jailTime));
+                const fineAmt = parseFineAmount(item.fine);
+                const fineDisp = fineAmt >= 999999999 ? '∞' : item.fine;
+                return `${item.category} | Fine: ${fineDisp} | Jail: ${jailDisp}`;
+              }
             },
            stateLaws: {
              primary: item => `${item.code} - ${item.title}`,
@@ -2117,8 +2126,9 @@
          const target = name.toLowerCase();
          for(const k of Object.keys(by)){
            if(String(k || '').trim().toLowerCase() !== target) continue;
-           const disp = String(by[k]?.disposition || '').trim().toLowerCase();
-           return disp === 'prison' || disp === 'sip';
+            const disp = String(by[k]?.disposition || '').trim().toLowerCase();
+             // Sentencing dispositions: prison/sip finalize an arrest, hut does not.
+            return disp === 'finalized' || disp === 'prison' || disp === 'sip';
          }
          return false;
        }
@@ -3246,7 +3256,10 @@
 
                     <div class="mdtDetailSection" data-collapsible="evidence" style="margin-top: 6px;">
                       <div class="mdtDetailNotesHead" style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0;">
-                        <div class="mdtDetailSectionTitle" style="margin:0;">EVIDENCE</div>
+                        <div style="display:flex; align-items:baseline; gap:10px; min-width:0;">
+                          <div class="mdtDetailSectionTitle" style="margin:0;">EVIDENCE</div>
+                          <div data-evidence-summary-compact class="mdtMeta" style="opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:none;">0 pictures in evidence • 0 items in evidence</div>
+                        </div>
                         <button type="button" class="mdtBtn mdtBtnY" data-toggle-collapsible="evidence" style="height:28px; padding:0 8px; font-size:11px;">HIDE</button>
                       </div>
 
@@ -3768,6 +3781,7 @@
             return {
               photos: Array.isArray(obj.photos) ? obj.photos.map(x => String(x)).filter(Boolean) : [],
               links: Array.isArray(obj.links) ? obj.links.map(x => String(x)).filter(Boolean) : [],
+              items: Array.isArray(obj.items) ? obj.items.map(x => String(x)).filter(Boolean) : [],
             };
           };
  
@@ -3793,19 +3807,24 @@
               if(!key) continue;
               const deltaJail = Math.round(Number(v?.deltaJail ?? v?.jailDelta ?? 0));
               const deltaFine = Math.round(Number(v?.deltaFine ?? v?.fineDelta ?? 0));
-              const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
-              const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
-              const dispositionAt = String(v?.dispositionAt || '').trim();
-              const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
-              const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
-              out[key] = {
-                deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
-                deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
-                ...(disposition ? { disposition } : {}),
-                ...(dispositionAt ? { dispositionAt } : {}),
-                ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}),
-                ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}),
-              };
+                  const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
+                  // New dispositions: `hut` and `finalized`. Legacy `prison`/`sip` save as `finalized`.
+                  const disposition = (dispositionRaw === 'hut')
+                    ? 'hut'
+                    : (dispositionRaw === 'finalized' || dispositionRaw === 'prison' || dispositionRaw === 'sip')
+                      ? 'finalized'
+                      : '';
+                  const dispositionAt = String(v?.dispositionAt || '').trim();
+                  const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
+                  const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
+                  out[key] = {
+                    deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
+                    deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
+                    ...(disposition ? { disposition } : {}),
+                    ...(dispositionAt ? { dispositionAt } : {}),
+                    ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}),
+                    ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}),
+                  };
             }
 
             // Keep defaults consistent with editor behavior.
@@ -4127,8 +4146,14 @@
         }
 
         function parseFineAmount(fineStr){
-          const raw = String(fineStr ?? '').replace(/,/g, '');
-          const m = raw.match(/\$\s*(\d+(?:\.\d+)?)/);
+          const rawNorm = String(fineStr ?? '');
+          const raw = rawNorm.replace(/,/g, '').toLowerCase();
+
+          // HUT / infinity cases.
+          if(raw.includes('∞') || raw.includes('inf') || raw.includes('life') || raw.includes('hut')) return 999999999;
+
+          // Credits: accept both ₡ (preferred) and $ (back-compat).
+          const m = raw.match(/[₡\$]\s*(\d+(?:\.\d+)?)/);
           if(!m) return 0;
           const n = Number(m[1]);
           return Number.isFinite(n) ? n : 0;
@@ -4137,7 +4162,7 @@
         function parseJailMonthsRange(jailStr){
           const raw = String(jailStr ?? '').toLowerCase().trim();
           if(!raw) return { min: 0, max: 0 };
-          if(raw.includes('life') || raw.includes('hut')) return { min: 999999, max: 999999 };
+          if(raw.includes('∞') || raw.includes('life') || raw.includes('hut')) return { min: 999999, max: 999999 };
 
           // Parse one or more numbers; treat as a range. Example: "5-20 months".
           const nums = Array.from(raw.matchAll(/(\d+(?:\.\d+)?)/g))
@@ -4165,14 +4190,14 @@
 
         function formatMoney(n){
           const num = Number(n || 0);
-          if(!Number.isFinite(num)) return '$0';
-          return '$' + Math.round(num).toLocaleString('en-US');
+          if(!Number.isFinite(num) || num >= 999999999) return '∞';
+          return '₡' + Math.round(num).toLocaleString('en-US');
         }
 
         function formatJailMonths(months){
           const m = Math.round(Number(months || 0));
           if(!Number.isFinite(m) || m <= 0) return '0 months';
-          if(m >= 999999) return 'Life / HUT';
+          if(m >= 999999) return '∞';
           return `${m} months`;
         }
 
@@ -4180,9 +4205,10 @@
           const min = Math.round(Number(range?.min ?? 0));
           const max = Math.round(Number(range?.max ?? 0));
           if(!Number.isFinite(min) || !Number.isFinite(max) || (min <= 0 && max <= 0)) return '0 months';
-          if(min >= 999999 || max >= 999999) return 'Life / HUT';
-          if(min === max) return `${max} months`;
-          return `${min}-${max} months`;
+          if(min >= 999999 || max >= 999999) return '∞';
+
+          // We display and sentence using the *max* months only (no ranges).
+          return `${Math.max(min, max)} months`;
         }
 
         function normalizeChargesV2(val){
@@ -4370,9 +4396,11 @@
                 if(!key) continue;
                  const deltaJail = Math.round(Number(v?.deltaJail ?? v?.jailDelta ?? 0));
                  const deltaFine = Math.round(Number(v?.deltaFine ?? v?.fineDelta ?? 0));
-                 const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
-                 const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
-                 const dispositionAt = String(v?.dispositionAt || '').trim();
+                   const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
+                   const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip' || dispositionRaw === 'hut' || dispositionRaw === 'finalized')
+                     ? dispositionRaw
+                     : '';
+                   const dispositionAt = String(v?.dispositionAt || '').trim();
                  const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
                  const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
                  out[key] = {
@@ -4401,6 +4429,7 @@
             return {
               photos: Array.isArray(obj.photos) ? obj.photos.map(x => String(x)).filter(Boolean) : [],
               links: Array.isArray(obj.links) ? obj.links.map(x => String(x)).filter(Boolean) : [],
+              items: Array.isArray(obj.items) ? obj.items.map(x => String(x)).filter(Boolean) : [],
             };
           })();
 
@@ -4806,12 +4835,14 @@
                for(const [k, v] of Object.entries(sentencingByCriminalRaw || {})){
                  const key = String(k || '').trim();
                  if(!key) continue;
-                 const deltaJail = Math.round(Number(v?.deltaJail ?? v?.jailDelta ?? 0));
-                 const deltaFine = Math.round(Number(v?.deltaFine ?? v?.fineDelta ?? 0));
-                  const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
-                  const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
-                  const dispositionAt = String(v?.dispositionAt || '').trim();
-                  const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
+                  const deltaJail = Math.round(Number(v?.deltaJail ?? v?.jailDelta ?? 0));
+                  const deltaFine = Math.round(Number(v?.deltaFine ?? v?.fineDelta ?? 0));
+                   const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
+                   const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip' || dispositionRaw === 'hut' || dispositionRaw === 'finalized')
+                     ? dispositionRaw
+                     : '';
+                   const dispositionAt = String(v?.dispositionAt || '').trim();
+                   const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
                   const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
                   out[key] = {
                     deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
@@ -4835,6 +4866,15 @@
 
           const notesHtml = String(read('notesHtml') || '');
 
+          const normalizeEvidence = (raw) => {
+            const obj = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+            return {
+              photos: Array.isArray(obj.photos) ? obj.photos.map(x => String(x)).filter(Boolean) : [],
+              links: Array.isArray(obj.links) ? obj.links.map(x => String(x)).filter(Boolean) : [],
+              items: Array.isArray(obj.items) ? obj.items.map(x => String(x)).filter(Boolean) : [],
+            };
+          };
+
           const patch = {
             criminals,
              officers: dedupeStrings(normalizeStringArray(readJsonArr('officers'))),
@@ -4847,6 +4887,8 @@
 
             chargesByCriminal,
             sentencingByCriminal,
+
+            evidence: normalizeEvidence(readJsonObj('evidence')),
 
             // Back-compat (global charges mirrors currently selected target)
             chargesV2,
@@ -4997,11 +5039,13 @@
         `;
       }
       
-      function renderPenalCodeDetail(p){
+       function renderPenalCodeDetail(p){
         const badgeCls = (String(p.category || '').toLowerCase().includes('felony')) ? 'mdtBadgeAlert'
           : (String(p.category || '').toLowerCase().includes('misdemeanor')) ? 'mdtBadgeWarn'
           : 'mdtBadgeInfo';
 
+        const jailDisp = formatJailMonths(parseJailMonths(p.jailTime));
+ 
         return `
           <div class="mdtDetail">
             <div class="mdtDetailHead">
@@ -5013,7 +5057,7 @@
               <div class="mdtDetailSection">
                 <div class="mdtDetailSectionTitle">PENALTIES</div>
                 ${detailRow('FINE', p.fine)}
-                ${detailRow('JAIL TIME', p.jailTime)}
+                ${detailRow('JAIL TIME', jailDisp)}
                 ${detailRow('POINTS', p.points)}
               </div>
             </div>
@@ -5824,7 +5868,10 @@
                     const deltaJail = Math.round(Number(v?.deltaJail || v?.jailDelta || 0));
                     const deltaFine = Math.round(Number(v?.deltaFine || v?.fineDelta || 0));
                   const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
-                  const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
+                  // Dispositions: prison, sip, hut, finalized.
+                  const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip' || dispositionRaw === 'hut' || dispositionRaw === 'finalized')
+                    ? dispositionRaw
+                    : '';
                   const dispositionAt = String(v?.dispositionAt || '').trim();
                   const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
                   const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
@@ -5840,12 +5887,15 @@
                     // Back-compat: older format stored absolute totals (jailMonths/fine).
                     const jailMonths = Math.max(0, Math.round(Number(v?.jailMonths || 0)));
                     const fine = Math.max(0, Math.round(Number(v?.fine || 0)));
-                     const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
-                     const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
-                     const dispositionAt = String(v?.dispositionAt || '').trim();
-                     const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
-                     const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
-                     out[key] = { deltaJail: 0, deltaFine: 0, __abs: { jailMonths, fine }, ...(disposition ? { disposition } : {}), ...(dispositionAt ? { dispositionAt } : {}), ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}), ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}) };
+                      const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
+                      // Dispositions: prison, sip, hut, finalized.
+                      const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip' || dispositionRaw === 'hut' || dispositionRaw === 'finalized')
+                        ? dispositionRaw
+                        : '';
+                      const dispositionAt = String(v?.dispositionAt || '').trim();
+                      const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
+                      const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
+                      out[key] = { deltaJail: 0, deltaFine: 0, __abs: { jailMonths, fine }, ...(disposition ? { disposition } : {}), ...(dispositionAt ? { dispositionAt } : {}), ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}), ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}) };
                   }
 
               }
@@ -5864,7 +5914,10 @@
                   const deltaJail = Math.round(Number(v?.deltaJail || v?.jailDelta || 0));
                   const deltaFine = Math.round(Number(v?.deltaFine || v?.fineDelta || 0));
                   const dispositionRaw = String(v?.disposition || '').trim().toLowerCase();
-                  const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip') ? dispositionRaw : '';
+                  // Dispositions: prison, sip, hut, finalized.
+                  const disposition = (dispositionRaw === 'prison' || dispositionRaw === 'sip' || dispositionRaw === 'hut' || dispositionRaw === 'finalized')
+                    ? dispositionRaw
+                    : '';
                   const dispositionAt = String(v?.dispositionAt || '').trim();
                   const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
                   const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
@@ -5951,29 +6004,40 @@
             return overlay;
           };
 
-           const openConfirm = ({ criminalName, action, jailMonths, fine, onConfirm }) => {
-             const act = String(action || '').trim();
-             const overlay = ensureConfirmOverlay();
-             const card = overlay.querySelector('[data-confirm-card]');
-             const titleHost = overlay.querySelector('[data-confirm-title]');
-             const textHost = overlay.querySelector('[data-confirm-text]');
-             const totalsHost = overlay.querySelector('[data-confirm-totals]');
-             const okBtn = overlay.querySelector('[data-confirm-ok]');
-             const cancelBtn = overlay.querySelector('[data-confirm-cancel]');
-
-             const name = String(criminalName || '').trim() || 'Unknown';
-             const isSip = act === 'sip';
-
-             // Darker fills for readability.
-             const theme = isSip
-               ? { title: 'CONFIRM', bg: 'rgba(110, 80, 0, .72)', border: 'rgba(255, 210, 64, .85)', shadow: 'rgba(255, 210, 64, .35)' }
-               : { title: 'CONFIRM', bg: 'rgba(85, 0, 15, .78)', border: 'rgba(255, 56, 84, .85)', shadow: 'rgba(255, 56, 84, .35)' };
-
-             if(titleHost) titleHost.textContent = theme.title;
-
-             const question = isSip
-               ? `Are you sure you want to let (${name}) serve in place?`
-               : `Are you sure you want to send (${name}) to prison?`;
+            const openConfirm = ({ criminalName, action, jailMonths, fine, onConfirm }) => {
+               const act = String(action || '').trim().toLowerCase();
+               const overlay = ensureConfirmOverlay();
+               const card = overlay.querySelector('[data-confirm-card]');
+               const titleHost = overlay.querySelector('[data-confirm-title]');
+               const textHost = overlay.querySelector('[data-confirm-text]');
+               const totalsHost = overlay.querySelector('[data-confirm-totals]');
+               const okBtn = overlay.querySelector('[data-confirm-ok]');
+               const cancelBtn = overlay.querySelector('[data-confirm-cancel]');
+  
+               const name = String(criminalName || '').trim() || 'Unknown';
+               const isHut = act === 'hut';
+               const isFinalize = act === 'finalize';
+               const isPrison = act === 'prison';
+               const isSip = act === 'sip';
+  
+               const theme = (() => {
+                if(isHut) return { title: 'CONFIRM', bg: 'rgba(38, 0, 80, .78)', border: 'rgba(190, 120, 255, .85)', shadow: 'rgba(190, 120, 255, .35)', okClass: 'mdtBadgeInfo', okText: 'CONFIRM' };
+                if(isFinalize || isPrison) return { title: 'CONFIRM', bg: 'rgba(0, 70, 25, .78)', border: 'rgba(60, 255, 120, .70)', shadow: 'rgba(60, 255, 120, .28)', okClass: 'mdtBadgeOk', okText: 'CONFIRM' };
+                if(isSip) return { title: 'CONFIRM', bg: 'rgba(90, 45, 0, .78)', border: 'rgba(255, 175, 60, .70)', shadow: 'rgba(255, 175, 60, .28)', okClass: 'mdtBadgeWarn', okText: 'CONFIRM' };
+                return { title: 'CONFIRM', bg: 'rgba(10,10,14,.96)', border: 'rgba(96,143,255,.55)', shadow: 'rgba(96,143,255,.20)', okClass: '', okText: 'CONFIRM' };
+              })();
+  
+               if(titleHost) titleHost.textContent = theme.title;
+  
+               const question = isHut
+                 ? `Are you sure you want to send (${name}) on a Hold Until Trial (HUT)?`
+                 : isFinalize
+                   ? `Are you sure you want to finalize sentencing for (${name})?`
+                   : isPrison
+                     ? `Are you sure you want to send (${name}) to PRISON?`
+                     : isSip
+                       ? `Are you sure you want (${name}) to SERVE IN PLACE?`
+                       : `Are you sure you want to confirm?`;
 
              const byCharges = getChargesByCriminal();
              const items = normalizeChargesV2(byCharges[name] || []);
@@ -5993,19 +6057,33 @@
                `;
              }
 
-              if(totalsHost){
-                const jailText = formatJailMonthsRange({ min: jailMonths, max: jailMonths });
-                totalsHost.innerHTML = `Sentence to apply: <span class="mdtMeta">${escapeHtml(jailText)}</span> • <span class="mdtMeta">${escapeHtml(formatMoney(fine))}</span>`;
-              }
-             if(card){
-               card.style.background = theme.bg;
-               card.style.border = `1px solid ${theme.border}`;
-               card.style.boxShadow = `0 0 26px ${theme.shadow}`;
-             }
-             if(okBtn){
-               okBtn.textContent = 'CONFIRM';
-               okBtn.className = `mdtBtn ${isSip ? 'mdtBadgeWarn' : 'mdtBadgeAlert'}`;
-             }
+               if(totalsHost){
+                 if(isHut){
+                   totalsHost.innerHTML = `Status to apply: <span class="mdtMeta">HUT</span> • <span class="mdtMeta">Hold Until Trial</span>`;
+                 }else{
+                   const jailText = formatJailMonthsRange({ min: jailMonths, max: jailMonths });
+                   const prefix = (isSip ? 'SIP sentence to apply' : isPrison ? 'Prison sentence to apply' : 'Sentence to apply');
+                   totalsHost.innerHTML = `${escapeHtml(prefix)}: <span class="mdtMeta">${escapeHtml(jailText)}</span> • <span class="mdtMeta">${escapeHtml(formatMoney(fine))}</span>`;
+                 }
+               }
+               if(card){
+                 card.style.background = theme.bg;
+                 card.style.border = `1px solid ${theme.border}`;
+                 card.style.boxShadow = `0 0 26px ${theme.shadow}`;
+               }
+               if(okBtn){
+                 okBtn.textContent = theme.okText || 'CONFIRM';
+                 okBtn.className = `mdtBtn ${theme.okClass || ''}`;
+                 if(isHut){
+                   okBtn.style.background = 'rgba(190, 120, 255, .18)';
+                   okBtn.style.borderColor = 'rgba(190, 120, 255, .55)';
+                   okBtn.style.color = 'rgba(225, 200, 255, .98)';
+                 }else{
+                   okBtn.style.background = '';
+                   okBtn.style.borderColor = '';
+                   okBtn.style.color = '';
+                 }
+               }
 
              overlay.style.display = '';
 
@@ -6083,39 +6161,50 @@
               return;
             }
 
-              const clampNum = (val, min, max) => {
-                const n = Number(val);
-                if(!Number.isFinite(n)) return min;
-                return Math.min(max, Math.max(min, n));
-              };
+               const clampNum = (val, min, max) => {
+                 const n = Number(val);
+                 if(!Number.isFinite(n)) return min;
+                 return Math.min(max, Math.max(min, n));
+               };
 
-              // Enforce sentencing caps: you can lower from charges, but never exceed them.
-              const normalizeDeltasToCaps = () => {
-                const by = getSentencingByCriminal();
-                let mutated = false;
-                for(const name of list){
-                  const n = String(name || '').trim() || 'Unknown';
+               const isHutMonths = (months) => {
+                 const m = Math.round(Number(months ?? 0));
+                 return Number.isFinite(m) && m >= 999999;
+               };
+
+               // Enforce sentencing caps: you can lower from charges, but never exceed them.
+                const normalizeDeltasToCaps = () => {
+                  const by = getSentencingByCriminal();
+                  let mutated = false;
+                  for(const name of list){
+                    const n = String(name || '').trim() || 'Unknown';
                     const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
-                    const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                    const baseMonthsRaw = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
                     const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
-                   const cur = by[n] || { deltaJail: 0, deltaFine: 0 };
-                   const disp = String(cur?.disposition || '').trim().toLowerCase();
-                   if(disp === 'prison' || disp === 'sip') continue;
  
-                   const jailFinal = clampNum(baseMonths + Number(cur.deltaJail || 0), 0, baseMonths);
-                   const fineFinal = clampNum(baseFine + Number(cur.deltaFine || 0), 0, baseFine);
-
-                  const nextDeltaJail = jailFinal - baseMonths;
-                  const nextDeltaFine = fineFinal - baseFine;
-
-                  if(nextDeltaJail !== Number(cur.deltaJail || 0) || nextDeltaFine !== Number(cur.deltaFine || 0)){
-                    by[n] = { ...cur, deltaJail: nextDeltaJail, deltaFine: nextDeltaFine };
-                    mutated = true;
+                    // If charges imply HUT/∞, do not clamp or adjust deltas here.
+                    if(isHutMonths(baseMonthsRaw)) continue;
+ 
+                    const baseMonths = baseMonthsRaw;
+                    const cur = by[n] || { deltaJail: 0, deltaFine: 0 };
+                    const disp = String(cur?.disposition || '').trim().toLowerCase();
+                    if(disp === 'finalized' || disp === 'prison' || disp === 'sip') continue;
+ 
+ 
+                    const jailFinal = clampNum(baseMonths + Number(cur.deltaJail || 0), 0, baseMonths);
+                    const fineFinal = clampNum(baseFine + Number(cur.deltaFine || 0), 0, baseFine);
+ 
+                    const nextDeltaJail = jailFinal - baseMonths;
+                    const nextDeltaFine = fineFinal - baseFine;
+ 
+                    if(nextDeltaJail !== Number(cur.deltaJail || 0) || nextDeltaFine !== Number(cur.deltaFine || 0)){
+                      by[n] = { ...cur, deltaJail: nextDeltaJail, deltaFine: nextDeltaFine };
+                      mutated = true;
+                    }
                   }
-                }
-                if(mutated) setSentencingByCriminal(by);
-                return getSentencingByCriminal();
-              };
+                  if(mutated) setSentencingByCriminal(by);
+                  return getSentencingByCriminal();
+                };
 
               const bySentCapped = normalizeDeltasToCaps();
 
@@ -6126,56 +6215,86 @@
                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
 
-                 const delta = bySentCapped[n] || { deltaJail: 0, deltaFine: 0 };
+                  const delta = bySentCapped[n] || { deltaJail: 0, deltaFine: 0 };
 
-                 const disp = String(delta?.disposition || '').trim().toLowerCase();
-                 const isLocked = (disp === 'prison' || disp === 'sip');
+                  const disp = String(delta?.disposition || '').trim().toLowerCase();
+                  const hasHutCharge = isHutMonths(baseMonths);
 
-                 const jailMonthsFinal = isLocked && Number.isFinite(Number(delta.lockedJailMonths))
-                   ? clampNum(Number(delta.lockedJailMonths), 0, baseMonths)
-                   : clampNum(baseMonths + Number(delta.deltaJail || 0), 0, baseMonths);
-
-                 const fineFinal = isLocked && Number.isFinite(Number(delta.lockedFine))
-                   ? clampNum(Number(delta.lockedFine), 0, baseFine)
-                   : clampNum(baseFine + Number(delta.deltaFine || 0), 0, baseFine);
+                   const isOnHut = disp === 'hut';
+                   const isFinalized = disp === 'finalized' || disp === 'prison' || disp === 'sip';
+                   const isLocked = isFinalized;
 
 
-                const maxMonths = baseMonths;
-                const fineStep = baseFine >= 100 ? 100 : 1;
-                const maxFine = baseFine;
+                  const jailMonthsFinalRaw = isFinalized && Number.isFinite(Number(delta.lockedJailMonths))
+                    ? Number(delta.lockedJailMonths)
+                    : (hasHutCharge
+                      ? Math.max(0, Math.round(Number(delta.lockedJailMonths ?? 0)))
+                      : (baseMonths + Number(delta.deltaJail || 0)));
+
+                  const fineFinalRaw = isFinalized && Number.isFinite(Number(delta.lockedFine))
+                    ? Number(delta.lockedFine)
+                    : (hasHutCharge
+                      ? Math.max(0, Math.round(Number(delta.lockedFine ?? 0)))
+                      : (baseFine + Number(delta.deltaFine || 0)));
+
+                  const jailMonthsFinal = hasHutCharge
+                    ? Math.max(0, Math.round(Number(jailMonthsFinalRaw || 0)))
+                    : clampNum(Math.round(jailMonthsFinalRaw), 0, baseMonths);
+
+                  const fineFinal = Math.max(0, Math.round(Number(fineFinalRaw || 0)));
 
 
-                 const dispAt = String(delta?.dispositionAt || '').trim();
-                 const actionHtml = (() => {
-                   if(isLocked){
+                   const maxMonths = hasHutCharge ? Math.max(0, jailMonthsFinal) : baseMonths;
+                   const fineStep = hasHutCharge ? 1 : (baseFine >= 100 ? 100 : 1);
+                   const maxFine = hasHutCharge ? Math.max(0, fineFinal) : baseFine;
 
-                     const isSip = disp === 'sip';
-                     const label = isSip ? 'SERVED IN PLACE' : 'SENT TO PRISON';
-                     const when = dispAt ? ` • ${escapeHtml(shortDateTime(dispAt))}` : '';
-                     const bg = isSip ? 'rgba(255, 210, 64, .18)' : 'rgba(255, 56, 84, .18)';
-                     const bd = isSip ? 'rgba(255, 210, 64, .75)' : 'rgba(255, 56, 84, .75)';
-                     return `
-                       <div style="width:100%; text-align:right; padding:6px 10px; border:1px solid ${bd}; background:${bg}; font-size:12px; letter-spacing:.4px;">
-                         <span style="font-weight:700;">${label}</span>${when}
-                       </div>
-                     `;
-                   }
 
-                   const chargeList = byCharges[n] || [];
-                   const hasAnyCharges = Array.isArray(chargeList) && chargeList.length > 0;
-                   const canSip = hasAnyCharges;
-                   const canPrison = hasAnyCharges && baseMonths > 0;
+                  const dispAt = String(delta?.dispositionAt || '').trim();
+                  const actionHtml = (() => {
+                    if(isFinalized){
+                      const when = dispAt ? ` • ${escapeHtml(shortDateTime(dispAt))}` : '';
+                      const bg = 'rgba(60,255,120,.12)';
+                      const bd = 'rgba(60,255,120,.45)';
+                      return `
+                        <div style="width:100%; text-align:right; padding:6px 10px; border:1px solid ${bd}; background:${bg}; font-size:12px; letter-spacing:.4px;">
+                          <span style="font-weight:700;">FINALIZED</span>${when}
+                        </div>
+                      `;
+                    }
 
-                   const sipTitle = canSip ? '' : 'Add at least one charge before sentencing.';
-                   const prisonTitle = !hasAnyCharges
-                     ? 'Add at least one charge before sentencing.'
-                     : (baseMonths <= 0 ? 'Requires at least one charge that carries jail time.' : '');
+                    const chargeList = byCharges[n] || [];
+                    const hasAnyCharges = Array.isArray(chargeList) && chargeList.length > 0;
 
-                   return `
-                     <button type="button" class="mdtBtn mdtBadgeAlert" data-action-prison="${escapeHtml(n)}" ${canPrison ? '' : 'disabled'} title="${escapeHtml(prisonTitle)}" style="height:28px; padding:0 8px; font-size:12px;">SEND TO PRISON</button>
-                     <button type="button" class="mdtBtn mdtBadgeWarn" data-action-sip="${escapeHtml(n)}" ${canSip ? '' : 'disabled'} title="${escapeHtml(sipTitle)}" style="height:28px; padding:0 8px; font-size:12px;">SERVE IN PLACE</button>
-                   `;
-                 })();
+                    if(hasHutCharge){
+                      const canHut = hasAnyCharges;
+                      const canFinalize = hasAnyCharges;
+
+                      const hutTitle = !hasAnyCharges
+                        ? 'Add at least one charge before sentencing.'
+                        : '';
+                      const finalizeTitle = !hasAnyCharges
+                        ? 'Add at least one charge before sentencing.'
+                        : 'Has HUT charges: time/fine must be set manually.';
+
+                      const hutLabel = isOnHut
+                        ? `ON HUT${dispAt ? ` • ${escapeHtml(shortDateTime(dispAt))}` : ''}`
+                        : 'SEND ON A HUT';
+
+                      return `
+                        <button type="button" class="mdtBtn" data-action-hut="${escapeHtml(n)}" ${(canHut && !isOnHut) ? '' : 'disabled'} title="${escapeHtml(isOnHut ? 'Already on HUT.' : hutTitle)}" style="height:28px; padding:0 8px; font-size:12px; background:rgba(190, 120, 255, .16); border-color:rgba(190, 120, 255, .55); color:rgba(225, 200, 255, .98);">${hutLabel}</button>
+                        <button type="button" class="mdtBtn mdtBadgeOk" data-action-finalize="${escapeHtml(n)}" ${canFinalize ? '' : 'disabled'} title="${escapeHtml(finalizeTitle)}" style="height:28px; padding:0 8px; font-size:12px;">FINALIZE SENTENCING</button>
+                      `;
+                    }
+
+                    const canPrison = hasAnyCharges;
+                    const canSip = hasAnyCharges;
+                    const prisonTitle = !hasAnyCharges ? 'Add at least one charge before sentencing.' : '';
+                    const sipTitle = !hasAnyCharges ? 'Add at least one charge before sentencing.' : '';
+                    return `
+                      <button type="button" class="mdtBtn mdtBadgeOk" data-action-prison="${escapeHtml(n)}" ${canPrison ? '' : 'disabled'} title="${escapeHtml(prisonTitle)}" style="height:28px; padding:0 8px; font-size:12px;">SEND TO PRISON</button>
+                      <button type="button" class="mdtBtn" data-action-sip="${escapeHtml(n)}" ${canSip ? '' : 'disabled'} title="${escapeHtml(sipTitle)}" style="height:28px; padding:0 8px; font-size:12px;">SERVE IN PLACE</button>
+                    `;
+                  })();
 
 
                 return `
@@ -6186,22 +6305,16 @@
  
                     </div>
                     <div style="display:grid; gap:10px; min-width:260px;">
-                      <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+                      <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; position:relative;">
                         <span class="mdtMeta" style="opacity:.85; font-size:12px;">Time</span>
-                          <input class="mdtInput" data-sentence-months="${escapeHtml(n)}" value="${escapeHtml(String(jailMonthsFinal))}" inputmode="numeric" ${isLocked ? 'disabled' : ''} style="width:86px; height:28px; padding:0 8px; font-size:12px;" />
-                            <input class="mdtRange" type="range" data-sentence-months-slider="${escapeHtml(n)}" min="0" max="${escapeHtml(String(maxMonths))}" step="1" value="${escapeHtml(String(jailMonthsFinal))}" ${isLocked ? 'disabled' : ''} style="width:140px;" />
-
-
- 
+                        <input class="mdtInput" data-sentence-months="${escapeHtml(n)}" value="${escapeHtml(String(jailMonthsFinal))}" inputmode="numeric" ${isLocked ? 'disabled' : ''} style="width:86px; height:28px; padding:0 8px; font-size:12px;" />
+                        <input class="mdtRange" type="range" data-sentence-months-slider="${escapeHtml(n)}" min="0" max="${escapeHtml(String(maxMonths))}" step="1" value="${escapeHtml(String(jailMonthsFinal))}" ${isLocked || hasHutCharge ? 'disabled' : ''} style="width:140px;" />
                         <span class="mdtMeta" style="opacity:.75; font-size:12px;">mo</span>
                       </div>
-                      <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+                      <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; position:relative;">
                         <span class="mdtMeta" style="opacity:.85; font-size:12px;">Fine</span>
-                          <input class="mdtInput" data-sentence-fine="${escapeHtml(n)}" value="${escapeHtml(String(fineFinal))}" inputmode="numeric" ${isLocked ? 'disabled' : ''} style="width:110px; height:28px; padding:0 8px; font-size:12px;" />
-                            <input class="mdtRange" type="range" data-sentence-fine-slider="${escapeHtml(n)}" min="0" max="${escapeHtml(String(maxFine))}" step="${escapeHtml(String(fineStep))}" value="${escapeHtml(String(fineFinal))}" ${isLocked ? 'disabled' : ''} style="width:140px;" />
-
-
- 
+                        <input class="mdtInput" data-sentence-fine="${escapeHtml(n)}" value="${escapeHtml(String(fineFinal))}" inputmode="numeric" ${isLocked ? 'disabled' : ''} style="width:110px; height:28px; padding:0 8px; font-size:12px;" />
+                        <input class="mdtRange" type="range" data-sentence-fine-slider="${escapeHtml(n)}" min="0" max="${escapeHtml(String(maxFine))}" step="${escapeHtml(String(fineStep))}" value="${escapeHtml(String(fineFinal))}" ${isLocked || hasHutCharge ? 'disabled' : ''} style="width:140px;" />
                       </div>
                        <div data-sentence-actions="${escapeHtml(n)}" style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
                          ${actionHtml}
@@ -6213,158 +6326,216 @@
              }).join('');
 
 
-                const setSentenceDeltaFromFinal = (name, { jailMonthsFinal, fineFinal }) => {
-                 const n = String(name || '').trim();
-                 if(!n) return;
-
-                 const curRec = getSentencingByCriminal()[n] || {};
-                 const curDisp = String(curRec?.disposition || '').trim().toLowerCase();
-                 if(curDisp === 'prison' || curDisp === 'sip') return;
-  
-                 const byCharges = getChargesByCriminal();
-
-                 const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
-                 const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
-                 const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+                 const setSentenceDeltaFromFinal = (name, { jailMonthsFinal, fineFinal }) => {
+                   const n = String(name || '').trim();
+                   if(!n) return;
  
-                 const jail = clampNum(Math.round(Number(jailMonthsFinal ?? baseMonths)), 0, baseMonths);
-                 const fine = clampNum(Math.round(Number(fineFinal ?? baseFine)), 0, baseFine);
- 
- 
-                const deltaJail = jail - baseMonths;
-                const deltaFine = fine - baseFine;
- 
-                const by = getSentencingByCriminal();
-                const curSent = by[n] || {};
-                by[n] = {
-                  ...curSent,
-                  deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
-                  deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
-                };
-                setSentencingByCriminal(by);
-              };
+                   const curRec = getSentencingByCriminal()[n] || {};
+                   const curDisp = String(curRec?.disposition || '').trim().toLowerCase();
+                   if(curDisp === 'finalized' || curDisp === 'prison' || curDisp === 'sip') return;
 
-
-               const setSentenceDisposition = (name, disposition) => {
-                 const n = String(name || '').trim();
-                 const d = String(disposition || '').trim().toLowerCase();
-                 if(!n) return;
-                 if(d !== 'prison' && d !== 'sip') return;
-                  const by = getSentencingByCriminal();
-                  const cur = by[n] || { deltaJail: 0, deltaFine: 0 };
-
-                  // Freeze sentence totals at the moment of confirmation.
                   const byCharges = getChargesByCriminal();
-                   const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
-                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
-                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
-                   const lockedJailMonths = clampNum(baseMonths + Number(cur.deltaJail || 0), 0, baseMonths);
-                   const lockedFine = clampNum(baseFine + Number(cur.deltaFine || 0), 0, baseFine);
+                  const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
+                  const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                  const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
 
-                   // Guard: cannot sentence without charges; cannot prison without time.
-                   const chargeList = byCharges[n] || [];
-                   const hasAnyCharges = Array.isArray(chargeList) && chargeList.length > 0;
-                   if(!hasAnyCharges) return;
-                   if(d === 'prison' && baseMonths <= 0) return;
+                  // For HUT/∞ charge sets: sliders are frozen, but manual inputs are allowed.
+                  // Store the manual values into locked fields.
+                  if(baseMonths >= 999999){
+                    const jail = Math.max(0, Math.round(Number(jailMonthsFinal ?? 0)));
+                    const fine = Math.max(0, Math.round(Number(fineFinal ?? 0)));
+
+                    const by = getSentencingByCriminal();
+                    const curSent = by[n] || {};
+                    by[n] = { ...curSent, lockedJailMonths: jail, lockedFine: fine };
+                    setSentencingByCriminal(by);
+                    return;
+                  }
+
+                  const jail = clampNum(Math.round(Number(jailMonthsFinal ?? baseMonths)), 0, baseMonths);
+                  const fine = clampNum(Math.round(Number(fineFinal ?? baseFine)), 0, baseFine);
+
+                  const deltaJail = jail - baseMonths;
+                  const deltaFine = fine - baseFine;
+
+                  const by = getSentencingByCriminal();
+                  const curSent = by[n] || {};
+                  by[n] = {
+                    ...curSent,
+                    deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
+                    deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
+                  };
+                  setSentencingByCriminal(by);
+                };
+
+
+                const setSentenceDisposition = (name, disposition) => {
+                   const n = String(name || '').trim();
+                   const d = String(disposition || '').trim().toLowerCase();
+                   if(!n) return;
+                   if(d !== 'hut' && d !== 'finalized' && d !== 'prison' && d !== 'sip') return;
  
-                   by[n] = { ...cur, disposition: d, dispositionAt: new Date().toISOString(), lockedJailMonths, lockedFine };
+                   const by = getSentencingByCriminal();
+                   const cur = by[n] || { deltaJail: 0, deltaFine: 0 };
+
+                  const byCharges = getChargesByCriminal();
+                  const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
+                  const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                  const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+
+                  // Guard: cannot sentence without charges.
+                  const chargeList = byCharges[n] || [];
+                  const hasAnyCharges = Array.isArray(chargeList) && chargeList.length > 0;
+                  if(!hasAnyCharges) return;
+
+                   if(d === 'finalized'){
+                     // Freeze sentence totals at the moment of confirmation.
+                     const lockedJailMonths = (baseMonths >= 999999)
+                       ? Math.max(0, Math.round(Number(cur.lockedJailMonths ?? 0)))
+                       : clampNum(baseMonths + Number(cur.deltaJail || 0), 0, baseMonths);
+
+                     const lockedFine = (baseMonths >= 999999)
+                       ? Math.max(0, Math.round(Number(cur.lockedFine ?? 0)))
+                       : clampNum(baseFine + Number(cur.deltaFine || 0), 0, baseFine);
+
+                     by[n] = { ...cur, disposition: 'finalized', dispositionAt: new Date().toISOString(), lockedJailMonths, lockedFine };
+                   }else if(d === 'hut'){
+                     // HUT does not apply time/fine at this stage, but we keep any manual locked values.
+                     by[n] = { ...cur, disposition: 'hut', dispositionAt: new Date().toISOString() };
+                   }else if(d === 'prison' || d === 'sip'){
+                     // Prison/SIP only apply to normal ranges (not HUT/∞).
+                     if(baseMonths >= 999999) return;
+
+                     const lockedJailMonths = clampNum(baseMonths + Number(cur.deltaJail || 0), 0, baseMonths);
+                     const lockedFine = clampNum(baseFine + Number(cur.deltaFine || 0), 0, baseFine);
+
+                     by[n] = { ...cur, disposition: d, dispositionAt: new Date().toISOString(), lockedJailMonths, lockedFine };
+                   }
 
                   setSentencingByCriminal(by);
 
+                  // Trigger the existing autosave system (hidden field change).
+                  try{
+                    sentencingField.dispatchEvent(new Event('change', { bubbles: true }));
+                  }catch{}
+
+                  // Also save immediately so the disposition can't be lost to timing.
+                  try{ saveArrestEdits(id, { manual: true }); }catch{}
+                };
+
+              const syncInputsFor = (name, { jailMonths, fine }) => {
+                const n = String(name || '').trim();
+                if(!n) return;
+                const mInp = sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(n)}"]`);
+                const mSl = sentencingHost.querySelector(`[data-sentence-months-slider="${CSS.escape(n)}"]`);
+                const fInp = sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(n)}"]`);
+                const fSl = sentencingHost.querySelector(`[data-sentence-fine-slider="${CSS.escape(n)}"]`);
+
+                const byCharges = getChargesByCriminal();
+                const totals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
+                const baseMonths = Math.max(0, Math.round(Number(totals.jailMaxMonths ?? totals.jailMonths ?? 0)));
+                const hut = baseMonths >= 999999;
+
+                if(mInp) mInp.value = String(jailMonths ?? '0');
+                if(mSl){
+                  if(hut){
+                    const nextMax = Math.max(0, Math.round(Number(jailMonths ?? 0)));
+                    mSl.max = String(nextMax);
+                  }
+                  mSl.value = String(jailMonths ?? '0');
+                }
+                if(fInp) fInp.value = String(fine ?? '0');
+                if(fSl){
+                  if(hut){
+                    const nextMax = Math.max(0, Math.round(Number(fine ?? 0)));
+                    fSl.max = String(nextMax);
+                    fSl.step = '1';
+                  }
+                  fSl.value = String(fine ?? '0');
+                }
+              };
+
+              sentencingHost.querySelectorAll('[data-sentence-months]').forEach(inp => {
+                inp.oninput = () => {
+                   const name = String(inp.dataset.sentenceMonths || '').trim();
+                    const byCharges = getChargesByCriminal();
+                    const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
+                    const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                    const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+
+                    const isHut = baseMonths >= 999999;
+                    const jailMonthsFinal = isHut
+                      ? Math.max(0, Math.round(Number(inp.value || 0)))
+                      : clampNum(Math.round(Number(inp.value || 0)), 0, baseMonths);
  
-                 // Trigger the existing autosave system (hidden field change).
-                 try{
-                   sentencingField.dispatchEvent(new Event('change', { bubbles: true }));
-                 }catch{}
+                   // Keep current fine input/sliders as-is (but clamp to charges max unless HUT).
+                   const fineCurRaw = Math.round(Number(String(sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(name)}"]`)?.value || '0').replace(/,/g, '') || 0));
+                   const fineCur = isHut ? Math.max(0, fineCurRaw) : clampNum(fineCurRaw, 0, baseFine);
  
-                 // Also save immediately so the disposition can't be lost to timing.
-                 try{ saveArrestEdits(id, { manual: true }); }catch{}
-               };
+                   setSentenceDeltaFromFinal(name, { jailMonthsFinal, fineFinal: fineCur });
+                   syncInputsFor(name, { jailMonths: jailMonthsFinal, fine: fineCur });
+                };
+              });
 
-             const syncInputsFor = (name, { jailMonths, fine }) => {
-               const n = String(name || '').trim();
-               if(!n) return;
-               const mInp = sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(n)}"]`);
-               const mSl = sentencingHost.querySelector(`[data-sentence-months-slider="${CSS.escape(n)}"]`);
-               const fInp = sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(n)}"]`);
-               const fSl = sentencingHost.querySelector(`[data-sentence-fine-slider="${CSS.escape(n)}"]`);
-               if(mInp) mInp.value = String(jailMonths ?? '0');
-               if(mSl) mSl.value = String(jailMonths ?? '0');
-               if(fInp) fInp.value = String(fine ?? '0');
-               if(fSl) fSl.value = String(fine ?? '0');
-             };
+              sentencingHost.querySelectorAll('[data-sentence-months-slider]').forEach(sl => {
+                sl.oninput = () => {
+                   const name = String(sl.dataset.sentenceMonthsSlider || '').trim();
+                    const byCharges = getChargesByCriminal();
+                    const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
+                    const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                    const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
 
-             sentencingHost.querySelectorAll('[data-sentence-months]').forEach(inp => {
-               inp.oninput = () => {
-                  const name = String(inp.dataset.sentenceMonths || '').trim();
-                   const byCharges = getChargesByCriminal();
-                   const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
-                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
-                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+                    if(baseMonths >= 999999) return;
+ 
+                    const jailMonthsFinal = clampNum(Math.round(Number(sl.value || 0)), 0, baseMonths);
+ 
+                   const fineCurRaw = Math.round(Number(String(sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(name)}"]`)?.value || '0').replace(/,/g, '') || 0));
+                   const fineCur = clampNum(fineCurRaw, 0, baseFine);
+ 
+                   setSentenceDeltaFromFinal(name, { jailMonthsFinal, fineFinal: fineCur });
+                   syncInputsFor(name, { jailMonths: jailMonthsFinal, fine: fineCur });
+                };
+              });
 
-                   const jailMonthsFinal = clampNum(Math.round(Number(inp.value || 0)), 0, baseMonths);
+              sentencingHost.querySelectorAll('[data-sentence-fine]').forEach(inp => {
+                inp.oninput = () => {
+                  const name = String(inp.dataset.sentenceFine || '').trim();
+                    const byCharges = getChargesByCriminal();
+                    const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
+                    const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                    const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
 
-                  // Keep current fine input/sliders as-is (but clamp to charges max).
-                  const fineCurRaw = Math.round(Number(String(sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(name)}"]`)?.value || '0').replace(/,/g, '') || 0));
-                  const fineCur = clampNum(fineCurRaw, 0, baseFine);
+                    const isHut = baseMonths >= 999999;
+                    const fineRaw = Math.round(Number(String(inp.value || '').replace(/,/g, '') || 0));
+                    const fineFinal = isHut ? Math.max(0, fineRaw) : clampNum(fineRaw, 0, baseFine);
 
-                  setSentenceDeltaFromFinal(name, { jailMonthsFinal, fineFinal: fineCur });
-                  syncInputsFor(name, { jailMonths: jailMonthsFinal, fine: fineCur });
-               };
-             });
+                    const jailCurRaw = Math.round(Number(sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(name)}"]`)?.value || 0));
+                    const jailCur = isHut ? Math.max(0, jailCurRaw) : clampNum(jailCurRaw, 0, baseMonths);
+ 
+                   setSentenceDeltaFromFinal(name, { jailMonthsFinal: jailCur, fineFinal });
+                   syncInputsFor(name, { jailMonths: jailCur, fine: fineFinal });
+                };
+              });
 
-             sentencingHost.querySelectorAll('[data-sentence-months-slider]').forEach(sl => {
-               sl.oninput = () => {
-                  const name = String(sl.dataset.sentenceMonthsSlider || '').trim();
-                   const byCharges = getChargesByCriminal();
-                   const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
-                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
-                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+              sentencingHost.querySelectorAll('[data-sentence-fine-slider]').forEach(sl => {
+                sl.oninput = () => {
+                   const name = String(sl.dataset.sentenceFineSlider || '').trim();
+                    const byCharges = getChargesByCriminal();
+                    const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
+                    const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                    const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
 
-                   const jailMonthsFinal = clampNum(Math.round(Number(sl.value || 0)), 0, baseMonths);
-
-                  const fineCurRaw = Math.round(Number(String(sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(name)}"]`)?.value || '0').replace(/,/g, '') || 0));
-                  const fineCur = clampNum(fineCurRaw, 0, baseFine);
-
-                  setSentenceDeltaFromFinal(name, { jailMonthsFinal, fineFinal: fineCur });
-                  syncInputsFor(name, { jailMonths: jailMonthsFinal, fine: fineCur });
-               };
-             });
-
-             sentencingHost.querySelectorAll('[data-sentence-fine]').forEach(inp => {
-               inp.oninput = () => {
-                 const name = String(inp.dataset.sentenceFine || '').trim();
-                   const byCharges = getChargesByCriminal();
-                   const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
-                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
-                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
-
-                   const fineFinal = clampNum(Math.round(Number(String(inp.value || '').replace(/,/g, '') || 0)), 0, baseFine);
+                    if(baseMonths >= 999999) return;
+ 
+                    const fineFinal = clampNum(Math.round(Number(sl.value || 0)), 0, baseFine);
+ 
                    const jailCurRaw = Math.round(Number(sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(name)}"]`)?.value || 0));
                    const jailCur = clampNum(jailCurRaw, 0, baseMonths);
-
-                  setSentenceDeltaFromFinal(name, { jailMonthsFinal: jailCur, fineFinal });
-                  syncInputsFor(name, { jailMonths: jailCur, fine: fineFinal });
-               };
-             });
-
-             sentencingHost.querySelectorAll('[data-sentence-fine-slider]').forEach(sl => {
-               sl.oninput = () => {
-                  const name = String(sl.dataset.sentenceFineSlider || '').trim();
-                   const byCharges = getChargesByCriminal();
-                   const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
-                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
-                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
-
-                   const fineFinal = clampNum(Math.round(Number(sl.value || 0)), 0, baseFine);
-
-                  const jailCurRaw = Math.round(Number(sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(name)}"]`)?.value || 0));
-                  const jailCur = clampNum(jailCurRaw, 0, baseMonths);
-
-                  setSentenceDeltaFromFinal(name, { jailMonthsFinal: jailCur, fineFinal });
-                  syncInputsFor(name, { jailMonths: jailCur, fine: fineFinal });
-               };
-             });
+ 
+                   setSentenceDeltaFromFinal(name, { jailMonthsFinal: jailCur, fineFinal });
+                   syncInputsFor(name, { jailMonths: jailCur, fine: fineFinal });
+                };
+              });
 
 
 
@@ -6381,20 +6552,93 @@
                };
              });
 
+              sentencingHost.querySelectorAll('[data-action-hut]').forEach(btn => {
+                btn.onclick = () => {
+                  const name = String(btn.dataset.actionHut || '').trim() || 'Unknown';
+                  const byCharges = getChargesByCriminal();
+                  const chargeList = byCharges[name] || [];
+                  if(!Array.isArray(chargeList) || chargeList.length < 1) return;
+
+                  const totals = computeChargeTotals(normalizeChargesV2(chargeList));
+                  const baseMonths = Math.max(0, Math.round(Number(totals.jailMaxMonths ?? totals.jailMonths ?? 0)));
+                  // Safety: only allow HUT action when HUT/∞ charge exists.
+                  if(baseMonths < 999999) return;
+
+                  openConfirm({
+                    criminalName: name,
+                    action: 'hut',
+                    jailMonths: 0,
+                    fine: 0,
+                    onConfirm: () => {
+                      setSentenceDisposition(name, 'hut');
+                      try{ renderSentencing(); }catch{}
+                    }
+                  });
+                };
+              });
+
+               sentencingHost.querySelectorAll('[data-action-finalize]').forEach(btn => {
+                 btn.onclick = () => {
+                   const name = String(btn.dataset.actionFinalize || '').trim() || 'Unknown';
+                   const byCharges = getChargesByCriminal();
+                   const chargeList = byCharges[name] || [];
+                   if(!Array.isArray(chargeList) || chargeList.length < 1) return;
+ 
+                   const chargesTotals = computeChargeTotals(normalizeChargesV2(chargeList));
+                   const delta = getSentencingByCriminal()[name] || { deltaJail: 0, deltaFine: 0 };
+                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+ 
+                   // HUT/∞ charge sets require manual time/fine entry.
+                   if(baseMonths >= 999999){
+                     const cur = getSentencingByCriminal()[name] || {};
+                     const lockedJailMonths = Math.max(0, Math.round(Number(cur.lockedJailMonths ?? 0)));
+                     const lockedFine = Math.max(0, Math.round(Number(cur.lockedFine ?? 0)));
+                     openConfirm({
+                       criminalName: name,
+                       action: 'finalize',
+                       jailMonths: lockedJailMonths,
+                       fine: lockedFine,
+                       onConfirm: () => {
+                         setSentenceDisposition(name, 'finalized');
+                         try{ renderSentencing(); }catch{}
+                       }
+                     });
+                     return;
+                   }
+ 
+                   const jailMonths = clampNum(Math.round(baseMonths + Number(delta.deltaJail || 0)), 0, baseMonths);
+                   const fine = clampNum(Math.round(baseFine + Number(delta.deltaFine || 0)), 0, baseFine);
+ 
+                   openConfirm({
+                     criminalName: name,
+                     action: 'finalize',
+                     jailMonths,
+                     fine,
+                     onConfirm: () => {
+                       setSentenceDisposition(name, 'finalized');
+                       try{ renderSentencing(); }catch{}
+                     }
+                   });
+                 };
+               });
+
                sentencingHost.querySelectorAll('[data-action-prison]').forEach(btn => {
                  btn.onclick = () => {
                    const name = String(btn.dataset.actionPrison || '').trim() || 'Unknown';
                    const byCharges = getChargesByCriminal();
                    const chargeList = byCharges[name] || [];
                    if(!Array.isArray(chargeList) || chargeList.length < 1) return;
- 
-                    const chargesTotals = computeChargeTotals(normalizeChargesV2(chargeList));
-                    const delta = getSentencingByCriminal()[name] || { deltaJail: 0, deltaFine: 0 };
-                    const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
-                    if(baseMonths <= 0) return;
-                    const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+
+                   const chargesTotals = computeChargeTotals(normalizeChargesV2(chargeList));
+                   const delta = getSentencingByCriminal()[name] || { deltaJail: 0, deltaFine: 0 };
+                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+                   if(baseMonths >= 999999) return;
+
                    const jailMonths = clampNum(Math.round(baseMonths + Number(delta.deltaJail || 0)), 0, baseMonths);
                    const fine = clampNum(Math.round(baseFine + Number(delta.deltaFine || 0)), 0, baseFine);
+
                    openConfirm({
                      criminalName: name,
                      action: 'prison',
@@ -6408,20 +6652,22 @@
                  };
                });
 
-  
                sentencingHost.querySelectorAll('[data-action-sip]').forEach(btn => {
                  btn.onclick = () => {
                    const name = String(btn.dataset.actionSip || '').trim() || 'Unknown';
                    const byCharges = getChargesByCriminal();
                    const chargeList = byCharges[name] || [];
                    if(!Array.isArray(chargeList) || chargeList.length < 1) return;
- 
-                    const chargesTotals = computeChargeTotals(normalizeChargesV2(chargeList));
-                    const delta = getSentencingByCriminal()[name] || { deltaJail: 0, deltaFine: 0 };
-                    const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
-                    const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+
+                   const chargesTotals = computeChargeTotals(normalizeChargesV2(chargeList));
+                   const delta = getSentencingByCriminal()[name] || { deltaJail: 0, deltaFine: 0 };
+                   const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                   const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+                   if(baseMonths >= 999999) return;
+
                    const jailMonths = clampNum(Math.round(baseMonths + Number(delta.deltaJail || 0)), 0, baseMonths);
                    const fine = clampNum(Math.round(baseFine + Number(delta.deltaFine || 0)), 0, baseFine);
+
                    openConfirm({
                      criminalName: name,
                      action: 'sip',
@@ -6676,10 +6922,13 @@
                 const obj = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
                 return {
                   photos: Array.isArray(obj.photos) ? obj.photos.map(x => String(x)).filter(Boolean) : [],
+                  // "links" are treated as evidence "items" in the UI summary.
                   links: Array.isArray(obj.links) ? obj.links.map(x => String(x)).filter(Boolean) : [],
+                  // Reserved for future locker inventory wiring.
+                  items: Array.isArray(obj.items) ? obj.items.map(x => String(x)).filter(Boolean) : [],
                 };
               }catch{
-                return { photos: [], links: [] };
+                return { photos: [], links: [], items: [] };
               }
             };
 
@@ -6688,6 +6937,7 @@
               const normalized = {
                 photos: Array.isArray(obj.photos) ? obj.photos.map(x => String(x)).filter(Boolean) : [],
                 links: Array.isArray(obj.links) ? obj.links.map(x => String(x)).filter(Boolean) : [],
+                items: Array.isArray(obj.items) ? obj.items.map(x => String(x)).filter(Boolean) : [],
               };
               if(evidenceField) evidenceField.value = JSON.stringify(normalized);
               markEditedField('arrests', id, 'evidence');
@@ -6695,20 +6945,20 @@
             };
 
             const renderEvidenceSummary = () => {
-              const host = wrap.querySelector('[data-evidence-summary]');
-              if(!host) return;
+              const hosts = [
+                wrap.querySelector('[data-evidence-summary]'),
+                wrap.querySelector('[data-evidence-summary-compact]'),
+              ].filter(Boolean);
+              if(!hosts.length) return;
+
               const ev = getEvidence();
               const photos = (ev.photos || []).length;
-              const links = (ev.links || []).length;
-              if(!photos && !links){
-                host.textContent = 'None';
-                return;
-              }
-              const parts = [];
-              if(photos) parts.push(`${photos} photo${photos === 1 ? '' : 's'}`);
-              if(links) parts.push(`${links} link${links === 1 ? '' : 's'}`);
-              host.textContent = parts.join(' • ');
+              const items = (ev.links || []).length + (ev.items || []).length;
+              const txt = `${photos} picture${photos === 1 ? '' : 's'} in evidence • ${items} item${items === 1 ? '' : 's'} in evidence`;
+
+              hosts.forEach(h => { h.textContent = txt; });
             };
+
 
             renderEvidenceSummary();
 
@@ -6761,31 +7011,57 @@
               const overlay = ensureEvidencePhotosOverlay();
               const ev = getEvidence();
 
-              // Scanner photos: currently no data source in MDT seed data, so show placeholder.
-              // For now we also show whatever is attached to this arrest as "photos".
+              // Scanner photos: render from seed dataset when present.
+              // Also show whatever is already attached to this arrest.
               const scannerHost = overlay.querySelector('[data-evidence-photos-panel="scanner"]');
               if(scannerHost){
                 const photos = Array.isArray(ev.photos) ? ev.photos : [];
+                const scannerPhotos = Array.isArray(window.MDT_DATA?.scannerPhotos) ? window.MDT_DATA.scannerPhotos : [];
+
+                const grid = (items) => {
+                  if(!items.length) return '<div class="mdtDetailItem mdtItemNone">No scanner photos available</div>';
+                  return `
+                    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:10px;">
+                      ${items.map(p => {
+                        const src = String(p && p.src ? p.src : '').trim();
+                        const label = String(p && p.label ? p.label : (src || 'Photo')).trim();
+                        const takenAt = String(p && p.takenAt ? p.takenAt : '').trim();
+                        const takenBy = String(p && p.takenBy ? p.takenBy : '').trim();
+                        const tags = Array.isArray(p?.tags) ? p.tags.map(x => String(x)).filter(Boolean) : [];
+                        const meta = [takenBy, takenAt, (tags.length ? tags.join(', ') : '')].filter(Boolean).join(' • ');
+
+                        return `
+                          <div style="border:1px solid var(--mdt-border); padding:8px; background:rgba(255,255,255,.02);">
+                            <img src="${escapeHtml(src)}" alt="Scanner photo" style="width:100%; height:96px; object-fit:cover; border:1px solid var(--mdt-border);" />
+                            <div class="mdtDetailVal" style="margin-top:8px; font-size:12px; line-height:1.15;">${escapeHtml(label)}</div>
+                            <div class="mdtMeta" style="opacity:.75; margin-top:4px; font-size:11px; line-height:1.15;">${escapeHtml(meta) || '—'}</div>
+                            <button type="button" class="mdtBtn" data-evidence-scanner-attach="${escapeHtml(src)}" style="margin-top:8px; height:30px; padding:0 10px; width:100%;">ATTACH</button>
+                          </div>
+                        `;
+                      }).join('')}
+                    </div>
+                  `;
+                };
+
                 scannerHost.innerHTML = `
                   <div class="mdtDetailSectionTitle" style="margin-top:0;">SCANNER PHOTOS</div>
-                  <div class="mdtMeta" style="opacity:.85; margin-top:-6px;">No scanner photo dataset found in this build yet.</div>
+                  <div class="mdtMeta" style="opacity:.85; margin-top:-6px;">Template evidence photos from MDT seed database.</div>
+
+                  ${grid(scannerPhotos)}
 
                   <div class="mdtDetailSectionTitle" style="margin:14px 0 6px; font-size:12px; opacity:.9;">ATTACHED PHOTOS (THIS ARREST)</div>
-                  <div data-evidence-photo-list>
-                    ${photos.length
-                      ? photos.map(u => `
-                        <div class="mdtDetailRow" style="gap:10px; align-items:center;">
-                          <img src="${escapeHtml(u)}" alt="Evidence photo" style="width:64px; height:64px; object-fit:cover; border:1px solid var(--mdt-border);" />
-                          <span class="mdtDetailVal" style="flex:1; word-break:break-all;">${escapeHtml(u)}</span>
-                          <button type="button" class="mdtBtn" data-evidence-photo-remove="${escapeHtml(u)}" style="height:30px; padding:0 10px;">REMOVE</button>
-                        </div>
-                      `).join('')
-                      : '<div class="mdtDetailItem mdtItemNone">No attached photos</div>'}
-                  </div>
-
-                  <div class="mdtMeta" style="opacity:.75; margin-top:10px;">Clipboard uploads use local session URLs and may not survive a reload.</div>
-                  <div class="mdtMeta" style="opacity:.75; margin-top:6px;">(Later we can wire this tab to whatever your scanner saves.)</div>
+                  <div class="mdtMeta" style="opacity:.82;">${photos.length} picture${photos.length === 1 ? '' : 's'} in evidence</div>
                 `;
+
+                scannerHost.querySelectorAll('[data-evidence-scanner-attach]').forEach(btn => {
+                  btn.onclick = () => {
+                    const url = String(btn.dataset.evidenceScannerAttach || '').trim();
+                    if(!url) return;
+                    const cur = getEvidence();
+                    setEvidence({ ...cur, photos: dedupeStrings([...(cur.photos || []), url]) });
+                    renderEvidencePhotosOverlay();
+                  };
+                });
 
                 scannerHost.querySelectorAll('[data-evidence-photo-remove]').forEach(btn => {
                   btn.onclick = () => {
@@ -6797,6 +7073,7 @@
                   };
                 });
               }
+
 
               const linkHost = overlay.querySelector('[data-evidence-photos-panel="link"]');
               if(linkHost){
@@ -6866,12 +7143,26 @@
                       if(status) status.textContent = 'No image found in clipboard.';
                       return;
                     }
+
                     const blob = await found.it.getType(found.type);
-                    const url = URL.createObjectURL(blob);
+
+                    // Persist the actual image content so it survives reload.
+                    const dataUrl = await new Promise((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onerror = () => reject(reader.error || new Error('FileReader failed'));
+                      reader.onload = () => resolve(String(reader.result || ''));
+                      reader.readAsDataURL(blob);
+                    });
+
+                    if(!String(dataUrl || '').startsWith('data:image/')){
+                      if(status) status.textContent = 'Clipboard image read succeeded, but format was not an image.';
+                      return;
+                    }
+
                     const cur = getEvidence();
-                    const next = { ...cur, photos: dedupeStrings([...(cur.photos || []), url]) };
+                    const next = { ...cur, photos: dedupeStrings([...(cur.photos || []), dataUrl]) };
                     setEvidence(next);
-                    if(status) status.textContent = 'Added clipboard image (local session URL).';
+                    if(status) status.textContent = 'Added clipboard image (stored persistently).';
                     renderEvidencePhotosOverlay();
                   }catch(err){
                     if(status) status.textContent = `Clipboard read failed: ${String(err && err.message ? err.message : err)}`;
@@ -6956,11 +7247,127 @@
               return overlay;
             };
 
+            // Fullscreen zoomable photo viewer
+            let evidencePhotoViewerRef = null;
+            const ensureEvidencePhotoViewer = () => {
+              let viewer = (evidencePhotoViewerRef && evidencePhotoViewerRef.isConnected)
+                ? evidencePhotoViewerRef
+                : document.querySelector('[data-evidence-photo-viewer]');
+              if(viewer){
+                evidencePhotoViewerRef = viewer;
+                return viewer;
+              }
+
+              viewer = document.createElement('div');
+              viewer.setAttribute('data-evidence-photo-viewer', '1');
+              viewer.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:10000; display:none;';
+              viewer.innerHTML = `
+                <div style="position:absolute; inset:20px; border:1px solid var(--mdt-border-strong); box-shadow:0 0 22px var(--mdt-glow-strong); background:rgba(10,10,14,.98); display:flex; flex-direction:column; overflow:hidden;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; border-bottom:1px solid var(--mdt-border);">
+                    <div class="mdtDetailSectionTitle" style="margin:0;">EVIDENCE PHOTO</div>
+                    <button type="button" class="mdtBtn" data-evidence-photo-viewer-close>CLOSE</button>
+                  </div>
+                  <div data-evidence-photo-viewer-stage style="position:relative; flex:1; overflow:hidden;">
+                    <img data-evidence-photo-viewer-img alt="Evidence photo" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) scale(1); transform-origin:center center; max-width:none; max-height:none; width:auto; height:auto; user-select:none; -webkit-user-drag:none;" />
+                  </div>
+                  <div class="mdtMeta" style="opacity:.85; padding:10px; border-top:1px solid var(--mdt-border);">
+                    Scroll to zoom | Drag to pan | ESC to close
+                  </div>
+                </div>
+              `;
+
+              document.body.appendChild(viewer);
+              evidencePhotoViewerRef = viewer;
+
+              const close = () => { viewer.style.display = 'none'; };
+
+              const closeBtn = viewer.querySelector('[data-evidence-photo-viewer-close]');
+              if(closeBtn) closeBtn.onclick = close;
+
+              viewer.onclick = (e) => {
+                if(e.target === viewer) close();
+              };
+
+              document.addEventListener('keydown', (e) => {
+                if(viewer.style.display === 'none') return;
+                if(String(e.key || '').toLowerCase() === 'escape') close();
+              }, true);
+
+              return viewer;
+            };
+
+            const openEvidencePhotoViewer = (src) => {
+              const viewer = ensureEvidencePhotoViewer();
+              const img = viewer.querySelector('[data-evidence-photo-viewer-img]');
+              const stage = viewer.querySelector('[data-evidence-photo-viewer-stage]');
+              if(!img || !stage) return;
+
+              const url = String(src || '').trim();
+              if(!url) return;
+
+              viewer.style.display = '';
+
+              let scale = 1;
+              let panX = 0;
+              let panY = 0;
+              let dragging = false;
+              let lastX = 0;
+              let lastY = 0;
+
+              const apply = () => {
+                img.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) scale(${scale})`;
+              };
+
+              img.src = url;
+              scale = 1;
+              panX = 0;
+              panY = 0;
+              apply();
+
+              const onWheel = (e) => {
+                // Zoom with scroll, clamp scale.
+                e.preventDefault();
+                const delta = e.deltaY;
+                const factor = delta > 0 ? 0.9 : 1.1;
+                const next = Math.min(10, Math.max(0.15, scale * factor));
+                if(next === scale) return;
+                scale = next;
+                apply();
+              };
+
+              const onDown = (e) => {
+                dragging = true;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                try{ stage.setPointerCapture(e.pointerId); }catch{}
+              };
+              const onMove = (e) => {
+                if(!dragging) return;
+                const dx = e.clientX - lastX;
+                const dy = e.clientY - lastY;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                panX += dx;
+                panY += dy;
+                apply();
+              };
+              const onUp = () => { dragging = false; };
+
+              // Reset any previous handlers by reassigning.
+              stage.onwheel = onWheel;
+              stage.onpointerdown = onDown;
+              stage.onpointermove = onMove;
+              stage.onpointerup = onUp;
+              stage.onpointercancel = onUp;
+              stage.onpointerleave = onUp;
+            };
+
             const renderEvidenceViewOverlay = () => {
               const overlay = ensureEvidenceViewOverlay();
               const ev = getEvidence();
               const photosHost = overlay.querySelector('[data-evidence-view-photos]');
               const lockerHost = overlay.querySelector('[data-evidence-view-locker]');
+
 
               if(photosHost){
                 const photos = Array.isArray(ev.photos) ? ev.photos : [];
@@ -6969,15 +7376,16 @@
                 const photoRows = photos.length
                   ? photos.map(u => `
                       <div class="mdtDetailRow" style="gap:10px; align-items:center;">
-                        <img src="${escapeHtml(u)}" alt="Evidence photo" style="width:84px; height:84px; object-fit:cover; border:1px solid var(--mdt-border);" />
+                        <img src="${escapeHtml(u)}" alt="Evidence photo" data-evidence-photo-open="${escapeHtml(u)}" style="width:84px; height:84px; object-fit:cover; border:1px solid var(--mdt-border); cursor:zoom-in;" />
                         <div style="flex:1; min-width:0;">
-                          <div class="mdtDetailVal" style="word-break:break-all;">${escapeHtml(u)}</div>
-                          <div class="mdtMeta" style="opacity:.75; margin-top:4px;">(Some photos may be session-only)</div>
+                          <div class="mdtDetailVal" style="word-break:break-all;">${escapeHtml(u.startsWith('data:image/') ? '[stored image]' : u)}</div>
+                          <div class="mdtMeta" style="opacity:.75; margin-top:4px;">Click image to open full view</div>
                         </div>
                         <button type="button" class="mdtBtn" data-evidence-view-photo-remove="${escapeHtml(u)}" style="height:30px; padding:0 10px;">REMOVE</button>
                       </div>
                     `).join('')
                   : '<div class="mdtDetailItem mdtItemNone">No photos attached</div>';
+
 
                 const linkRows = links.length
                   ? links.map(u => `
@@ -6995,6 +7403,14 @@
                   ${linkRows}
                 `;
 
+                photosHost.querySelectorAll('[data-evidence-photo-open]').forEach(img => {
+                  img.onclick = (e) => {
+                    e.preventDefault();
+                    const src = String(img.getAttribute('data-evidence-photo-open') || '').trim();
+                    openEvidencePhotoViewer(src);
+                  };
+                });
+
                 photosHost.querySelectorAll('[data-evidence-view-photo-remove]').forEach(btn => {
                   btn.onclick = () => {
                     const url = String(btn.dataset.evidenceViewPhotoRemove || '').trim();
@@ -7011,6 +7427,7 @@
                     renderEvidenceViewOverlay();
                   };
                 });
+
               }
 
               if(lockerHost){
@@ -7125,6 +7542,12 @@
               const btn = section.querySelector(`[data-toggle-collapsible="${panel}"]`);
               if(body) body.style.display = isCollapsed ? 'none' : '';
               if(btn) btn.textContent = isCollapsed ? 'SHOW' : 'HIDE';
+
+              // Evidence: show compact header summary only when collapsed.
+              if(panel === 'evidence'){
+                const compact = section.querySelector('[data-evidence-summary-compact]');
+                if(compact) compact.style.display = isCollapsed ? '' : 'none';
+              }
             };
 
             ['sentencing','charges','evidence'].forEach(panel => applyCollapsedUi(panel));
