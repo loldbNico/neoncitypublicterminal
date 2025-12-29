@@ -203,6 +203,8 @@
       for(let i=0;i<4;i++) addOne();
       if(securoservChaosTimer) clearInterval(securoservChaosTimer);
       securoservChaosTimer = setInterval(addOne, 330);
+      // Auto-stop after 12s to avoid runaway timers if not cleared elsewhere.
+      try{ setTimeout(() => { if(securoservChaosTimer){ clearInterval(securoservChaosTimer); securoservChaosTimer = null; } }, 12000); }catch{}
     }
 
     function stopSecuroservChaos(){
@@ -472,7 +474,7 @@
       try{
         const msg = fx.querySelector('.msg');
         if(msg){
-          msg.textContent = (typeof text === 'string' && text.length) ? text : "COUNTERHACK SUCCESFULL";
+          msg.textContent = (typeof text === 'string' && text.length) ? text : "COUNTERHACK SUCCESSFUL";
         }
       }catch{}
       if(counterhackFxOffTimer){

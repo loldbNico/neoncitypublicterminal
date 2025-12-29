@@ -54,10 +54,10 @@
 
       <div class="mapwrap">
         <div id="mapStack">
-          <img id="layerOcean" draggable="false" alt="" />
-          <img id="layerLand" draggable="false" alt="" />
-          <img id="layerBuildings" draggable="false" alt="" />
-          <img id="layerRoads" draggable="false" alt="" />
+          <img id="layerOcean" draggable="false" alt="" loading="lazy" decoding="async" />
+          <img id="layerLand" draggable="false" alt="" loading="lazy" decoding="async" />
+          <img id="layerBuildings" draggable="false" alt="" loading="lazy" decoding="async" />
+          <img id="layerRoads" draggable="false" alt="" loading="lazy" decoding="async" />
           <div id="restrictedBlurLayer" aria-hidden="true">
             <svg id="restrictedBlurSvg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"></svg>
           </div>
@@ -67,7 +67,7 @@
           <div id="labelsLayer"></div>
         </div>
         <div class="tip" id="tooltip"></div>
-        <img id="cursorLogo" class="cursorLogo" draggable="false" alt="" />
+        <img id="cursorLogo" class="cursorLogo" draggable="false" alt="" loading="lazy" decoding="async" />
         <div id="zoomBar" class="zoomBar" aria-hidden="true">
           <div id="zoomReadout" class="zoomReadout">100%</div>
           <div class="fill up" id="zoomFillUp"></div>
@@ -75,8 +75,8 @@
         </div>
       </div>
 
-      <div class="securserve-badge" id="securserveBadge" aria-hidden="true">
-        <img src="./SS.png" alt="" draggable="false" onerror="this.onerror=null; this.src='./SS.png';" />
+      <div class="securoserv-badge" id="securserveBadge" aria-hidden="true">
+        <img src="./SS.png" alt="" draggable="false" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='./SS.png';" />
       </div>
     </main>
 
@@ -191,7 +191,7 @@
     </div>
 
     <div class="counterhack-fx" id="counterhackFx" aria-hidden="true">
-      <div class="msg">COUNTERHACK SUCCESFULL</div>
+      <div class="msg">COUNTERHACK SUCCESSFUL</div>
     </div>
     <div class="screen-off" id="screenOff" aria-hidden="true"></div>
   </div>
@@ -332,17 +332,17 @@
     </div>
   </div>
 
-  <script src="js/00-bootstrap-config.js"></script>
-  <script src="js/10-data-hackprompt.js"></script>
-  <script src="js/10-data-mdt.js"></script>
-  <script src="js/11-data-penal-code.js"></script>
-  <script src="js/20-dom-logos.js"></script>
-  <script src="js/30-camera-and-logoslayer.js"></script>
-  <script src="js/40-svg-patterns-and-color.js"></script>
-  <script src="js/50-svg-loader-and-tooltip.js"></script>
-  <script src="js/60-securoserv.js"></script>
-  <script src="js/70-hover-selection-filters-tabs.js"></script>
-  <script src="js/80-lore-inventory.js"></script>
-  <script src="js/99-start.js"></script>
+  <script src="js/00-bootstrap-config.js" defer></script>
+  <script src="js/10-data-hackprompt.js" defer></script>
+  <script src="js/10-data-mdt.js" defer></script>
+  <script src="js/11-data-penal-code.js" defer></script>
+  <script src="js/20-dom-logos.js" defer></script>
+  <script src="js/30-camera-and-logoslayer.js" defer></script>
+  <script src="js/40-svg-patterns-and-color.js" defer></script>
+  <script src="js/50-svg-loader-and-tooltip.js" defer></script>
+  <script src="js/60-securoserv.js" defer></script>
+  <script src="js/70-hover-selection-filters-tabs.js" defer></script>
+  <script src="js/80-lore-inventory.js" defer></script>
+  <script src="js/99-start.js" defer></script>
 </body>
 </html>

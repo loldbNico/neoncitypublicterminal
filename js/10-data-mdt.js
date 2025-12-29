@@ -6,16 +6,16 @@
 window.MDT_DATA = {
   // ========== CITIZENS ==========
   citizens: [
-    { id: 1, firstName: 'Marcus', lastName: 'Chen', dob: '1989-03-14', gender: 'Male', phone: '555-0101', address: '1420 Neon Core Ave, Apt 12B', occupation: 'Software Engineer', licenseStatus: 'Valid', licenseClass: 'C', priors: [], warrants: [], notes: 'No criminal history.' },
-    { id: 2, firstName: 'Sarah', lastName: 'Williams', dob: '1995-07-22', gender: 'Female', phone: '555-0102', address: '88 Mirror Hills Dr', occupation: 'Nurse', licenseStatus: 'Valid', licenseClass: 'C', priors: [], warrants: [], notes: 'Emergency contact: David Williams (brother).' },
-    { id: 3, firstName: 'Viktor', lastName: 'Kozlov', dob: '1982-11-30', gender: 'Male', phone: '555-0103', address: '2200 South Side Blvd', occupation: 'Unemployed', licenseStatus: 'Suspended', licenseClass: 'C', priors: ['Assault (2019)', 'DUI (2021)'], warrants: ['WAR-2024-0002'], notes: 'Known associate of South Side gang. ACTIVE WARRANT - Approach with caution.' },
-    { id: 4, firstName: 'Elena', lastName: 'Vasquez', dob: '1991-05-08', gender: 'Female', phone: '555-0104', address: '445 Vespucci Beach Rd', occupation: 'Bartender', licenseStatus: 'Valid', licenseClass: 'M', priors: ['Petty Theft (2018)'], warrants: [], notes: 'Works at The Neon Lounge.' },
-    { id: 5, firstName: 'James', lastName: 'Morrison', dob: '1978-09-15', gender: 'Male', phone: '555-0105', address: '1200 Rockford Hills Estate', occupation: 'CEO - Morrison Industries', licenseStatus: 'Valid', licenseClass: 'C', priors: [], warrants: [], notes: 'High-profile individual. Handle with discretion.' },
-    { id: 6, firstName: 'Yuki', lastName: 'Tanaka', dob: '1993-02-28', gender: 'Female', phone: '555-0106', address: '78 Little Seoul Plaza', occupation: 'Restaurant Owner', licenseStatus: 'Valid', licenseClass: 'C', priors: [], warrants: [], notes: 'Owns "Tanaka Ramen" in Little Seoul.' },
-    { id: 7, firstName: 'Derek', lastName: 'Stone', dob: '1985-12-03', gender: 'Male', phone: '555-0107', address: '999 Pacific Bluffs Way', occupation: 'Private Security', licenseStatus: 'Valid', licenseClass: 'C', priors: ['Assault (2017) - Dismissed'], warrants: [], notes: 'Former military. Licensed CCW holder.' },
-    { id: 8, firstName: 'Maria', lastName: 'Santos', dob: '1988-06-17', gender: 'Female', phone: '555-0108', address: '320 La Puerta St', occupation: 'Mechanic', licenseStatus: 'Valid', licenseClass: 'C', priors: [], warrants: [], notes: 'Owns Santos Auto Repair.' },
-    { id: 9, firstName: 'Tyler', lastName: 'Reed', dob: '2001-04-25', gender: 'Male', phone: '555-0109', address: '1800 Vinewood Hills Rd', occupation: 'Student', licenseStatus: 'Provisional', licenseClass: 'C', priors: ['Drug Possession (2024) - Pending'], warrants: ['WAR-2024-0001'], notes: 'Outstanding warrant for failure to appear. Vehicle flagged for unpaid citations.' },
-    { id: 10, firstName: 'Nina', lastName: 'Petrov', dob: '1990-08-12', gender: 'Female', phone: '555-0110', address: '600 Palomino Lands Ranch', occupation: 'Veterinarian', licenseStatus: 'Valid', licenseClass: 'C', priors: [], warrants: [], notes: 'Rural area resident.' },
+    { id: 1, firstName: 'Marcus', lastName: 'Chen', dob: '1989-03-14', gender: 'Male', pronouns: 'he/him', phone: '555-0101', address: '1420 Neon Core Ave, Apt 12B', occupation: 'Software Engineer', licenseStatus: 'Valid', licenseClass: 'C', weaponLicense: 'Valid', dna: 'ATCG-1138-00A', fingerprints: 'NC-CHEN-1989', priors: [], warrants: [], notes: 'No criminal history.', photo: './77web.png' },
+    { id: 2, firstName: 'Sarah', lastName: 'Williams', dob: '1995-07-22', gender: 'Female', pronouns: 'she/her', phone: '555-0102', address: '88 Mirror Hills Dr', occupation: 'Nurse', licenseStatus: 'Valid', licenseClass: 'C', weaponLicense: 'Valid', dna: 'ATCG-5522-07B', fingerprints: 'NC-WILL-1995', priors: [], warrants: [], notes: 'Emergency contact: David Williams (brother).', photo: './77web.png' },
+    { id: 3, firstName: 'Viktor', lastName: 'Kozlov', dob: '1982-11-30', gender: 'Male', pronouns: 'he/him', phone: '555-0103', address: '2200 South Side Blvd', occupation: 'Unemployed', licenseStatus: 'Suspended', licenseClass: 'C', weaponLicense: 'Suspended', dna: 'ATCG-3344-11C', fingerprints: 'NC-KOZ-1982', priors: ['Assault (2019)', 'DUI (2021)'], warrants: ['WAR-2024-0002'], notes: 'Known associate of South Side gang. ACTIVE WARRANT - Approach with caution.', photo: './77web.png' },
+    { id: 4, firstName: 'Elena', lastName: 'Vasquez', dob: '1991-05-08', gender: 'Female', pronouns: 'she/her', phone: '555-0104', address: '445 Vespucci Beach Rd', occupation: 'Bartender', licenseStatus: 'Valid', licenseClass: 'M', weaponLicense: 'Valid', dna: 'ATCG-7781-05A', fingerprints: 'NC-VAS-1991', priors: ['Petty Theft (2018)'], warrants: [], notes: 'Works at The Neon Lounge.', photo: './77web.png' },
+    { id: 5, firstName: 'James', lastName: 'Morrison', dob: '1978-09-15', gender: 'Male', pronouns: 'he/him', phone: '555-0105', address: '1200 Rockford Hills Estate', occupation: 'CEO - Morrison Industries', licenseStatus: 'Valid', licenseClass: 'C', weaponLicense: 'Valid', dna: 'ATCG-9900-09X', fingerprints: 'NC-MOR-1978', priors: [], warrants: [], notes: 'High-profile individual. Handle with discretion.', photo: './77web.png' },
+    { id: 6, firstName: 'Yuki', lastName: 'Tanaka', dob: '1993-02-28', gender: 'Female', pronouns: 'she/her', phone: '555-0106', address: '78 Little Seoul Plaza', occupation: 'Restaurant Owner', licenseStatus: 'Valid', licenseClass: 'C', weaponLicense: 'Valid', dna: 'ATCG-4411-02Q', fingerprints: 'NC-TAN-1993', priors: [], warrants: [], notes: 'Owns "Tanaka Ramen" in Little Seoul.', photo: './77web.png' },
+    { id: 7, firstName: 'Derek', lastName: 'Stone', dob: '1985-12-03', gender: 'Male', pronouns: 'he/him', phone: '555-0107', address: '999 Pacific Bluffs Way', occupation: 'Private Security', licenseStatus: 'Valid', licenseClass: 'C', weaponLicense: 'Valid', dna: 'ATCG-0066-12B', fingerprints: 'NC-STO-1985', priors: ['Assault (2017) - Dismissed'], warrants: [], notes: 'Former military. Licensed CCW holder.', photo: './77web.png' },
+    { id: 8, firstName: 'Maria', lastName: 'Santos', dob: '1988-06-17', gender: 'Female', pronouns: 'she/her', phone: '555-0108', address: '320 La Puerta St', occupation: 'Mechanic', licenseStatus: 'Valid', licenseClass: 'C', weaponLicense: 'Valid', dna: 'ATCG-5521-06T', fingerprints: 'NC-SAN-1988', priors: [], warrants: [], notes: 'Owns Santos Auto Repair.', photo: './77web.png' },
+    { id: 9, firstName: 'Tyler', lastName: 'Reed', dob: '2001-04-25', gender: 'Male', pronouns: 'he/him', phone: '555-0109', address: '1800 Vinewood Hills Rd', occupation: 'Student', licenseStatus: 'Provisional', licenseClass: 'C', weaponLicense: 'Pending', dna: 'ATCG-8722-04M', fingerprints: 'NC-REE-2001', priors: ['Drug Possession (2024) - Pending'], warrants: ['WAR-2024-0001'], notes: 'Outstanding warrant for failure to appear. Vehicle flagged for unpaid citations.', photo: './77web.png' },
+    { id: 10, firstName: 'Nina', lastName: 'Petrov', dob: '1990-08-12', gender: 'Female', pronouns: 'she/her', phone: '555-0110', address: '600 Palomino Lands Ranch', occupation: 'Veterinarian', licenseStatus: 'Valid', licenseClass: 'C', weaponLicense: 'Valid', dna: 'ATCG-2255-08C', fingerprints: 'NC-PET-1990', priors: [], warrants: [], notes: 'Rural area resident.', photo: './77web.png' },
   ],
 
   // ========== ORGANIZATIONS ==========
@@ -24,7 +24,7 @@ window.MDT_DATA = {
       id: 1,
       name: 'Tanaka Ramen Group',
       type: 'Business',
-      logo: './logos/mw.png',
+      logo: './mw.png',
       hq: '78 Little Seoul Plaza',
       notes: 'Commercial food-service group. Owns multiple restaurant properties across Little Seoul.',
       employees: [
@@ -36,7 +36,7 @@ window.MDT_DATA = {
       id: 2,
       name: 'Morrison Industries',
       type: 'Corporation',
-      logo: './logos/77web.png',
+      logo: './77web.png',
       hq: '1200 Rockford Hills Estate',
       notes: 'High-profile corporate entity with private security contracts.',
       employees: [
@@ -48,7 +48,7 @@ window.MDT_DATA = {
       id: 3,
       name: 'SecuroServ Holdings',
       type: 'Security / Logistics',
-      logo: './logos/mw.png',
+      logo: './mw.png',
       hq: 'Warehouse 7, Neon City Ports',
       notes: 'RESTRICTED operations across port facilities.',
       employees: [

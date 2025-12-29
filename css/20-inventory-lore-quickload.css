@@ -703,12 +703,15 @@
 
 
     /* Notes editor */
-    .mdtDetailNotesHead{
+.mdtDetailNotesHead{
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
       gap: 10px;
+      margin-bottom: 10px;
     }
+    .mdtDetailNotesActions{ display:flex; gap:8px; flex-wrap:wrap; }
+
 
     .mdtDetailNotesActions{
       display: flex;
@@ -903,6 +906,7 @@
       position: relative;
     }
     .mdtCardHead{ display: flex; align-items: center; gap: 10px; }
+    .mdtCardHeadText{ display: grid; gap: 6px; }
     .mdtCardImg{
       width: 56px;
       height: 56px;
@@ -913,6 +917,37 @@
       place-items: center;
       font-size: 22px;
       color: var(--mdt-accent-text, rgba(215,230,255,.78));
+    }
+
+    /* Citizen cards */
+    .mdtCitizenCard{
+      display: grid;
+      gap: 10px;
+    }
+    .mdtCitizenHead{
+      align-items: center;
+      gap: 12px;
+    }
+    .mdtCitizenBody{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 6px 10px;
+    }
+    .mdtAvatar{
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.24));
+      box-shadow: 0 0 0 1px rgba(0,0,0,.55) inset;
+      background: radial-gradient(180% 120% at 16% 12%, rgba(96,143,255,.18), rgba(0,0,0,.55));
+      flex-shrink: 0;
+    }
+    .mdtAvatar img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(1.05) contrast(1.05);
     }
     .mdtCardTitle{ color: var(--mdt-accent-strong-text, rgba(215,230,255,.95)); font-weight: 800; letter-spacing: .6px; }
     .mdtCardSub{ color: var(--mdt-accent-text, rgba(215,230,255,.72)); font-size: 12px; letter-spacing: .4px; }
@@ -1111,6 +1146,73 @@
       border-bottom: 1px solid rgba(96,143,255,.18);
       margin-bottom: 20px;
     }
+    .mdtCitizenHead{
+      align-items: flex-start;
+      gap: 16px 24px;
+    }
+    .mdtCitizenPortrait{
+      display: grid;
+      gap: 8px;
+      width: 180px;
+      max-width: 32vw;
+    }
+    .mdtCitizenPhoto{
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.24));
+      box-shadow: 0 0 0 1px rgba(0,0,0,.55) inset, 0 0 18px rgba(96,143,255,.16);
+      overflow: hidden;
+      background: radial-gradient(160% 140% at 18% 12%, rgba(96,143,255,.18), rgba(0,0,0,.72));
+      position: relative;
+    }
+    .mdtCitizenPhoto::after{
+      content:'';
+      position:absolute;
+      inset:0;
+      border:1px solid rgba(255,255,255,.06);
+      pointer-events:none;
+      mix-blend-mode:screen;
+    }
+    .mdtCitizenPhoto img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(1.08) contrast(1.06);
+    }
+    .mdtPhotoActions{
+      display: flex;
+      gap: 8px;
+    }
+    .mdtCitizenMeta{ flex: 1 1 320px; display: grid; gap: 6px; }
+    .mdtCitizenBadges{ display: flex; flex-wrap: wrap; gap: 8px; }
+    .mdtPronouns{ color: rgba(215,230,255,.70); letter-spacing: .8px; font-size: 12px; }
+
+    /* Citizen header: compact notes box on the right */
+    .mdtCitizenTopNotes{
+      flex: 1 1 360px;
+      min-width: 260px;
+      max-width: 520px;
+      align-self: stretch;
+      display: flex;
+    }
+    .mdtCitizenTopNotes .mdtDetailNotes{
+      margin: 0;
+      width: 100%;
+      padding: 10px;
+    }
+    .mdtCitizenTopNotes .mdtDetailNotesHead{ gap: 8px; }
+    .mdtCitizenTopNotes .mdtDetailNotesActions{ gap: 6px; }
+
+    /* Keep header notes compact: hide formatting toolbar */
+    .mdtCitizenTopNotes .mdtRichbar{ display: none !important; }
+
+    .mdtCitizenTopNotes .mdtRichEditor{
+      min-height: 90px !important;
+      max-height: 160px;
+      overflow: auto;
+    }
+
+    .mdtDetailSubhead{ font-size: 11px; letter-spacing: 1px; font-weight: 800; color: rgba(96,143,255,.75); margin: 10px 0 6px; }
     .mdtDetailTitle{
       font-size: 22px;
       font-weight: 900;
@@ -1119,6 +1221,20 @@
       color: rgba(96,143,255,.95);
       flex: 1 1 100%;
     }
+
+    .mdtBanner{
+      padding: 10px 14px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.25));
+      background: rgba(0,0,0,.22);
+      color: rgba(215,230,255,.88);
+      letter-spacing: 1px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin: 10px 12px 0;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.55) inset;
+    }
+    .mdtBannerAlert{ border-color: rgba(255,60,60,.55); background: rgba(255,60,60,.08); color: rgba(255,120,120,.96); box-shadow: 0 0 12px rgba(255,60,60,.12); }
+    .mdtBannerWarn{ border-color: rgba(255,180,60,.45); background: rgba(255,180,60,.06); color: rgba(255,210,130,.92); box-shadow: 0 0 12px rgba(255,180,60,.10); }
     .mdtDetailSubtitle{
       font-size: 13px;
       letter-spacing: 1.2px;
@@ -1159,6 +1275,10 @@
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 20px;
       padding: 0 20px;
+    }
+    .mdtCitizenGrid{
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      align-items: start;
     }
     .mdtDetailSection{
       border: 1px solid rgba(96,143,255,.14);
@@ -1247,6 +1367,7 @@
       line-height: 1.6;
       letter-spacing: .4px;
     }
+    .mdtDetailNotes .mdtInput{ min-height: 120px; }
 
     /* Lore view: Data Shards (Cyberpunk-style) */
     .lorestage{

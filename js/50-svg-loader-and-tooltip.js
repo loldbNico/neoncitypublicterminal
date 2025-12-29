@@ -9,7 +9,7 @@
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 second timeout
         
-        const res = await fetch(SVG_URL, { cache: "no-store", signal: controller.signal });
+        const res = await fetch(SVG_URL, { cache: "force-cache", signal: controller.signal });
         clearTimeout(timeoutId);
         if(!res.ok) throw new Error(`Failed to load SVG (${res.status})`);
 
@@ -26,7 +26,7 @@
         
         bootSet(85, "rendering");
         term("[SVG] rendering DOM…");
-        host.innerHTML = txt;
+        if(host.innerHTML !== txt) host.innerHTML = txt;
         bootSet(87, "rendering");
 
         // --- Parse & setup phase ---

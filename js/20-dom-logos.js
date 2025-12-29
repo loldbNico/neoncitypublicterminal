@@ -24,6 +24,7 @@
     function expandLogoPaths(fileNames){
       const paths = [];
       for(const f of (fileNames || [])){
+        // Prefer repo-root assets first.
         paths.push(`./${f}`);
         paths.push(`./logos/${f}`);
       }
@@ -35,29 +36,31 @@
     // =========================
     // Preload known logo assets so they show instantly when requested.
     const LOGO_PRELOAD_URLS = [
-      "./logos/APEX_HQ.png",
-      "./logos/HUMANE_LABS.png",
-      "./logos/LA_PUERTA.png",
-      "./logos/LEX.png",
-      "./logos/LEXIES.png",
-      "./logos/LITTLE_SOEUL.png",
-      "./logos/MERRYWEATHER_BASE.png",
-      "./logos/MIRROR_HILLS.png",
+      // Most region logos live in repo root (not /logos).
+      "./APEX_HQ.png",
+      "./HUMANE_LABS.png",
+      "./LA_PUERTA.png",
+      "./LEX.png",
+      "./LEXIES.png",
+      "./LITTLE_SOEUL.png",
+      "./MERRYWEATHER_BASE.png",
+      "./MIRROR_HILLS.png",
+      "./NEON_CITY_NATIONAL_AIRPORT.png",
+      "./NEON_CITY_PORTS.png",
+      "./NEON_CITY_PRISON.png", // NCPD intel logo fallback
+      "./NEON_CORE.png",
+      "./PACIFIC_BLUFFS.png",
+      "./PALAMINO_LANDS.png",
+      "./ROCKFORD_HILLS.png",
+      "./SECUROSERV_PORT.png",
+      "./SOUTH_SIDE.png",
+      "./SS.png",
+      "./SS2.png",
+      "./TACMED.png",
+      "./VESPUCCI.png",
+      "./VINEWOOD_HILLS.png",
+      // Only this one currently exists in /logos
       "./logos/mw.png",
-      "./logos/NEON_CITY_NATIONAL_AIRPORT.png",
-      "./logos/NEON_CITY_PORTS.png",
-      "./logos/NEON_CITY_PRISON.png", // NCPD intel logo fallback
-      "./logos/NEON_CORE.png",
-      "./logos/PACIFIC_BLUFFS.png",
-      "./logos/PALAMINO_LANDS.png",
-      "./logos/ROCKFORD_HILLS.png",
-      "./logos/SECUROSERV_PORT.png",
-      "./logos/SOUTH_SIDE.png",
-      "./logos/SS.png",
-      "./logos/SS2.png",
-      "./logos/TACMED.png",
-      "./logos/VESPUCCI.png",
-      "./logos/VINEWOOD_HILLS.png",
     ];
 
     const _preloadedUrls = new Set();
@@ -99,7 +102,7 @@
 
     function scheduleLogoPreload(){
       // Prime the most visible logos immediately (no UI stall, just starts fetch).
-      try{ preloadOneImage("./logos/NEON_CITY_PRISON.png"); }catch{}
+      try{ preloadOneImage("./NEON_CITY_PRISON.png"); }catch{}
 
       const run = () => {
         // Keep this low-priority so it doesn't compete with initial map rendering.

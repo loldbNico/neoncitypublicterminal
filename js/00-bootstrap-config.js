@@ -92,11 +92,17 @@
     try{ setTimeout(enforceOverlaySafety, 0); }catch{}
 
     window.forceUnblockInputs = forceUnblockInputs;
-    // Load raster layers
-    document.getElementById("layerOcean").src = LAYERS.ocean;
-    document.getElementById("layerLand").src = LAYERS.land;
-    document.getElementById("layerBuildings").src = LAYERS.buildings;
-    document.getElementById("layerRoads").src = LAYERS.roads;
+    // Load raster layers (defer to next tick to let DOM settle)
+    setTimeout(() => {
+      const setSrc = (id, src) => {
+        const el = document.getElementById(id);
+        if(el && el.getAttribute('src') !== src) el.setAttribute('src', src);
+      };
+      setSrc("layerOcean", LAYERS.ocean);
+      setSrc("layerLand", LAYERS.land);
+      setSrc("layerBuildings", LAYERS.buildings);
+      setSrc("layerRoads", LAYERS.roads);
+    }, 0);
 
     function ensureRestrictedBlurSvg(){
       const svg = document.getElementById("restrictedBlurSvg");

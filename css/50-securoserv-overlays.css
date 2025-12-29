@@ -816,7 +816,7 @@ body.view-lore .securoserv-midbar{ z-index: 85; }
     body.powering-off .layerToggles,
     body.powering-off .termDock,
     body.powering-off .hudpopup,
-    body.powering-off .securserve-badge,
+    body.powering-off .securoserv-badge,
     body.powering-off .tip{
       opacity: 0 !important;
       pointer-events: none !important;

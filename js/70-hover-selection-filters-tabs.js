@@ -1186,7 +1186,11 @@
             if(dataKey && !Number.isNaN(id)){
               const data = getMdtData(dataKey);
               const item = data?.find(d => d.id === id);
-              const label = (dataKey === 'ncpdReports') ? (item?.caseNum || `#${id}`) : `#${id}`;
+              const label = (dataKey === 'ncpdReports')
+                ? (item?.caseNum || `#${id}`)
+                : (dataKey === 'citizens')
+                  ? (citizenFullName(item) || `#${id}`)
+                  : `#${id}`;
               return `History ${label}`;
             }
             return 'History';
@@ -1609,19 +1613,25 @@
           const hasBolos = getActiveBoloEntriesForCitizen(c).length > 0;
           const hasPriors = Boolean(c.priors && c.priors.length);
           const statusClass = (c.licenseStatus === 'Suspended') ? 'mdtBadgeWarn' : (c.licenseStatus === 'Provisional') ? 'mdtBadgeInfo' : 'mdtBadgeOk';
+          const photoSrc = escapeHtml(c.photo || './77web.png');
  
           return `
             <div class="mdtCard mdtCitizenCard" data-id="${c.id}">
-              <div class="mdtCardHead">
-                <div class="mdtCardTitle">${escapeHtml(fullName)}</div>
-                <div class="mdtCardBadges">
-                  <span class="mdtBadge ${statusClass}">${escapeHtml(c.licenseStatus || '—')}</span>
-                  ${hasWarrants ? '<span class="mdtBadge mdtBadgeAlert">WARRANT</span>' : ''}
-                  ${hasBolos ? '<span class="mdtBadge mdtBadgeWarn">BOLO</span>' : ''}
-                  ${hasPriors ? '<span class="mdtBadge mdtBadgeWarn">PRIORS</span>' : ''}
+              <div class="mdtCardHead mdtCitizenHead">
+                <div class="mdtAvatar">
+                  <img src="${photoSrc}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='./77web.png';" />
+                </div>
+                <div class="mdtCardHeadText">
+                  <div class="mdtCardTitle">${escapeHtml(fullName)}</div>
+                  <div class="mdtCardBadges">
+                    <span class="mdtBadge ${statusClass}">${escapeHtml(c.licenseStatus || '—')}</span>
+                    ${hasWarrants ? '<span class="mdtBadge mdtBadgeAlert">WARRANT</span>' : ''}
+                    ${hasBolos ? '<span class="mdtBadge mdtBadgeWarn">BOLO</span>' : ''}
+                    ${hasPriors ? '<span class="mdtBadge mdtBadgeWarn">PRIORS</span>' : ''}
+                  </div>
                 </div>
               </div>
-              <div class="mdtCardBody">
+              <div class="mdtCardBody mdtCitizenBody">
                  <div class="mdtField"><span class="k">ID</span><span class="v">${c.id}</span></div>
                  <div class="mdtField"><span class="k">DOB</span><span class="v">${escapeHtml(c.dob)}</span></div>
                  <div class="mdtField"><span class="k">PHONE</span><span class="v">${escapeHtml(c.phone)}</span></div>
@@ -1877,17 +1887,21 @@
             const host = root || viewHost;
             if(!host || !host.querySelectorAll) return;
 
-            host.querySelectorAll('[data-link-target]').forEach(el => {
-              el.onclick = (e) => {
-                e.preventDefault();
-                const target = el.dataset.linkTarget;
-                const id = parseInt(el.dataset.linkId, 10);
-                if(!target || Number.isNaN(id)) return;
+             host.querySelectorAll('[data-link-target]').forEach(el => {
+               el.onclick = (e) => {
+                 // Prevent double navigation: when a link lives inside a fully-clickable
+                 // detail card (like a vehicle/property row), let the parent handle it.
+                 if(el.closest && el.closest('.mdtDetailItem.mdtLinkish')) return;
 
-                const openInNewTab = Boolean(e.ctrlKey || e.metaKey || e.shiftKey || el.dataset.linkNewtab === '1');
-                navigateToDetail(target, id, { openInNewTab });
-              };
-            });
+                 e.preventDefault();
+                 const target = el.dataset.linkTarget;
+                 const id = parseInt(el.dataset.linkId, 10);
+                 if(!target || Number.isNaN(id)) return;
+
+                 const openInNewTab = Boolean(e.ctrlKey || e.metaKey || e.shiftKey || el.dataset.linkNewtab === '1');
+                 navigateToDetail(target, id, { openInNewTab });
+               };
+             });
           }
 
 
@@ -2220,10 +2234,19 @@
            return false;
          });
          hits.sort((a, b) => arrestTimestamp(b) - arrestTimestamp(a));
-         return hits;
-       }
+          return hits;
+        }
+
+        function getCitizenAssets(c){
+          return {
+            properties: getCitizenProperties(c),
+            vehicles: getCitizenVehicles(c),
+            weapons: getCitizenWeapons(c),
+          };
+        }
 
         function chargeCountsFromArrestForPerson(a, personName, opts = {}){
+
          const includeUnservedWarrantCharges = Boolean(opts && opts.includeUnservedWarrantCharges);
 
          // Warrant charges should not count toward criminal history until served.
@@ -2252,38 +2275,205 @@
 
          const name = String(personName || '').trim();
 
-         // Newer arrest records might store per-criminal charges.
-         if(a && a.chargesByCriminal && typeof a.chargesByCriminal === 'object' && !Array.isArray(a.chargesByCriminal)){
-           const realKey = findKeyCI(a.chargesByCriminal, name);
-           const items = realKey ? normalizeChargesV2(a.chargesByCriminal[realKey]) : [];
-           for(const it of items){
-             add(chargeLabelFromToken(it.token), it.count);
-           }
-         }
+          let usedPerCriminal = false;
 
-         // Otherwise use global/v2 or legacy.
-         if(a && Array.isArray(a.chargesV2)){
-           for(const it of normalizeChargesV2(a.chargesV2)) add(chargeLabelFromToken(it.token), it.count);
-         }else if(a && Array.isArray(a.charges)){
-           for(const ch of a.charges) add(ch, 1);
-         }
+          // Newer arrest records might store per-criminal charges.
+          if(a && a.chargesByCriminal && typeof a.chargesByCriminal === 'object' && !Array.isArray(a.chargesByCriminal)){
+            const realKey = findKeyCI(a.chargesByCriminal, name);
+            const items = realKey ? normalizeChargesV2(a.chargesByCriminal[realKey]) : [];
+            if(items.length){
+              usedPerCriminal = true;
+              for(const it of items){
+                add(chargeLabelFromToken(it.token), it.count);
+              }
+            }
+          }
+
+          // Otherwise use global/v2 or legacy.
+          if(!usedPerCriminal){
+            if(a && Array.isArray(a.chargesV2)){
+              for(const it of normalizeChargesV2(a.chargesV2)) add(chargeLabelFromToken(it.token), it.count);
+            }else if(a && Array.isArray(a.charges)){
+              for(const ch of a.charges) add(ch, 1);
+            }
+          }
 
          return Array.from(out.values()).sort((x, y) => (y.count - x.count) || x.label.localeCompare(y.label));
        }
 
         function aggregateChargeCountsForPerson(arrests, personName, opts = {}){
-         const out = new Map();
-         for(const a of (Array.isArray(arrests) ? arrests : [])){
-           for(const row of chargeCountsFromArrestForPerson(a, personName, opts)){
-             const key = row.label.toLowerCase();
-             const prev = out.get(key);
-             out.set(key, { label: prev?.label || row.label, count: (prev?.count || 0) + row.count });
-           }
-         }
-         return Array.from(out.values()).sort((x, y) => (y.count - x.count) || x.label.localeCompare(y.label));
-       }
+          const out = new Map();
+          for(const a of (Array.isArray(arrests) ? arrests : [])){
+            for(const row of chargeCountsFromArrestForPerson(a, personName, opts)){
+              const key = row.label.toLowerCase();
+              const prev = out.get(key);
+              out.set(key, { label: prev?.label || row.label, count: (prev?.count || 0) + row.count });
+            }
+          }
+          return Array.from(out.values()).sort((x, y) => (y.count - x.count) || x.label.localeCompare(y.label));
+        }
 
-       function findCitizenIdByName(name){
+        function chargeTokenCountsFromArrestForPerson(a, personName, opts = {}){
+          const includeUnservedWarrantCharges = Boolean(opts && opts.includeUnservedWarrantCharges);
+
+          // Warrant charges should not count toward criminal history until served.
+          if(!includeUnservedWarrantCharges && isWarrantArrest(a) && !isPersonServedInArrest(a, personName)) return [];
+
+          const out = new Map();
+
+          const add = (token, count = 1) => {
+            const tok = normalizeChargeToken(token);
+            if(!tok) return;
+            const c = Math.max(1, Math.round(Number(count || 1)));
+            const key = tok.toLowerCase();
+            const prev = out.get(key);
+            out.set(key, { token: prev?.token || tok, count: (prev?.count || 0) + c });
+          };
+
+          const findKeyCI = (obj, key) => {
+            if(!obj || typeof obj !== 'object') return null;
+            const target = String(key || '').trim().toLowerCase();
+            if(!target) return null;
+            for(const k of Object.keys(obj)){
+              if(String(k || '').trim().toLowerCase() === target) return k;
+            }
+            return null;
+          };
+
+          const name = String(personName || '').trim();
+
+           let usedPerCriminal = false;
+
+           // Newer arrest records might store per-criminal charges.
+           if(a && a.chargesByCriminal && typeof a.chargesByCriminal === 'object' && !Array.isArray(a.chargesByCriminal)){
+             const realKey = findKeyCI(a.chargesByCriminal, name);
+             const items = realKey ? normalizeChargesV2(a.chargesByCriminal[realKey]) : [];
+             if(items.length){
+               usedPerCriminal = true;
+               for(const it of items) add(it.token, it.count);
+             }
+           }
+
+           // Otherwise use global/v2 or legacy.
+           if(!usedPerCriminal){
+             if(a && Array.isArray(a.chargesV2)){
+               for(const it of normalizeChargesV2(a.chargesV2)) add(it.token, it.count);
+             }else if(a && Array.isArray(a.charges)){
+               for(const ch of a.charges) add(ch, 1);
+             }
+           }
+
+          return Array.from(out.values()).sort((x, y) => (y.count - x.count) || String(x.token).localeCompare(String(y.token)));
+        }
+
+        function aggregateChargeTokenCountsForPerson(arrests, personName, opts = {}){
+          const out = new Map();
+
+          for(const a of (Array.isArray(arrests) ? arrests : [])){
+            for(const row of chargeTokenCountsFromArrestForPerson(a, personName, opts)){
+              const key = String(row.token || '').toLowerCase();
+              if(!key) continue;
+              const prev = out.get(key);
+              out.set(key, { token: prev?.token || row.token, count: (prev?.count || 0) + row.count });
+            }
+          }
+
+          return Array.from(out.values()).sort((x, y) => (y.count - x.count) || String(x.token).localeCompare(String(y.token)));
+        }
+
+        function penalEntryFromToken(token){
+          const t = normalizeChargeToken(token);
+          if(!isChargeToken(t)) return null;
+          const id = Number(t.match(/\d+/)?.[0]);
+          if(Number.isNaN(id)) return null;
+          return (window.MDT_DATA?.penalCode || []).find(p => p.id === id) || null;
+        }
+
+        function classifyChargeToken(token){
+          const t = normalizeChargeToken(token);
+          const hit = penalEntryFromToken(t);
+
+          const cat = String(hit?.category || '').toLowerCase();
+          const jailMonths = hit ? parseJailMonths(hit.jailTime) : 0;
+          const isHut = jailMonths >= 999999 || cat.includes('hut') || cat.includes('life') || cat.includes('\u221e');
+
+          const groupKey = isHut
+            ? 'hut'
+            : cat.includes('felony')
+              ? 'felony'
+              : cat.includes('misdemeanor')
+                ? 'misdemeanor'
+                : 'infraction';
+
+          const label = hit ? `${hit.code} - ${hit.title}` : chargeLabelFromToken(t);
+
+          return { token: t, label, groupKey, jailMonths, category: hit?.category || '' };
+        }
+
+        function renderCriminalHistorySummaryHtml(rows, opts = {}){
+          const limit = Math.max(1, Math.round(Number(opts.limit ?? 12)));
+          const list = Array.isArray(rows) ? rows : [];
+
+          const groups = { hut: [], felony: [], misdemeanor: [], infraction: [] };
+          for(const r of list){
+            const key = (r && typeof r.groupKey === 'string') ? r.groupKey : 'infraction';
+            (groups[key] || groups.infraction).push(r);
+          }
+
+          const sortFn = (a, b) => {
+            const am = Number(a?.jailMonths || 0);
+            const bm = Number(b?.jailMonths || 0);
+            return (bm - am) || (Number(b?.count || 0) - Number(a?.count || 0)) || String(a?.label || '').localeCompare(String(b?.label || ''));
+          };
+
+          for(const k of Object.keys(groups)) groups[k].sort(sortFn);
+
+          const order = [
+            { key: 'hut', title: 'HUTS / LIFE' },
+            { key: 'felony', title: 'FELONIES' },
+            { key: 'misdemeanor', title: 'MISDEMEANORS' },
+            { key: 'infraction', title: 'INFRACTIONS' },
+          ];
+
+          let shown = 0;
+          let hidden = 0;
+          let html = '';
+
+          for(const g of order){
+            const arr = groups[g.key] || [];
+            if(!arr.length) continue;
+
+            const remaining = limit - shown;
+            if(remaining <= 0){
+              hidden += arr.length;
+              continue;
+            }
+
+            const slice = arr.slice(0, remaining);
+            const omitted = arr.length - slice.length;
+
+            html += `<div class=\"mdtDetailSubhead\">${escapeHtml(g.title)}</div>`;
+
+            const rowClsFor = (key) => {
+              if(key === 'misdemeanor') return 'mdtItemWarn';
+              if(key === 'felony' || key === 'hut') return 'mdtItemAlert';
+              return '';
+            };
+
+             html += slice.map(r => {
+               return `<div class=\"mdtDetailItem ${rowClsFor(g.key)}\">${escapeHtml(r.label)} <span style=\"opacity:.8;\">x${escapeHtml(String(r.count))}</span></div>`;
+             }).join('');
+
+            shown += slice.length;
+            hidden += omitted;
+          }
+
+          if(hidden > 0) html += `<div class="mdtDetailItem mdtItemNone">+${escapeHtml(String(hidden))} more…</div>`;
+
+          return html;
+        }
+
+        function findCitizenIdByName(name){
           if(!name) return null;
           const lower = String(name).toLowerCase();
           const hit = (window.MDT_DATA?.citizens || []).find(c => `${c.firstName} ${c.lastName}`.toLowerCase() === lower);
@@ -2291,10 +2481,31 @@
         }
 
 
-       function findOrgIdByName(name){
+        function findOrgIdByName(name){
          if(!name) return null;
          const lower = String(name).toLowerCase();
          const hit = (window.MDT_DATA?.organizations || []).find(o => String(o.name || '').toLowerCase() === lower);
+         return hit ? hit.id : null;
+       }
+
+       function findPropertyIdByAddress(address){
+         if(!address) return null;
+         const lower = String(address).toLowerCase();
+         const hit = (window.MDT_DATA?.properties || []).find(p => String(p.address || '').toLowerCase() === lower);
+         return hit ? hit.id : null;
+       }
+
+       function findVehicleIdByPlate(plate){
+         if(!plate) return null;
+         const lower = String(plate).toLowerCase();
+         const hit = (window.MDT_DATA?.vehicles || []).find(v => String(v.plate || '').toLowerCase() === lower);
+         return hit ? hit.id : null;
+       }
+
+       function findWeaponIdBySerial(serial){
+         if(!serial) return null;
+         const lower = String(serial).toLowerCase();
+         const hit = (window.MDT_DATA?.weapons || []).find(w => String(w.serial || '').toLowerCase() === lower);
          return hit ? hit.id : null;
        }
 
@@ -2305,8 +2516,54 @@
          if(orgId) return { target: 'organizations', id: orgId };
          return null;
        }
+
+       function citizenFullName(c){
+         if(!c) return '';
+         return `${c.firstName || ''} ${c.lastName || ''}`.trim();
+       }
+
+       function getCitizenOrganizations(c){
+         if(!c) return [];
+         const orgs = getMdtData('organizations') || [];
+         const cid = c.id;
+         return orgs
+           .map(org => {
+             const employees = Array.isArray(org.employees) ? org.employees : [];
+             const match = employees.find(e => e && Number(e.citizenId) === cid);
+             if(!match) return null;
+             return { org, rank: match.rank || 'Member' };
+           })
+           .filter(Boolean);
+       }
+
+       function ownsRecordForCitizen(c, ownerValue){
+         if(!c) return false;
+         const full = citizenFullName(c).toLowerCase();
+         const raw = String(ownerValue || '').trim().toLowerCase();
+         return raw && raw === full;
+       }
+
+       function getCitizenProperties(c){
+         if(!c) return [];
+         const props = getMdtData('properties') || [];
+         return props.filter(p => Number(p?.citizenId) === c.id || ownsRecordForCitizen(c, p?.owner));
+       }
+
+       function getCitizenVehicles(c){
+         if(!c) return [];
+         const vehicles = getMdtData('vehicles') || [];
+         return vehicles.filter(v => Number(v?.citizenId) === c.id || ownsRecordForCitizen(c, v?.owner));
+       }
+
+       function getCitizenWeapons(c){
+         if(!c) return [];
+         const weapons = getMdtData('weapons') || [];
+         return weapons.filter(w => Number(w?.citizenId) === c.id || ownsRecordForCitizen(c, w?.owner));
+       }
+
  
-        function renderDetailPage(dataKey, id){
+         function renderDetailPage(dataKey, id){
+
 
            const data = getMdtData(dataKey);
            if(!data) return `<div class="mdtPanel"><div class="mdtH">ERROR</div><div class="mdtP">Data not found.</div></div>`;
@@ -2352,34 +2609,64 @@
           return String(item?.notes || '');
         }
 
-        function renderNotesEditor(item, dataKey, opts = {}){
-          const editable = Boolean(opts.editable);
-          const text = notesDisplayTextFor(item, dataKey);
+         function renderNotesEditor(item, dataKey, opts = {}){
+            const editable = Boolean(opts.editable);
+            const viewHtml = sanitizeRichHtml(String(item?.notesHtml || item?.notes || notesDisplayTextFor(item, dataKey) || ''));
+            const plain = notesDisplayTextFor(item, dataKey);
 
-          if(!editable){
+            const showHistoryBtn = (opts.showHistory !== false) && (dataKey === 'citizens');
+            const showUndoRedoBtns = (opts.showUndoRedo !== false);
+
+            if(!editable){
+              return `
+                <div class="mdtDetailNotes">
+                  <div class="mdtDetailSectionTitle">NOTES</div>
+                  <div class="mdtDetailNotesText">${viewHtml || 'No additional notes.'}</div>
+                </div>
+              `;
+            }
+
+            const actionsHtml = (showHistoryBtn || showUndoRedoBtns)
+              ? `
+                  <div class="mdtDetailNotesActions" style="display:flex; gap:6px; flex-wrap:wrap;">
+                    ${showHistoryBtn ? `<button type="button" class="mdtBtn" data-notes-history="${Number(item.id)}" data-open-citizen-history="${Number(item.id)}" style="height:28px; padding:0 8px; font-size:11px;">HISTORY</button>` : ''}
+                    ${showUndoRedoBtns ? `<button type="button" class="mdtBtn mdtNotesUndo" style="height:28px; padding:0 8px; font-size:11px;">UNDO</button>` : ''}
+                    ${showUndoRedoBtns ? `<button type="button" class="mdtBtn mdtNotesRedo" style="height:28px; padding:0 8px; font-size:11px;">REDO</button>` : ''}
+                  </div>
+                `
+              : '';
+
             return `
-              <div class="mdtDetailNotes">
-                <div class="mdtDetailSectionTitle">NOTES</div>
-                <div class="mdtDetailNotesText">${escapeHtml(text) || 'No additional notes.'}</div>
+              <div class="mdtDetailNotes" data-notes-key="${escapeHtml(dataKey)}" data-notes-id="${Number(item.id)}">
+                <div class="mdtDetailNotesHead" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                  <div class="mdtDetailSectionTitle">${escapeHtml(opts.label || 'NOTES')}</div>
+                  ${actionsHtml}
+                </div>
+
+                <div class="mdtRichbar" data-notes-richbar style="display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 6px;">
+                  <button type="button" class="mdtBtn" data-rich-cmd="bold" title="Bold" style="min-width:30px; height:30px; padding:0;"><b>B</b></button>
+                  <button type="button" class="mdtBtn" data-rich-cmd="italic" title="Italic" style="min-width:30px; height:30px; padding:0;"><i>I</i></button>
+                  <button type="button" class="mdtBtn" data-rich-cmd="underline" title="Underline" style="min-width:30px; height:30px; padding:0;"><u>U</u></button>
+                  <button type="button" class="mdtBtn" data-rich-cmd="insertUnorderedList" title="Bullets" style="min-width:30px; height:30px; padding:0;">•</button>
+                  <button type="button" class="mdtBtn" data-rich-cmd="insertOrderedList" title="Numbered" style="min-width:30px; height:30px; padding:0;">1.</button>
+                  <button type="button" class="mdtBtn" data-rich-cmd="justifyLeft" title="Align left" style="min-width:30px; height:30px; padding:0;">L</button>
+                  <button type="button" class="mdtBtn" data-rich-cmd="justifyCenter" title="Center" style="min-width:30px; height:30px; padding:0;">C</button>
+                  <button type="button" class="mdtBtn" data-rich-cmd="justifyRight" title="Align right" style="min-width:30px; height:30px; padding:0;">R</button>
+                  <button type="button" class="mdtBtn" data-rich-cmd="justifyFull" title="Justify" style="min-width:30px; height:30px; padding:0;">J</button>
+                  <button type="button" class="mdtBtn" data-rich-action="normal" title="Normal" style="min-width:46px; height:30px; padding:0;">P</button>
+                  <button type="button" class="mdtBtn" data-rich-action="heading" title="Heading" style="min-width:46px; height:30px; padding:0;">H</button>
+                  <button type="button" class="mdtBtn" data-rich-action="quote" title="Quote" style="min-width:46px; height:30px; padding:0;">❝</button>
+                  <button type="button" class="mdtBtn" data-rich-action="clear" title="Clear formatting" style="min-width:46px; height:30px; padding:0;">CLR</button>
+                </div>
+
+                <div class="mdtRichEditor mdtInput" data-notes-editor contenteditable="true" style="min-height:180px; padding:10px; white-space:pre-wrap; overflow:auto;">${viewHtml}</div>
+                <textarea class="mdtInput mdtNotesArea" data-notes-area style="display:none;">${escapeHtml(plain)}</textarea>
+                <input type="hidden" data-notes-html value="${escapeHtml(viewHtml)}" />
               </div>
             `;
           }
 
-          return `
-            <div class="mdtDetailNotes" data-notes-key="${escapeHtml(dataKey)}" data-notes-id="${Number(item.id)}">
-              <div class="mdtDetailNotesHead">
-                <div class="mdtDetailSectionTitle">${escapeHtml(opts.label || 'NOTES')}</div>
-                <div class="mdtDetailNotesActions">
-                  <button type="button" class="mdtBtn mdtNotesEdit">EDIT</button>
-                  <button type="button" class="mdtBtn mdtNotesSave" style="display:none;">SAVE</button>
-                  <button type="button" class="mdtBtn mdtNotesCancel" style="display:none;">CANCEL</button>
-                </div>
-              </div>
-              <div class="mdtDetailNotesText" data-notes-view>${escapeHtml(text) || 'No additional notes.'}</div>
-              <textarea class="mdtInput mdtNotesArea" data-notes-area style="display:none;">${escapeHtml(text)}</textarea>
-            </div>
-          `;
-        }
+
 
         function renderChip(label, idx, opts = {}){
           const safe = escapeHtml(label);
@@ -3447,77 +3734,212 @@
          `;
        }
 
-       function renderCitizenDetail(c){
+        function renderCitizenDetail(c){
            const activeWarrantEntries = getActiveWarrantEntriesForCitizen(c);
            const hasWarrants = activeWarrantEntries.length > 0;
            const activeBoloEntries = getActiveBoloEntriesForCitizen(c);
            const hasBolos = activeBoloEntries.length > 0;
-           const fullName = `${c.firstName} ${c.lastName}`;
- 
-           const arrests = getArrestsForCitizen(c);
-           const chargeSummary = aggregateChargeCountsForPerson(arrests, fullName);
-           const hasPriors = chargeSummary.length > 0;
- 
+           const fullName = citizenFullName(c);
+
+            const arrests = getArrestsForCitizen(c);
+            const chargeTokenSummary = aggregateChargeTokenCountsForPerson(arrests, fullName);
+            const chargeSummaryDetailed = chargeTokenSummary
+              .map(row => ({ ...classifyChargeToken(row.token), count: row.count }))
+              .filter(r => r && r.label);
+            const hasPriors = chargeSummaryDetailed.length > 0;
+            const hasSeverePriors = chargeSummaryDetailed.some(r => r.groupKey === 'hut' || r.groupKey === 'felony');
+            const hasModeratePriors = !hasSeverePriors && chargeSummaryDetailed.some(r => r.groupKey === 'misdemeanor');
+
+
+           const orgMemberships = getCitizenOrganizations(c);
+           const properties = getCitizenProperties(c);
+           const vehicles = getCitizenVehicles(c);
+           const weapons = getCitizenWeapons(c);
+
+           const hasAssets = properties.length || vehicles.length || weapons.length;
+
+            const licenseWarnCls = (c.licenseStatus && c.licenseStatus.toLowerCase().includes('suspend')) ? 'mdtValWarn' : '';
+            const weaponWarnCls = (c.weaponLicense && c.weaponLicense.toLowerCase().includes('suspend')) ? 'mdtValWarn' : '';
+            const licenseReason = c.licenseReason || '';
+            const weaponReason = c.weaponLicenseReason || '';
+            const licenseSuspended = Boolean(c.licenseStatus && c.licenseStatus.toLowerCase().includes('suspend'));
+            const weaponSuspended = Boolean(c.weaponLicense && c.weaponLicense.toLowerCase().includes('suspend'));
+
+            const dlButtons = licenseSuspended
+              ? `<button type="button" class="mdtBtn" data-license-action="reinstate" data-license-type="driver" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">REINSTATE DL</button>`
+              : `<button type="button" class="mdtBtn" data-license-action="suspend" data-license-type="driver" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">SUSPEND DL</button>`;
+
+            const wlButtons = weaponSuspended
+              ? `<button type="button" class="mdtBtn" data-license-action="reinstate" data-license-type="weapon" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">REINSTATE WL</button>`
+              : `<button type="button" class="mdtBtn" data-license-action="suspend" data-license-type="weapon" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">SUSPEND WL</button>`;
+
+            const dlReasonHtml = licenseReason ? `<div class="mdtMeta" style="opacity:.85;">Reason: ${escapeHtml(licenseReason)}</div>` : '';
+            const wlReasonHtml = weaponReason ? `<div class="mdtMeta" style="opacity:.85;">Reason: ${escapeHtml(weaponReason)}</div>` : '';
+
+
+           const bannerHtml = `
+             ${hasWarrants ? '<div class="mdtBanner mdtBannerAlert">ACTIVE WARRANT — detain and serve immediately</div>' : ''}
+             ${hasBolos ? '<div class="mdtBanner mdtBannerWarn">ACTIVE BOLO — notify dispatch</div>' : ''}
+           `;
+
+           const photoSrc = c.photo || './77web.png';
+
+            const orgList = orgMemberships.length
+              ? orgMemberships.map(({ org, rank }) => `<div class="mdtDetailRow"><span class="mdtDetailKey mdtLinkish" data-link-target="organizations" data-link-id="${org.id}" data-link-newtab="1">${escapeHtml(org.name || 'ORG')}</span><span class="mdtDetailVal">${escapeHtml(rank || 'Member')}</span></div>`).join('')
+              : '<div class="mdtDetailItem mdtItemNone">No org memberships</div>';
+
+           const assetList = (title, arr, mapFn) => {
+             if(!arr || !arr.length) return `<div class="mdtDetailItem mdtItemNone">No ${escapeHtml(title.toLowerCase())}</div>`;
+             return arr.map(mapFn).join('');
+           };
+
+           const propertyRows = assetList('properties', properties, p => {
+             const propId = p.id || findPropertyIdByAddress(p.address);
+             return `<div class="mdtDetailItem mdtLinkish" data-link-target="properties" data-link-id="${propId}"><div class="mdtDetailRow"><span class="mdtDetailKey">PROPERTY</span><span class="mdtDetailVal">${escapeHtml(p.address || '—')}</span></div><div class="mdtMeta" style="opacity:.8;">${escapeHtml(p.type || 'Property')} • ${escapeHtml(p.taxStatus || '—')}</div></div>`;
+           });
+           const vehicleRows = assetList('vehicles', vehicles, v => {
+             const vid = v.id || findVehicleIdByPlate(v.plate);
+             return `<div class="mdtDetailItem mdtLinkish" data-link-target="vehicles" data-link-id="${vid}"><div class="mdtDetailRow"><span class="mdtDetailKey">PLATE</span><span class="mdtDetailVal">${escapeHtml(v.plate || '—')}</span></div><div class="mdtMeta" style="opacity:.8;">${escapeHtml(String(v.year || ''))} ${escapeHtml(v.make || '')} ${escapeHtml(v.model || '')} • ${escapeHtml(v.status || '—')}</div></div>`;
+           });
+           const weaponRows = assetList('weapons', weapons, w => {
+             const wid = w.id || findWeaponIdBySerial(w.serial);
+             return `<div class="mdtDetailItem mdtLinkish" data-link-target="weapons" data-link-id="${wid}"><div class="mdtDetailRow"><span class="mdtDetailKey">SERIAL</span><span class="mdtDetailVal">${escapeHtml(w.serial || '—')}</span></div><div class="mdtMeta" style="opacity:.8;">${escapeHtml(w.type || '')} • ${escapeHtml(w.status || '—')}</div></div>`;
+           });
+
           return `
-            <div class="mdtDetail">
-              <div class="mdtDetailHead">
-                 <div class="mdtDetailTitle">${escapeHtml(fullName)}</div>
-                 <div class="mdtDetailSubtitle">CITIZEN PROFILE #${c.id} ${copyBtn(String(c.id), 'COPY ID')}</div>
-                ${hasWarrants ? '<div class="mdtDetailBadge mdtBadgeAlert">ACTIVE WARRANT</div>' : ''}
-                ${hasBolos ? '<div class="mdtDetailBadge mdtBadgeWarn">ACTIVE BOLO</div>' : ''}
-              </div>
-              <div class="mdtDetailGrid">
-                <div class="mdtDetailSection">
-                  <div class="mdtDetailSectionTitle">PERSONAL INFORMATION</div>
-                   ${detailRow('DATE OF BIRTH', c.dob)}
-                   ${detailRow('GENDER', c.gender)}
-                   ${detailRow('PHONE', c.phone, { copy: true, copyLabel: 'COPY PHONE', copyValue: c.phone })}
-                   ${detailRow('ADDRESS', c.address)}
-                   ${detailRow('OCCUPATION', c.occupation)}
-                </div>
-                <div class="mdtDetailSection">
-                  <div class="mdtDetailSectionTitle">LICENSE INFORMATION</div>
-                  ${detailRow('STATUS', c.licenseStatus, { valClass: c.licenseStatus === 'Suspended' ? 'mdtValWarn' : '' })}
-                  ${detailRow('CLASS', c.licenseClass)}
-                </div>
-                  <div class="mdtDetailSection ${hasWarrants ? 'mdtSectionAlert' : ''}">
-                    <div class="mdtDetailSectionTitle">WARRANTS</div>
-                     ${hasWarrants ? activeWarrantEntries.map(({ arrest: a, charges }) => {
-                       const label = a.title || a.arrestNum || `Warrant #${a.id}`;
-                       const sub = [shortDate(a.date), a.location].filter(Boolean).join(' • ');
-                       const subHtml = sub ? `<div class="mdtMeta" style="opacity:.85; margin-top:-2px;">${escapeHtml(sub)}</div>` : '';
-                       const chargesHtml = (Array.isArray(charges) && charges.length)
-                         ? `<div style="opacity:.85; margin-top:6px;">
-                             ${charges.slice(0, 4).map(ch => `<div class="mdtMeta" style="margin:0; padding:1px 0;">${escapeHtml(ch.label)} x${escapeHtml(String(ch.count))}</div>`).join('')}
-                             ${charges.length > 4 ? `<div class="mdtMeta" style="margin:0; padding:1px 0;">…</div>` : ''}
-                           </div>`
-                         : '';
-                       return `<div class="mdtDetailItem mdtItemAlert">${linkSpan(label, 'arrests', a.id)}${subHtml}${chargesHtml}</div>`;
-                     }).join('') : '<div class="mdtDetailItem mdtItemNone">None</div>'}
+            <div class="mdtDetail mdtCitizenDetail" data-citizen-live-edit="${c.id}">
+              ${bannerHtml}
+
+              <div class="mdtDetailHead mdtCitizenHead">
+                <div class="mdtCitizenPortrait">
+                  <div class="mdtCitizenPhoto">
+                    <img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(fullName)}" onerror="this.src='./77web.png';" />
                   </div>
-
-                   <div class="mdtDetailSection ${hasBolos ? 'mdtSectionWarn' : ''}">
-                     <div class="mdtDetailSectionTitle">BOLOS</div>
-                     ${hasBolos ? activeBoloEntries.map(({ arrest: a }) => {
-                       const label = a.title || a.arrestNum || `BOLO #${a.id}`;
-                       return `<div class="mdtDetailItem mdtItemWarn">BOLO NOTICE: ${linkSpan(label, 'arrests', a.id)}</div>`;
-                     }).join('') : '<div class="mdtDetailItem mdtItemNone">None</div>'}
+                  <div class="mdtPhotoActions" style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button type="button" class="mdtBtn" data-set-citizen-photo="${c.id}">UPDATE PHOTO</button>
+                  </div>
+                </div>
+                 <div class="mdtCitizenMeta">
+                   <div class="mdtDetailTitle">${escapeHtml(fullName)}</div>
+                   <div class="mdtDetailSubtitle">CITIZEN PROFILE #${c.id} ${copyBtn(String(c.id), 'COPY ID')}</div>
+                   <div class="mdtMeta mdtPronouns">${escapeHtml(c.pronouns || c.gender || '')}</div>
+                   <div class="mdtCitizenBadges">
+                     ${hasWarrants ? '<div class="mdtDetailBadge mdtBadgeAlert">ACTIVE WARRANT</div>' : ''}
+                     ${hasBolos ? '<div class="mdtDetailBadge mdtBadgeWarn">ACTIVE BOLO</div>' : ''}
                    </div>
-
-                 <div class="mdtDetailSection ${hasPriors ? 'mdtSectionWarn' : ''}">
-                   <div class="mdtDetailSectionTitle">CRIMINAL HISTORY</div>
-                   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                     <div class="mdtMeta" style="opacity:.85;">Computed from arrest records.</div>
-                     <button type="button" class="mdtBtn" data-open-citizen-history="${c.id}" style="height:28px; padding:0 8px; font-size:11px;">FULL HISTORY</button>
-                   </div>
-                    ${hasPriors ? chargeSummary.map(row => `<div class="mdtDetailItem mdtItemWarn">${escapeHtml(row.label)} <span style="opacity:.8;">x${escapeHtml(String(row.count))}</span></div>`).join('') : '<div class="mdtDetailItem mdtItemNone">No prior arrests</div>'}
+ 
+                    <div class="mdtFormActions" style="margin: 10px 0 0; justify-content:flex-start; gap:6px; flex-wrap:wrap;">
+                      <button type="button" class="mdtBtn" data-edit-undo style="height:28px; padding:0 8px; font-size:11px; min-width:56px;">UNDO</button>
+                      <button type="button" class="mdtBtn" data-edit-redo style="height:28px; padding:0 8px; font-size:11px; min-width:56px;">REDO</button>
+                      <button type="button" class="mdtBtn" data-open-history="citizens" data-open-history-id="${c.id}" style="height:28px; padding:0 8px; font-size:11px; min-width:70px;">HISTORY</button>
+                    </div>
                  </div>
  
+                  <div class="mdtCitizenTopNotes">
+                    ${renderNotesEditor(c, 'citizens', {
+                      editable: canEditNotesFor('citizens'),
+                      showUndoRedo: false,
+                      showHistory: false,
+                      label: 'NOTES'
+                    })}
+                  </div>
+               </div>
+
+              <div class="mdtDetailGrid mdtCitizenGrid">
+                <div class="mdtDetailSection">
+                  <div class="mdtDetailSectionTitle">PERSONAL INFORMATION</div>
+                  ${detailRow('DATE OF BIRTH', c.dob)}
+                  ${detailRow('PRONOUNS', c.pronouns || '—')}
+                  ${detailRow('PHONE', c.phone, { copy: true, copyLabel: 'COPY PHONE', copyValue: c.phone })}
+                  ${orgMemberships.length ? detailRow('ORGANIZATIONS', String(orgMemberships.length)) : ''}
+                </div>
+
+                <div class="mdtDetailSection">
+                  <div class="mdtDetailSectionTitle">BIOMETRICS</div>
+                  ${detailRow('DNA', c.dna || '—', { copy: true, copyLabel: 'COPY DNA', copyValue: c.dna })}
+                  ${detailRow('FINGERPRINTS', c.fingerprints || '—', { copy: true, copyLabel: 'COPY PRINTS', copyValue: c.fingerprints })}
+                </div>
+
+                 <div class="mdtDetailSection">
+                   <div class="mdtDetailSectionTitle">LICENSES</div>
+
+                   <div style="display:grid; gap:10px;">
+                     <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+                       <div style="min-width:220px; flex:1;">
+                         ${detailRow('DRIVER LICENSE', c.licenseStatus || '—', { valClass: licenseWarnCls })}
+                         <div class="mdtMeta" style="opacity:.85;">Class: ${escapeHtml(c.licenseClass || '—')}</div>
+                         ${dlReasonHtml}
+                       </div>
+                       <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                         ${dlButtons}
+                       </div>
+                     </div>
+
+                     <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+                       <div style="min-width:220px; flex:1;">
+                         ${detailRow('WEAPON LICENSE', c.weaponLicense || '—', { valClass: weaponWarnCls })}
+                         ${wlReasonHtml}
+                       </div>
+                       <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                         ${wlButtons}
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+
+
+                <div class="mdtDetailSection">
+                  <div class="mdtDetailSectionTitle">ORGANIZATIONS</div>
+                  ${orgList}
+                </div>
+
+                <div class="mdtDetailSection">
+                  <div class="mdtDetailSectionTitle">ASSETS</div>
+                  ${hasAssets ? '' : '<div class="mdtDetailItem mdtItemNone">No registered assets</div>'}
+                  ${properties.length ? `<div class="mdtDetailSubhead">PROPERTIES</div>${propertyRows}` : ''}
+                  ${vehicles.length ? `<div class="mdtDetailSubhead">VEHICLES</div>${vehicleRows}` : ''}
+                  ${weapons.length ? `<div class="mdtDetailSubhead">WEAPONS</div>${weaponRows}` : ''}
+                </div>
+
+                <div class="mdtDetailSection ${hasWarrants ? 'mdtSectionAlert' : ''}">
+                  <div class="mdtDetailSectionTitle">WARRANTS</div>
+                   ${hasWarrants ? activeWarrantEntries.map(({ arrest: a, charges }) => {
+                     const label = a.title || a.arrestNum || `Warrant #${a.id}`;
+                     const sub = [shortDate(a.date), a.location].filter(Boolean).join(' • ');
+                     const subHtml = sub ? `<div class="mdtMeta" style="opacity:.85; margin-top:-2px;">${escapeHtml(sub)}</div>` : '';
+                     const chargesHtml = (Array.isArray(charges) && charges.length)
+                       ? `<div style="opacity:.85; margin-top:6px;">
+                           ${charges.slice(0, 4).map(ch => `<div class="mdtMeta" style="margin:0; padding:1px 0;">${escapeHtml(ch.label)} x${escapeHtml(String(ch.count))}</div>`).join('')}
+                           ${charges.length > 4 ? `<div class="mdtMeta" style="margin:0; padding:1px 0;">…</div>` : ''}
+                         </div>`
+                       : '';
+                     return `<div class="mdtDetailItem mdtItemAlert">${linkSpan(label, 'arrests', a.id)}${subHtml}${chargesHtml}</div>`;
+                   }).join('') : '<div class="mdtDetailItem mdtItemNone">None</div>'}
+                </div>
+
+                 <div class="mdtDetailSection ${hasBolos ? 'mdtSectionWarn' : ''}">
+                   <div class="mdtDetailSectionTitle">BOLOS</div>
+                   ${hasBolos ? activeBoloEntries.map(({ arrest: a }) => {
+                     const label = a.title || a.arrestNum || `BOLO #${a.id}`;
+                     return `<div class="mdtDetailItem mdtItemWarn">BOLO NOTICE: ${linkSpan(label, 'arrests', a.id)}</div>`;
+                   }).join('') : '<div class="mdtDetailItem mdtItemNone">None</div>'}
+                 </div>
+
+               <div class="mdtDetailSection ${hasPriors ? (hasSeverePriors ? 'mdtSectionAlert' : (hasModeratePriors ? 'mdtSectionWarn' : '')) : ''}">
+
+                <div class="mdtDetailSectionTitle">CRIMINAL HISTORY</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                  <div class="mdtMeta" style="opacity:.85;">Computed from arrest records.</div>
+                  <button type="button" class="mdtBtn" data-open-citizen-history="${c.id}" style="height:28px; padding:0 8px; font-size:11px;">FULL HISTORY</button>
+                </div>
+                 ${hasPriors ? renderCriminalHistorySummaryHtml(chargeSummaryDetailed, { limit: 12 }) : '<div class="mdtDetailItem mdtItemNone">No prior arrests</div>'}
               </div>
-               ${renderNotesEditor(c, 'citizens', { editable: canEditNotesFor('citizens') })}
+
+              </div>
             </div>
-          `;
-        }
+         `;
+       }
+
 
 
       
@@ -3720,6 +4142,7 @@
         function editHistoryWrapFor(dataKey, id){
           if(dataKey === 'ncpdReports') return viewHost.querySelector(`[data-ncpd-report-edit="${id}"]`);
           if(dataKey === 'arrests') return viewHost.querySelector(`[data-arrest-live-edit="${id}"]`) || viewHost.querySelector(`[data-arrest-edit-wrap="${id}"]`);
+          if(dataKey === 'citizens') return viewHost.querySelector(`[data-citizen-live-edit="${id}"]`);
           return null;
         }
 
@@ -3856,9 +4279,26 @@
           };
         }
 
+        function snapshotCitizenValuesFromData(id){
+          const citizen = getMdtData('citizens').find(x => x.id === id);
+          if(!citizen) return null;
+
+          // Only snapshot fields that this UI can mutate.
+          return {
+            photo: String(citizen.photo || '').trim(),
+            notes: String(citizen.notes || '').trim(),
+            notesHtml: String(citizen.notesHtml || '').trim(),
+            licenseStatus: String(citizen.licenseStatus || '').trim(),
+            licenseReason: String(citizen.licenseReason || '').trim(),
+            weaponLicense: String(citizen.weaponLicense || '').trim(),
+            weaponLicenseReason: String(citizen.weaponLicenseReason || '').trim(),
+          };
+        }
+
         function snapshotEditorValues(dataKey, id){
           if(dataKey === 'ncpdReports') return snapshotNcpdReportValuesFromEditor(id);
           if(dataKey === 'arrests') return snapshotArrestValuesFromEditor(id);
+          if(dataKey === 'citizens') return snapshotCitizenValuesFromData(id);
           return null;
         }
 
@@ -3986,6 +4426,10 @@
             bindDetailHandlers();
             startArrestAutosave(id);
             startEditHistoryTracking('arrests', id);
+          }else if(dataKey === 'citizens'){
+            viewHost.innerHTML = renderCitizenDetail(record);
+            bindDetailHandlers();
+            startEditHistoryTracking('citizens', id);
           }
 
           // After re-render, ensure button state matches the stacks.
@@ -4040,6 +4484,7 @@
 
             const arrestWrap = viewHost.querySelector('[data-arrest-live-edit]');
             const ncpdWrap = viewHost.querySelector('[data-ncpd-report-edit]');
+            const citizenWrap = viewHost.querySelector('[data-citizen-live-edit]');
 
             if(arrestWrap){
               const id = Number(arrestWrap.getAttribute('data-arrest-live-edit'));
@@ -4055,6 +4500,15 @@
               if(!Number.isNaN(id)){
                 e.preventDefault();
                 (isUndo ? editUndo : editRedo)('ncpdReports', id);
+              }
+              return;
+            }
+
+            if(citizenWrap){
+              const id = Number(citizenWrap.getAttribute('data-citizen-live-edit'));
+              if(!Number.isNaN(id)){
+                e.preventDefault();
+                (isUndo ? editUndo : editRedo)('citizens', id);
               }
             }
           }, true);
@@ -4450,6 +4904,19 @@
           };
         }
 
+        function snapshotCitizenValues(c){
+          const citizen = c || {};
+          return {
+            photo: String(citizen.photo || '').trim(),
+            notes: String(citizen.notes || '').trim(),
+            notesHtml: String(citizen.notesHtml || '').trim(),
+            licenseStatus: String(citizen.licenseStatus || '').trim(),
+            licenseReason: String(citizen.licenseReason || '').trim(),
+            weaponLicense: String(citizen.weaponLicense || '').trim(),
+            weaponLicenseReason: String(citizen.weaponLicenseReason || '').trim(),
+          };
+        }
+
         function beginEditSession(dataKey, id){
           const key = historyKeyFor(dataKey, id);
           if(ncpdEditSessions.has(key)) return;
@@ -4459,7 +4926,9 @@
             ? snapshotNcpdReportValues(record || {})
             : (dataKey === 'arrests')
               ? snapshotArrestValues(record || {})
-              : null;
+              : (dataKey === 'citizens')
+                ? snapshotCitizenValues(record || {})
+                : null;
 
           ncpdEditSessions.set(key, {
             key,
@@ -4482,43 +4951,53 @@
         }
 
         function commitEditSession(dataKey, id){
-          const key = historyKeyFor(dataKey, id);
-          const sess = ncpdEditSessions.get(key);
-          if(!sess) return;
+            const key = historyKeyFor(dataKey, id);
+            const sess = ncpdEditSessions.get(key);
+            if(!sess) return;
 
-          const fields = Array.from(sess.changedFields);
-          if(fields.length){
-            const actor = window.MDT_CURRENT_USER || {};
-            const labelMap = (dataKey === 'arrests')
-                  ? {
-                    criminals: 'criminals',
-                     officers: 'officers involved',
-                    title: 'title',
-                    type: 'type',
-                    status: 'status',
-                    location: 'location',
-                    gps: 'gps',
-                    chargesV2: 'charges',
-                    chargesByCriminal: 'charges',
-                    sentencingByCriminal: 'sentencing',
-                    relatedPaperwork: 'related paperwork',
-                    evidence: 'evidence',
-                     notes: 'report body',
-                     notesHtml: 'report body',
-                  }
-               : {};
+            const fields = Array.from(sess.changedFields);
+            if(fields.length){
+              const actor = window.MDT_CURRENT_USER || {};
+              const labelMap = (dataKey === 'arrests')
+                    ? {
+                      criminals: 'criminals',
+                       officers: 'officers involved',
+                      title: 'title',
+                      type: 'type',
+                      status: 'status',
+                      location: 'location',
+                      gps: 'gps',
+                      chargesV2: 'charges',
+                      chargesByCriminal: 'charges',
+                      sentencingByCriminal: 'sentencing',
+                      relatedPaperwork: 'related paperwork',
+                      evidence: 'evidence',
+                       notes: 'report body',
+                       notesHtml: 'report body',
+                    }
+                    : (dataKey === 'citizens')
+                      ? {
+                        photo: 'photo',
+                        notes: 'notes',
+                        notesHtml: 'notes',
+                        licenseStatus: 'driver license',
+                        licenseReason: 'driver license',
+                        weaponLicense: 'weapon license',
+                        weaponLicenseReason: 'weapon license',
+                      }
+                      : {};
 
-            appendHistoryEntry(dataKey, id, {
-              ts: Date.now(),
-              actorStateId: actor.stateId || null,
-              actorName: actor.name || 'Unknown',
-              actorRank: actor.rank || '',
-              changes: fields.map(f => `updated ${labelMap[f] || f}`),
-            });
+              appendHistoryEntry(dataKey, id, {
+                ts: Date.now(),
+                actorStateId: actor.stateId || null,
+                actorName: actor.name || 'Unknown',
+                actorRank: actor.rank || '',
+                changes: fields.map(f => `updated ${labelMap[f] || f}`),
+              });
+            }
+
+            ncpdEditSessions.delete(key);
           }
-
-          ncpdEditSessions.delete(key);
-        }
 
         function renderNcpdReportDetail(r){
           const isOpen = r.status === 'Open';
@@ -4934,7 +5413,9 @@
             ? `CASE ${escapeHtml(item?.caseNum || `#${id}`)}`
             : (dataKey === 'arrests')
               ? `ARREST ${escapeHtml(item?.arrestNum || `#${id}`)}`
-              : `RECORD #${id}`;
+              : (dataKey === 'citizens')
+                ? `CITIZEN ${escapeHtml(citizenFullName(item) || `#${id}`)}`
+                : `RECORD #${id}`;
 
           const row = (e) => {
             const when = new Date(e.ts || Date.now());
@@ -7567,10 +8048,43 @@
           startArrestAutosave(id);
         }
 
+        function bindCitizenLiveEdit(){
+          const wrap = viewHost.querySelector('[data-citizen-live-edit]');
+          if(!wrap) return;
+          const id = Number(wrap.getAttribute('data-citizen-live-edit'));
+          if(Number.isNaN(id)) return;
+
+          beginEditSession('citizens', id);
+
+          // Page-level undo/redo (like arrests).
+          wrap.querySelectorAll('[data-edit-undo]').forEach(btn => {
+            btn.onclick = () => editUndo('citizens', id);
+          });
+          wrap.querySelectorAll('[data-edit-redo]').forEach(btn => {
+            btn.onclick = () => editRedo('citizens', id);
+          });
+
+          // Start per-page tracking.
+          startEditHistoryTracking('citizens', id);
+          bindEditHistoryKeyboardShortcuts();
+          syncEditHistoryButtons('citizens', id);
+
+          // Profile change history (audit log) button.
+          wrap.querySelectorAll('[data-open-history]').forEach(btn => {
+            btn.onclick = () => {
+              const dk = String(btn.dataset.openHistory || '').trim();
+              const hid = Number(btn.dataset.openHistoryId);
+              if(!dk || Number.isNaN(hid)) return;
+              openNewTab(`history_${dk}_${hid}`);
+            };
+          });
+        }
+
         function bindDetailHandlers(){
           bindAllInlineHandlers();
           bindNcpdReportEdit();
           bindArrestLiveEdit();
+          bindCitizenLiveEdit();
         }
 
 
@@ -7833,7 +8347,17 @@
                stopArrestAutosave();
                stopEditHistoryTracking('arrests', id);
                commitEditSession('arrests', id);
+               return;
              }
+          }
+
+          const citizenWrap = viewHost.querySelector('[data-citizen-live-edit]');
+          if(citizenWrap){
+            const id = Number(citizenWrap.getAttribute('data-citizen-live-edit'));
+            if(!Number.isNaN(id)){
+              stopEditHistoryTracking('citizens', id);
+              commitEditSession('citizens', id);
+            }
           }
         }
 
@@ -8229,91 +8753,446 @@
           });
         }
 
-        function bindNotesEditors(){
-          viewHost.querySelectorAll('.mdtDetailNotes[data-notes-key]').forEach(wrap => {
-            const key = wrap.dataset.notesKey;
-            const id = Number(wrap.dataset.notesId);
-            if(!key || Number.isNaN(id)) return;
+         function bindNotesEditors(){
+           const htmlToPlain = (html) => {
+             try{
+               const el = document.createElement('div');
+               el.innerHTML = String(html || '');
+               return el.textContent || '';
+             }catch{
+               return String(html || '');
+             }
+           };
+ 
+           viewHost.querySelectorAll('.mdtDetailNotes[data-notes-key]').forEach(wrap => {
+             const key = wrap.dataset.notesKey;
+             const id = Number(wrap.dataset.notesId);
+             if(!key || Number.isNaN(id)) return;
+ 
+              const viewEl = wrap.querySelector('[data-notes-view]');
+              const area = wrap.querySelector('[data-notes-area]');
+              const editor = wrap.querySelector('[data-notes-editor]');
+              const htmlField = wrap.querySelector('[data-notes-html]');
+              const undoBtn = wrap.querySelector('.mdtNotesUndo');
+              const redoBtn = wrap.querySelector('.mdtNotesRedo');
+              const richbar = wrap.querySelector('[data-notes-richbar]');
 
-            const viewEl = wrap.querySelector('[data-notes-view]');
-            const area = wrap.querySelector('[data-notes-area]');
-            const editBtn = wrap.querySelector('.mdtNotesEdit');
-            const saveBtn = wrap.querySelector('.mdtNotesSave');
-            const cancelBtn = wrap.querySelector('.mdtNotesCancel');
+ 
+             const initialHtml = htmlField ? String(htmlField.value || '') : (viewEl ? String(viewEl.innerHTML || '') : '');
+             const history = { past: [], future: [], last: initialHtml };
+             const openHistoryBtn = wrap.querySelector('[data-notes-history]');
+             const isCitizenNotes = (key === 'citizens');
+ 
+             const syncButtons = () => {
+               if(!undoBtn || !redoBtn) return;
+               undoBtn.style.display = history.past.length ? '' : 'none';
+               redoBtn.style.display = history.future.length ? '' : 'none';
+             };
+ 
+             const pushHistory = (val) => {
+               const txt = String(val || '');
+               if(history.last === txt) return;
+               history.past.push(history.last);
+               history.last = txt;
+               history.future = [];
+               syncButtons();
+             };
+ 
+             const applyValue = (html) => {
+               const safeHtml = sanitizeRichHtml(String(html || ''));
+               if(editor) editor.innerHTML = safeHtml;
+               if(viewEl) viewEl.innerHTML = safeHtml || 'No additional notes.';
+               if(htmlField) htmlField.value = safeHtml;
+               if(area) area.value = htmlToPlain(safeHtml);
+             };
+ 
+             const setEditing = (on) => {
+               const show = Boolean(on);
+               if(editor) editor.style.display = show ? '' : 'none';
+               if(viewEl) viewEl.style.display = show ? 'none' : '';
+             };
+ 
+             const syncPlainFromEditor = () => {
+               if(!editor) return;
+               const cleaned = sanitizeRichHtml(String(editor.innerHTML || ''));
+               if(cleaned !== String(editor.innerHTML || '')){
+                 editor.innerHTML = cleaned;
+               }
+               if(htmlField) htmlField.value = cleaned;
+               if(area) area.value = htmlToPlain(cleaned);
+             };
 
-            const showEdit = () => {
-              if(!area || !viewEl) return;
-              area.value = notesDisplayTextFor({ id }, key);
-              viewEl.style.display = 'none';
-              area.style.display = '';
-              editBtn && (editBtn.style.display = 'none');
-              saveBtn && (saveBtn.style.display = '');
-              cancelBtn && (cancelBtn.style.display = '');
-              try{ area.focus(); }catch{}
-            };
+             const sanitizeAndSync = () => {
+               syncPlainFromEditor();
+               pushHistory(editor ? editor.innerHTML : history.last);
+             };
+ 
+              if(openHistoryBtn){
+                openHistoryBtn.onclick = () => {
+                  if(isCitizenNotes) openCitizenHistoryOverlay(id);
+                };
+              }
+ 
+              if(editor){
+                try{ editor.setAttribute('data-placeholder', 'Type notes…'); }catch{}
+              }
 
-            const showView = () => {
-              if(!area || !viewEl) return;
-              viewEl.style.display = '';
-              area.style.display = 'none';
-              editBtn && (editBtn.style.display = '');
-              saveBtn && (saveBtn.style.display = 'none');
-              cancelBtn && (cancelBtn.style.display = 'none');
-            };
+             // Notes are live-edit: always in edit mode
+             setEditing(true);
+             if(editor){
+               try{ editor.focus(); }catch{}
+             }
+ 
+             undoBtn && (undoBtn.onclick = () => {
+               if(!history.past.length) return;
+               const val = history.past.pop();
+               history.future.push(history.last);
+               history.last = val;
+               applyValue(history.last);
+               setEditing(true);
+               syncButtons();
+             });
+ 
+             redoBtn && (redoBtn.onclick = () => {
+               if(!history.future.length) return;
+               const val = history.future.pop();
+               history.past.push(history.last);
+               history.last = val;
+               applyValue(history.last);
+               setEditing(true);
+               syncButtons();
+             });
+ 
+               const persist = () => {
+                 if(!editor) return;
+ 
+                 // Sanitize + sync hidden/plain fields from the editor.
+                 syncPlainFromEditor();
+                 const html = htmlField ? String(htmlField.value || '') : String(editor.innerHTML || '');
+                 const plainVal = area ? String(area.value || '') : htmlToPlain(html);
+ 
+                 pushHistory(html);
+                 setRuntimeNotes(key, id, plainVal);
+                 setUpdatedRecord(key, id, { notes: plainVal, notesHtml: html });
+                 if(key === 'citizens'){
+                   beginEditSession('citizens', id);
+                   markEditedField('citizens', id, 'notes');
+                   markEditedField('citizens', id, 'notesHtml');
+                 }
+ 
+                 // Keep the read-only view (if ever shown) in sync, but do NOT
+                 // write back into the editor here (that can create feedback loops).
+                 if(viewEl) viewEl.innerHTML = html || 'No additional notes.';
+               };
 
-            editBtn && (editBtn.onclick = showEdit);
+              if(editor){
+                editor.addEventListener('input', persist);
+              }
+ 
+              // Rich bar actions
+              const exec = (cmd, value = null) => {
+                try{ editor && editor.focus(); }catch{}
+                try{ document.execCommand(cmd, false, value); }catch{}
+                syncPlainFromEditor();
+              };
+  
+              const toggleHeading = () => {
+                exec('formatBlock', 'h3');
+              };
+              const toggleQuote = () => {
+                exec('formatBlock', 'blockquote');
+              };
+              const clearFormatting = () => {
+                exec('removeFormat');
+                exec('unlink');
+                exec('justifyLeft');
+                exec('formatBlock', 'p');
+              };
 
-            cancelBtn && (cancelBtn.onclick = () => {
-              showView();
-            });
+              // Re-query richbar to avoid stale refs during rerenders.
+              const richbarEl = wrap.querySelector('[data-notes-richbar]');
+              if(richbarEl){
+                richbarEl.querySelectorAll('[data-rich-cmd]').forEach(btn => {
+                  btn.onclick = () => {
+                    const cmd = btn.dataset.richCmd;
+                    const val = btn.dataset.richValue;
+                    if(!cmd) return;
+                    exec(cmd, val || null);
+                    persist();
+                  };
+                });
+                richbarEl.querySelectorAll('[data-rich-action]').forEach(btn => {
+                  btn.onclick = () => {
+                    const action = btn.dataset.richAction;
+                    if(action === 'normal') exec('formatBlock', 'p');
+                    if(action === 'heading') toggleHeading();
+                    if(action === 'quote') toggleQuote();
+                    if(action === 'clear') clearFormatting();
+                    persist();
+                  };
+                });
+              }
 
-            saveBtn && (saveBtn.onclick = () => {
-              const text = area ? area.value : '';
-              setRuntimeNotes(key, id, text);
-              if(viewEl) viewEl.textContent = (String(text || '').trim() || 'No additional notes.');
-              showView();
-            });
-          });
-        }
+             applyValue(initialHtml);
+             setEditing(true);
+             syncButtons();
+           });
+         }
 
-        function ensureCitizenHistoryOverlay(){
-          let overlay = document.querySelector('[data-citizen-history-overlay]');
-          if(overlay) return overlay;
 
-          overlay = document.createElement('div');
-          overlay.setAttribute('data-citizen-history-overlay', '1');
-          overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:10001; display:none;';
-          overlay.innerHTML = `
-            <div data-citizen-history-card style="position:absolute; left:50%; top:10vh; transform:translateX(-50%); width:min(820px, 94vw); max-height:80vh; overflow:auto; background:rgba(10,10,14,.96); border:1px solid var(--mdt-border-strong); box-shadow:0 0 24px var(--mdt-glow-strong); padding:14px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                <div class="mdtDetailSectionTitle" data-citizen-history-title style="margin:0;">CRIMINAL HISTORY</div>
-                <button type="button" class="mdtBtn" data-citizen-history-close style="height:28px; padding:0 10px; font-size:11px;">CLOSE</button>
-              </div>
-              <div class="mdtMeta" data-citizen-history-subtitle style="opacity:.9; margin:6px 0 10px;"></div>
-              <div data-citizen-history-body></div>
-            </div>
-          `;
 
-          document.body.appendChild(overlay);
 
-          overlay.onclick = (e) => {
-            if(e.target === overlay) overlay.style.display = 'none';
-          };
+         function ensureTextPromptOverlay(){
+           let overlay = document.querySelector('[data-text-prompt-overlay]');
+           if(overlay) return overlay;
 
-          overlay.querySelector('[data-citizen-history-close]') && (overlay.querySelector('[data-citizen-history-close]').onclick = () => {
-            overlay.style.display = 'none';
-          });
+           overlay = document.createElement('div');
+           overlay.setAttribute('data-text-prompt-overlay', '1');
+           overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:10002; display:none;';
+           overlay.innerHTML = `
+             <div data-text-prompt-card style="position:absolute; left:50%; top:12vh; transform:translateX(-50%); width:min(720px, 94vw); background:rgba(10,10,14,.97); border:1px solid var(--mdt-border-strong); box-shadow:0 0 24px var(--mdt-glow-strong); padding:14px;">
+               <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                 <div class="mdtDetailSectionTitle" data-text-prompt-title style="margin:0;">INPUT</div>
+                 <button type="button" class="mdtBtn" data-text-prompt-close style="height:28px; padding:0 10px; font-size:11px;">CLOSE</button>
+               </div>
 
-          return overlay;
-        }
+               <div class="mdtMeta" data-text-prompt-subtitle style="opacity:.9; margin:6px 0 10px;"></div>
 
-        function openCitizenHistoryOverlay(citizenId){
+               <textarea class="mdtInput" data-text-prompt-input style="width:100%; min-height:92px; resize:vertical; padding:10px; line-height:1.25;" placeholder="Type here..."></textarea>
+
+               <div class="mdtFormActions" style="margin-top:10px; display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+                 <button type="button" class="mdtBtn" data-text-prompt-cancel style="height:30px; padding:0 12px; font-size:11px;">CANCEL</button>
+                 <button type="button" class="mdtBtn" data-text-prompt-ok style="height:30px; padding:0 12px; font-size:11px;">CONFIRM</button>
+               </div>
+             </div>
+           `;
+
+           document.body.appendChild(overlay);
+
+           const close = () => { overlay.style.display = 'none'; };
+           overlay.onclick = (e) => { if(e.target === overlay) close(); };
+           overlay.querySelector('[data-text-prompt-close]') && (overlay.querySelector('[data-text-prompt-close]').onclick = close);
+
+           return overlay;
+         }
+
+         function openTextPrompt({ title = 'INPUT', subtitle = '', placeholder = '', initial = '' } = {}){
+           const overlay = ensureTextPromptOverlay();
+           const titleEl = overlay.querySelector('[data-text-prompt-title]');
+           const subtitleEl = overlay.querySelector('[data-text-prompt-subtitle]');
+           const inputEl = overlay.querySelector('[data-text-prompt-input]');
+           const okBtn = overlay.querySelector('[data-text-prompt-ok]');
+           const cancelBtn = overlay.querySelector('[data-text-prompt-cancel]');
+
+           if(titleEl) titleEl.textContent = String(title || 'INPUT');
+           if(subtitleEl) subtitleEl.textContent = String(subtitle || '');
+           if(inputEl){
+             inputEl.value = String(initial || '');
+             inputEl.placeholder = String(placeholder || '');
+           }
+
+           overlay.style.display = '';
+
+           return new Promise((resolve) => {
+             let done = false;
+             const finish = (val) => {
+               if(done) return;
+               done = true;
+               overlay.style.display = 'none';
+               resolve(val);
+             };
+
+             const onKey = (e) => {
+               if(e.key === 'Escape') finish(null);
+               if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) finish(String(inputEl ? inputEl.value : ''));
+             };
+
+             const cleanup = () => {
+               try{ document.removeEventListener('keydown', onKey); }catch{}
+               try{ okBtn && okBtn.removeEventListener('click', onOk); }catch{}
+               try{ cancelBtn && cancelBtn.removeEventListener('click', onCancel); }catch{}
+               try{ overlay.removeEventListener('click', onOuterClick); }catch{}
+             };
+
+             const onOk = () => { cleanup(); finish(String(inputEl ? inputEl.value : '')); };
+             const onCancel = () => { cleanup(); finish(null); };
+             const onOuterClick = (e) => {
+               if(e.target === overlay){ cleanup(); finish(null); }
+             };
+
+             okBtn && okBtn.addEventListener('click', onOk);
+             cancelBtn && cancelBtn.addEventListener('click', onCancel);
+             overlay.addEventListener('click', onOuterClick);
+             document.addEventListener('keydown', onKey);
+
+             // Focus input after paint.
+             setTimeout(() => { try{ inputEl && inputEl.focus(); }catch{} }, 0);
+           });
+         }
+
+         function ensureCitizenHistoryOverlay(){
+           let overlay = document.querySelector('[data-citizen-history-overlay]');
+           if(overlay) return overlay;
+ 
+           overlay = document.createElement('div');
+           overlay.setAttribute('data-citizen-history-overlay', '1');
+           overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:10001; display:none;';
+           overlay.innerHTML = `
+             <div data-citizen-history-card style="position:absolute; left:50%; top:10vh; transform:translateX(-50%); width:min(820px, 94vw); max-height:80vh; overflow:auto; background:rgba(10,10,14,.96); border:1px solid var(--mdt-border-strong); box-shadow:0 0 24px var(--mdt-glow-strong); padding:14px;">
+               <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                 <div class="mdtDetailSectionTitle" data-citizen-history-title style="margin:0;">CRIMINAL HISTORY</div>
+                 <button type="button" class="mdtBtn" data-citizen-history-close style="height:28px; padding:0 10px; font-size:11px;">CLOSE</button>
+               </div>
+               <div class="mdtMeta" data-citizen-history-subtitle style="opacity:.9; margin:6px 0 10px;"></div>
+               <div data-citizen-history-body></div>
+             </div>
+           `;
+ 
+           document.body.appendChild(overlay);
+ 
+           overlay.onclick = (e) => {
+             if(e.target === overlay) overlay.style.display = 'none';
+           };
+ 
+           overlay.querySelector('[data-citizen-history-close]') && (overlay.querySelector('[data-citizen-history-close]').onclick = () => {
+             overlay.style.display = 'none';
+           });
+ 
+           return overlay;
+         }
+
+          function openCitizenPhotoPicker(citizenId){
           const cid = Number(citizenId);
           if(Number.isNaN(cid)) return;
           const citizen = (window.MDT_DATA?.citizens || []).find(x => x.id === cid);
           if(!citizen) return;
 
-          const overlay = ensureCitizenHistoryOverlay();
+          beginEditSession('citizens', cid);
+
+
+          const overlay = ensureEvidencePhotosOverlay();
+          renderEvidencePhotosOverlay();
+          if(!overlay) return;
+
+            const applyPhoto = (src) => {
+              const clean = String(src || '').trim();
+              if(!clean) return;
+              const next = { ...citizen, photo: clean };
+              setUpdatedRecord('citizens', cid, next);
+              markEditedField('citizens', cid, 'photo');
+              const record = getMdtData('citizens').find(x => x.id === cid) || next;
+              viewHost.innerHTML = renderCitizenDetail(record);
+              bindDetailHandlers();
+              overlay.style.display = 'none';
+            };
+
+
+          overlay.querySelectorAll('[data-evidence-scanner-attach]').forEach(btn => {
+            btn.onclick = () => {
+              const url = String(btn.dataset.evidenceScannerAttach || '').trim();
+              applyPhoto(url);
+            };
+          });
+
+          const linkPanel = overlay.querySelector('[data-evidence-photos-panel="link"]');
+          if(linkPanel){
+            const addBtn = linkPanel.querySelector('[data-evidence-link-add]');
+            const input = linkPanel.querySelector('[data-evidence-link-input]');
+            if(addBtn && input){
+              addBtn.onclick = () => {
+                const url = String(input.value || '').trim();
+                if(url) applyPhoto(url);
+              };
+            }
+            const clipBtn = linkPanel.querySelector('[data-evidence-clipboard-upload]');
+            if(clipBtn){
+              const original = clipBtn.onclick;
+              clipBtn.onclick = async () => {
+                if(original) original();
+                setTimeout(() => {
+                  const status = linkPanel.querySelector('[data-evidence-clipboard-status]');
+                  const url = (status && status.dataset && status.dataset.lastClipboardUrl) ? status.dataset.lastClipboardUrl : '';
+                  if(url && String(url).startsWith('http')) applyPhoto(url);
+                }, 150);
+              };
+            }
+          }
+
+          overlay.style.display = '';
+        }
+
+
+          async function handleLicenseAction(type, action, id){
+            const cid = Number(id);
+            if(Number.isNaN(cid)) return;
+            const citizen = (window.MDT_DATA?.citizens || []).find(x => x.id === cid) || getMdtData('citizens').find(x => x.id === cid);
+            if(!citizen) return;
+
+            beginEditSession('citizens', cid);
+
+  
+            const citizenLive = getMdtData('citizens').find(x => x.id === cid) || citizen;
+
+            // Only write the specific fields being changed.
+            // Using the full base record here can overwrite previously-edited fields because
+            // the base dataset (window.MDT_DATA) does not include runtime updates.
+            const next = {};
+
+            const act = String(action || '').toLowerCase();
+            const t = String(type || '').toLowerCase();
+
+            const verb = (act === 'reinstate') ? 'Reinstate' : 'Suspend';
+            const targetLabel = (t === 'weapon') ? 'Weapon License' : 'Driver License';
+
+            const reason = await openTextPrompt({
+              title: `${verb} ${targetLabel}`,
+              subtitle: 'Enter a reason (stored on the profile). Ctrl+Enter to confirm.',
+              placeholder: 'Reason…',
+              initial: ''
+            });
+
+            if(reason == null) return; // cancelled
+            const cleanReason = String(reason || '').trim();
+
+            if(t === 'driver'){
+              if(act === 'suspend'){
+                next.licenseStatus = 'Suspended';
+                next.licenseReason = cleanReason;
+              }else if(act === 'reinstate'){
+                next.licenseStatus = 'Valid';
+                next.licenseReason = cleanReason;
+              }
+              markEditedField('citizens', cid, 'licenseStatus');
+              markEditedField('citizens', cid, 'licenseReason');
+            }
+  
+            if(t === 'weapon'){
+              if(act === 'suspend'){
+                next.weaponLicense = 'Suspended';
+                next.weaponLicenseReason = cleanReason;
+              }else if(act === 'reinstate'){
+                next.weaponLicense = 'Valid';
+                next.weaponLicenseReason = cleanReason;
+              }
+              markEditedField('citizens', cid, 'weaponLicense');
+              markEditedField('citizens', cid, 'weaponLicenseReason');
+            }
+  
+            setUpdatedRecord('citizens', cid, next);
+            const record = getMdtData('citizens').find(x => x.id === cid) || { ...citizenLive, ...next };
+            viewHost.innerHTML = renderCitizenDetail(record);
+            bindDetailHandlers();
+          }
+
+         function openCitizenHistoryOverlay(citizenId){
+ 
+           const cid = Number(citizenId);
+           if(Number.isNaN(cid)) return;
+           const citizen = (window.MDT_DATA?.citizens || []).find(x => x.id === cid);
+           if(!citizen) return;
+ 
+           const overlay = ensureCitizenHistoryOverlay();
+
           const titleHost = overlay.querySelector('[data-citizen-history-title]');
           const subtitleHost = overlay.querySelector('[data-citizen-history-subtitle]');
           const bodyHost = overlay.querySelector('[data-citizen-history-body]');
@@ -8360,13 +9239,42 @@
           bindCopyButtons();
           bindLinkButtons();
           bindCreateButtons();
-          bindNotesEditors();
+             bindNotesEditors();
 
-          // Citizen criminal history popup.
-          viewHost.querySelectorAll('[data-open-citizen-history]').forEach(btn => {
-            btn.onclick = () => openCitizenHistoryOverlay(btn.dataset.openCitizenHistory);
-          });
-        }
+             // Citizen criminal history popup.
+             viewHost.querySelectorAll('[data-open-citizen-history]').forEach(btn => {
+               btn.onclick = () => openCitizenHistoryOverlay(btn.dataset.openCitizenHistory);
+             });
+
+             // Citizen photo update
+             viewHost.querySelectorAll('[data-set-citizen-photo]').forEach(btn => {
+               const id = Number(btn.dataset.setCitizenPhoto);
+               if(Number.isNaN(id)) return;
+               btn.onclick = () => openCitizenPhotoPicker(id);
+             });
+
+             // License actions
+              viewHost.querySelectorAll('[data-license-action]').forEach(btn => {
+               const action = btn.dataset.licenseAction;
+               const type = btn.dataset.licenseType;
+               const id = Number(btn.dataset.licenseId);
+               if(!action || !type || Number.isNaN(id)) return;
+               btn.onclick = () => handleLicenseAction(type, action, id);
+             });
+
+             // Make asset/org rows fully clickable
+             viewHost.querySelectorAll('.mdtDetailItem.mdtLinkish').forEach(el => {
+               el.addEventListener('click', (e) => {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 const target = el.dataset.linkTarget;
+                 const id = Number(el.dataset.linkId);
+                 if(target && !Number.isNaN(id)) navigateToDetail(target, id, { openInNewTab: true });
+               });
+             });
+
+           }
+
 
 
        function initMdt(){

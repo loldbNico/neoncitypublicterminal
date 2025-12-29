@@ -344,8 +344,6 @@
 
     // Note: no post-pan/post-zoom snapping. Selection is centered once on click.
 
-    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
-
     function hashToHue(str){
       // stable hash -> 0..359
       let h = 2166136261;

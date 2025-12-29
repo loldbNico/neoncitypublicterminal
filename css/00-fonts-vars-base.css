@@ -20,6 +20,10 @@
 
       --glowB: 0 0 14px rgba(96,143,255,.20), 0 0 32px rgba(96,143,255,.10);
       --glowY: 0 0 10px rgba(var(--ylRGB), .22), 0 0 26px rgba(var(--ylRGB), .10);
+      /* Gold accent reused by arrest tab highlight */
+      --mdt-gold-1: rgba(255, 210, 90, .68);
+      --mdt-gold-2: rgba(255, 230, 150, .92);
+      --mdt-gold-3: rgba(255, 200, 80, .16);
 
       --sw-region: 0.1px;
       --sw-road: 0.15px;
@@ -310,7 +314,7 @@
       align-items:flex-end;
     }
 
-    .securserve-badge{
+    .securoserv-badge{
       position: fixed;
       top: calc(var(--topbar-h) + 14px);
       right: 14px;
@@ -323,7 +327,7 @@
       pointer-events:none;
       z-index: 18;
     }
-    .securserve-badge img{
+    .securoserv-badge img{
       width: 70px;
       height: 70px;
       object-fit: contain;
