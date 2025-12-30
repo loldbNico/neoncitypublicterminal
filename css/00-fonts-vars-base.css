@@ -32,20 +32,82 @@
 
       --topbar-h: 48px;
       --term-h: 240px;
+
+      /* Cursor pack (all states) */
+      --cur-default: url("../cursor/aero_arrow_yellow_cyan.cur") 0 0;
+      --cur-link: url("../cursor/aero_link_yellow_cyan.cur") 0 0;
+      --cur-text: url("../cursor/aero_beam_yellow_cyan.cur") 0 0;
+      --cur-unavail: url("../cursor/aero_unavail_yellow_cyan.cur") 0 0;
+      --cur-move: url("../cursor/aero_move_yellow_cyan.cur") 0 0;
+      --cur-cross: url("../cursor/aero_cross_yellow_cyan.cur") 0 0;
+      --cur-help: url("../cursor/aero_helpsel_yellow_cyan.cur") 0 0;
+      --cur-pen: url("../cursor/aero_pen_yellow_cyan.cur") 0 0;
+      --cur-up: url("../cursor/aero_up_yellow_cyan.cur") 0 0;
+      --cur-busy: url("../cursor/aero_busy_yellow_cyan.ani") 0 0;
+      --cur-working: url("../cursor/aero_working_yellow_cyan.ani") 0 0;
+      --cur-ew: url("../cursor/aero_ew_yellow_cyan.cur") 0 0;
+      --cur-ns: url("../cursor/aero_ns_yellow_cyan.cur") 0 0;
+      --cur-nesw: url("../cursor/aero_nesw_yellow_cyan.cur") 0 0;
+      --cur-nwse: url("../cursor/aero_nwse_yellow_cyan.cur") 0 0;
     }
 
     *{ box-sizing:border-box; }
     /* Ensure controls inherit the global UI font (buttons often default otherwise). */
     button, input, textarea, select{ font-family: inherit; font-size: inherit; }
-    html, body{ height:100%; margin:0; color:var(--text); overflow:hidden; cursor: url("../cursor-32.png") 0 0, default !important; }
+
+    html, body{
+      height:100%;
+      margin:0;
+      color:var(--text);
+      overflow:hidden;
+      cursor: var(--cur-default), default;
+    }
+
+    /* Map common cursor intents to the provided cursor pack. */
+    a, button, [role="button"], input[type="button"], input[type="submit"], summary, label, [onclick],
+    .mdtLinkish, .mdtCat, .layerToggle, .hudf, .tab,
+    #svgHost .region:not(.wall){
+      cursor: var(--cur-link), pointer;
+    }
+
+    input, textarea, select, [contenteditable], [contenteditable="true"]{
+      cursor: var(--cur-text), text;
+    }
+
+    :disabled, [disabled], [aria-disabled="true"]{
+      cursor: var(--cur-unavail), not-allowed;
+    }
+
+    /* Drag/move states */
+    #mapStack{
+      cursor: var(--cur-default), default;
+    }
+    .grabbing, #mapStack.grabbing{ cursor: var(--cur-move), grabbing; }
+
+    /* Zoom hints */
+    .cursor-zoom-in{ cursor: var(--cur-up), zoom-in; }
+    .cursor-zoom-out{ cursor: var(--cur-up), zoom-out; }
+
+    /* Processing states */
+    .cursor-busy{ cursor: var(--cur-busy), wait; }
+    .cursor-working{ cursor: var(--cur-working), progress; }
+
+    /* Precision / misc */
+    .cursor-cross{ cursor: var(--cur-cross), crosshair; }
+    .cursor-help{ cursor: var(--cur-help), help; }
+    .cursor-pen{ cursor: var(--cur-pen), copy; }
+
+    /* Resize hints */
+    .resize-ew{ cursor: var(--cur-ew), ew-resize; }
+    .resize-ns{ cursor: var(--cur-ns), ns-resize; }
+    .resize-nesw{ cursor: var(--cur-nesw), nesw-resize; }
+    .resize-nwse{ cursor: var(--cur-nwse), nwse-resize; }
+
     body{
       font-family: "Rajdhani", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
       background: var(--bg0);
       position: relative;
     }
-
-    /* Force the custom cursor everywhere (overrides pointer/zoom/grab/text/etc). */
-    *, *::before, *::after{ cursor: url("../cursor-32.png") 0 0, default !important; }
 
     /* Top tabs (game-like) */
     .topnav{
@@ -164,7 +226,7 @@
       padding: 0;
       margin: 0;
       color: rgba(96,143,255,.82);
-      cursor: default;
+      cursor: var(--cur-default), default;
       line-height: 1;
       text-transform: uppercase;
       letter-spacing: 1.2px;
@@ -209,7 +271,7 @@
       align-items:center;
       gap: 10px;
       color: rgba(96,143,255,.78);
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       line-height: 1;
       text-transform: uppercase;
       letter-spacing: 1.2px;
@@ -268,7 +330,7 @@
       border: none;
       padding: 0;
       color: rgba(96,143,255,.82);
-      cursor: default;
+      cursor: var(--cur-link), pointer;
       line-height: 1;
       text-transform: uppercase;
       letter-spacing: 1.2px;
@@ -363,7 +425,7 @@
       border: none;
       padding: 0;
       color: rgba(96,143,255,.82);
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       line-height: 1;
     }
     .topnav .tab:hover{ color: var(--yl); }
@@ -375,7 +437,7 @@
     */
     .topnav .tab.disabled{
       opacity: .65;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       filter: none;
     }
     .topnav .tab.disabled span{

@@ -65,7 +65,7 @@
       color: rgba(215,230,255,.78);
       text-transform: uppercase;
       letter-spacing: 1.2px;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
       transition: border-color .12s ease, color .12s ease, transform .12s ease, box-shadow .12s ease;
     }
@@ -76,8 +76,9 @@
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 24px var(--mdt-glow-strong, rgba(96,143,255,.12));
     }
 
-    /* Highlight arrests category as "finished" (subtle gold glint) */
-    .mdtCat.mdtCat--arrests{
+    /* Highlight "finished" categories with a subtle gold glint */
+    .mdtCat.mdtCat--arrests,
+    .mdtCat.mdtCat--citizen_profiles{
       border-color: rgba(255, 205, 85, .38);
       color: rgba(255, 232, 170, .90);
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 18px rgba(255, 200, 80, .10);
@@ -85,13 +86,15 @@
       overflow: hidden;
     }
 
-    .mdtCat.mdtCat--arrests:hover{
+    .mdtCat.mdtCat--arrests:hover,
+    .mdtCat.mdtCat--citizen_profiles:hover{
       border-color: rgba(255, 210, 90, .68);
       color: rgba(255, 242, 205, .98);
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 26px rgba(255, 200, 80, .16);
     }
 
-    .mdtCat.mdtCat--arrests::after{
+    .mdtCat.mdtCat--arrests::after,
+    .mdtCat.mdtCat--citizen_profiles::after{
       content: '';
       position: absolute;
       inset: -2px;
@@ -123,7 +126,7 @@
       border: 1px solid var(--mdt-border, rgba(96,143,255,.25));
       background: rgba(0,0,0,.25);
       color: var(--mdt-accent-text, rgba(96,143,255,.75));
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       line-height: 1;
       font-weight: 900;
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
@@ -177,7 +180,7 @@
       text-transform: uppercase;
       letter-spacing: 1.2px;
       font-size: 11px;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
       transition: border-color .12s ease, color .12s ease, background .12s ease, box-shadow .12s ease;
     }
@@ -219,7 +222,7 @@
       padding: 0 4px 4px;
       margin: 0;
       background: rgba(0,0,0,.18);
-      cursor: grab;
+      cursor: var(--cur-move), grab;
       color: var(--mdt-accent-text, rgba(215,230,255,.68));
       text-transform: uppercase;
       letter-spacing: 1.2px;
@@ -252,7 +255,7 @@
       border: 1px solid var(--mdt-border, rgba(96,143,255,.20));
       background: rgba(0,0,0,.22);
       color: var(--mdt-accent-text, rgba(215,230,255,.75));
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       line-height: 1;
       font-weight: 900;
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
@@ -284,7 +287,7 @@
       border: 1px solid rgba(96,143,255,.25);
       background: rgba(0,0,0,.25);
       color: rgba(96,143,255,.80);
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       font-weight: 900;
       line-height: 1;
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
@@ -311,7 +314,7 @@
       border: 1px solid var(--mdt-border, rgba(96,143,255,.25));
       background: rgba(0,0,0,.25);
       color: var(--mdt-accent-text, rgba(96,143,255,.80));
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       font-weight: 900;
       line-height: 1;
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
@@ -321,7 +324,7 @@
     .mdtFwd:disabled,
     .mdtRestore:disabled{
       opacity: .35;
-      cursor: default;
+      cursor: var(--cur-default), default;
     }
 
 
@@ -348,7 +351,7 @@
       margin-bottom: 10px;
     }
 
-    .mdtLinkish{ cursor: pointer; text-decoration: underline; text-decoration-color: var(--mdt-accent-1, rgba(96,143,255,.72)); }
+    .mdtLinkish{ cursor: var(--cur-link), pointer; text-decoration: underline; text-decoration-color: var(--mdt-accent-1, rgba(96,143,255,.72)); }
 
     .mdtP{
       color: rgba(215,230,255,.70);
@@ -370,7 +373,7 @@
       opacity: .85;
       transform: translateY(-4px) scale(1.04);
       box-shadow: 0 14px 30px rgba(0,0,0,.38), 0 0 30px var(--mdt-glow-strong, rgba(96,143,255,.22));
-      cursor: grabbing;
+      cursor: var(--cur-move), grabbing;
     }
     .mdtTab.drag-over{
       border-left: 2px solid var(--mdt-border-strong, rgba(96,143,255,.9));
@@ -423,7 +426,7 @@
       border: 1px solid var(--mdt-border, rgba(96,143,255,.28));
       background: rgba(0,0,0,.26);
       color: var(--mdt-accent-text, rgba(215,230,255,.78));
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       font-weight: 700;
       letter-spacing: 1px;
       text-transform: uppercase;
@@ -486,7 +489,7 @@
       padding: 10px 20px;
       font-weight: 700;
       letter-spacing: 1.2px;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       transition: background .12s, border-color .12s;
     }
     .mdtBtn:hover{
@@ -496,7 +499,7 @@
 
     .mdtBtn:disabled{
       opacity: .45;
-      cursor: not-allowed;
+      cursor: var(--cur-unavail), not-allowed;
       filter: grayscale(.25);
     }
 
@@ -657,7 +660,7 @@
 
      .mdtPickerItem{
        padding: 10px 12px;
-       cursor: pointer;
+       cursor: var(--cur-link), pointer;
        color: rgba(215,230,255,.85);
        border-bottom: 1px solid rgba(96,143,255,.12);
      }
@@ -690,7 +693,7 @@
        border: 1px solid rgba(96,143,255,.25);
        background: rgba(0,0,0,.22);
        color: rgba(215,230,255,.78);
-       cursor: pointer;
+       cursor: var(--cur-link), pointer;
        line-height: 1;
        padding: 0;
        font-weight: 900;
@@ -923,7 +926,7 @@
     .mdtCitizenCard{
       display: grid;
       gap: 10px;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
     }
 
     .mdtCitizenCard:focus{
@@ -1103,7 +1106,7 @@
       padding: 0;
       margin: 0;
       background: transparent;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       display: inline-flex;
       border-radius: 8px;
     }
@@ -1171,7 +1174,7 @@
       background: rgba(0,0,0,.24);
       border: 1px solid var(--mdt-border, rgba(96,143,255,.45));
       color: var(--mdt-accent-text, rgba(96,143,255,.95));
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       font-weight: 700;
       letter-spacing: 1px;
       transition: border-color .12s ease, color .12s ease, background .12s ease;
@@ -1202,7 +1205,7 @@
       background: rgba(0,0,0,.24);
       border: 1px solid var(--mdt-border, rgba(96,143,255,.45));
       color: var(--mdt-accent-text, rgba(96,143,255,.95));
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       font-weight: 700;
       letter-spacing: 1px;
       transition: border-color .12s ease, color .12s ease, background .12s ease;
@@ -1240,7 +1243,7 @@
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 1px;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       transition: background .1s, border-color .1s;
     }
     .mdtResultView:hover{
@@ -1312,7 +1315,7 @@
       color: rgba(215,230,255,.65);
       width: 28px;
       height: 28px;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       font-weight: 900;
       transition: border-color .1s, color .1s;
     }
@@ -1387,7 +1390,7 @@
       mix-blend-mode:screen;
     }
     .mdtCitizenPhoto{
-      cursor: zoom-in;
+      cursor: var(--cur-up), zoom-in;
     }
     .mdtCitizenPhoto img{
       width: 100%;
@@ -1429,7 +1432,7 @@
       aspect-ratio: 1 / 1;
       object-fit: cover;
       border: 1px solid var(--mdt-border, rgba(96,143,255,.20));
-      cursor: zoom-in;
+      cursor: var(--cur-up), zoom-in;
       filter: saturate(1.06) contrast(1.04);
     }
 
@@ -1651,7 +1654,7 @@
     }
 
     .mdtCopyText{
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       text-decoration: underline;
       text-decoration-color: rgba(96,143,255,.55);
       text-underline-offset: 2px;
@@ -1781,7 +1784,7 @@
       border: 1px solid rgba(96,143,255,.22);
       background:
         linear-gradient(180deg, rgba(0,0,0,.46), rgba(0,0,0,.22));
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       box-shadow:
         0 0 0 1px rgba(0,0,0,.62) inset,
         0 0 22px rgba(96,143,255,.08);
@@ -1830,7 +1833,7 @@
 
     .shardTab.locked{
       opacity: .22;
-      cursor: default;
+      cursor: var(--cur-default), default;
       filter: grayscale(.2);
     }
 
@@ -2047,7 +2050,7 @@
       letter-spacing: 1px;
       text-transform: uppercase;
       padding: 0;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
     }
 
     .shardClose:hover{
@@ -2146,7 +2149,7 @@
       background:
         linear-gradient(180deg, rgba(0,0,0,.38), rgba(0,0,0,.62));
       padding: 12px;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       user-select: none;
       box-shadow: 0 0 22px rgba(96,143,255,.06);
       transition: border-color .12s ease, transform .12s ease, box-shadow .12s ease, filter .12s ease;
@@ -2164,7 +2167,7 @@
     }
 
     .loreFile.locked{
-      cursor: default;
+      cursor: var(--cur-default), default;
       opacity: .55;
       filter: grayscale(.15);
     }
@@ -2263,7 +2266,7 @@
       letter-spacing: 1px;
       text-transform: uppercase;
       padding: 0;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       flex: 0 0 auto;
     }
 
@@ -2429,7 +2432,7 @@
       font-weight: 900;
       letter-spacing: 3px;
       text-transform: uppercase;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       user-select: none;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
@@ -2690,7 +2693,7 @@
       letter-spacing: 1px;
       text-transform: uppercase;
       padding: 0;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
     }
     .loreWinClose:hover{
       border-color: rgba(var(--ylRGB), .28);
@@ -3094,7 +3097,7 @@
   font-size: 10px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  cursor: pointer;
+  cursor: var(--cur-link), pointer;
   box-shadow: 0 0 18px rgba(var(--ylRGB), .10);
 }
 .loreNextBtn:hover{
@@ -3103,7 +3106,7 @@
 }
 .loreNextBtn:disabled{
   opacity: .45;
-  cursor: default;
+  cursor: var(--cur-default), default;
 }
 
 /* Only show after file finishes typing. */

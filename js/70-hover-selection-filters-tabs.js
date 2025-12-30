@@ -1813,7 +1813,15 @@
 
           const arrests = getArrestsForCitizen(c);
           const chargeTokenSummary = aggregateChargeTokenCountsForPerson(arrests, fullName);
-          const hasPriors = Boolean((chargeTokenSummary && chargeTokenSummary.length) || (c.priors && c.priors.length));
+
+          // PRIORS: only misdemeanors+ (infractions do not count).
+          const nonInfractionTokenSummary = Array.isArray(chargeTokenSummary)
+            ? chargeTokenSummary
+              .map(row => ({ ...classifyChargeToken(row.token), count: row.count }))
+              .filter(r => r && r.label && r.groupKey !== 'infraction')
+            : [];
+
+          const hasPriors = Boolean(nonInfractionTokenSummary.length || (c.priors && c.priors.length));
 
           const photoSrc = escapeHtml(c.photo || './77web.png');
           const govLogoStrip = renderCitizenGovOrgLogos(c, {
@@ -4082,14 +4090,21 @@
            const hasBolos = activeBoloEntries.length > 0;
            const fullName = citizenFullName(c);
 
-            const arrests = getArrestsForCitizen(c);
-            const chargeTokenSummary = aggregateChargeTokenCountsForPerson(arrests, fullName);
+             const arrests = getArrestsForCitizen(c);
+             const chargeTokenSummary = aggregateChargeTokenCountsForPerson(arrests, fullName);
+
             const chargeSummaryDetailed = chargeTokenSummary
               .map(row => ({ ...classifyChargeToken(row.token), count: row.count }))
               .filter(r => r && r.label);
-            const hasPriors = chargeSummaryDetailed.length > 0;
-            const hasSeverePriors = chargeSummaryDetailed.some(r => r.groupKey === 'hut' || r.groupKey === 'felony');
-            const hasModeratePriors = !hasSeverePriors && chargeSummaryDetailed.some(r => r.groupKey === 'misdemeanor');
+
+            const hasAnyHistory = chargeSummaryDetailed.length > 0;
+
+            // PRIORS: only misdemeanors+ should trigger the badge/section state.
+            // (Infractions still appear in the history list, but they don't make the record "not clean".)
+            const chargeSummaryNonInfraction = chargeSummaryDetailed.filter(r => r.groupKey !== 'infraction');
+            const hasPriors = chargeSummaryNonInfraction.length > 0;
+            const hasSeverePriors = chargeSummaryNonInfraction.some(r => r.groupKey === 'hut' || r.groupKey === 'felony');
+            const hasModeratePriors = !hasSeverePriors && chargeSummaryNonInfraction.some(r => r.groupKey === 'misdemeanor');
 
 
            const orgMemberships = getCitizenOrganizations(c);
@@ -4287,7 +4302,7 @@
                   <div class="mdtMeta" style="opacity:.85;">Computed from arrest records.</div>
                   <button type="button" class="mdtBtn" data-open-citizen-history="${c.id}" style="height:28px; padding:0 8px; font-size:11px;">FULL HISTORY</button>
                 </div>
-                 ${hasPriors ? renderCriminalHistorySummaryHtml(chargeSummaryDetailed, { limit: 12 }) : '<div class="mdtDetailItem mdtItemNone">No prior arrests</div>'}
+                 ${hasAnyHistory ? renderCriminalHistorySummaryHtml(chargeSummaryDetailed, { limit: 12 }) : '<div class="mdtDetailItem mdtItemNone">No prior arrests</div>'}
               </div>
 
               </div>
@@ -5212,16 +5227,20 @@
                      ? dispositionRaw
                      : '';
                    const dispositionAt = String(v?.dispositionAt || '').trim();
-                 const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
-                 const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
-                 out[key] = {
-                   deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
-                   deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
-                   ...(disposition ? { disposition } : {}),
-                   ...(dispositionAt ? { dispositionAt } : {}),
-                   ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}),
-                   ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}),
-                 };
+                   const lockedJailMonths = Math.round(Number(v?.lockedJailMonths ?? v?.lockedJail ?? NaN));
+                   const lockedFine = Math.round(Number(v?.lockedFine ?? NaN));
+                   const lockedChargesV2 = Array.isArray(v?.lockedChargesV2)
+                     ? normalizeChargesV2(v.lockedChargesV2)
+                     : [];
+                   out[key] = {
+                     deltaJail: Number.isFinite(deltaJail) ? deltaJail : 0,
+                     deltaFine: Number.isFinite(deltaFine) ? deltaFine : 0,
+                     ...(disposition ? { disposition } : {}),
+                     ...(dispositionAt ? { dispositionAt } : {}),
+                     ...(Number.isFinite(lockedJailMonths) ? { lockedJailMonths: Math.max(0, lockedJailMonths) } : {}),
+                     ...(Number.isFinite(lockedFine) ? { lockedFine: Math.max(0, lockedFine) } : {}),
+                     ...(lockedChargesV2.length ? { lockedChargesV2 } : {}),
+                   };
               }
             }
 
@@ -6249,14 +6268,58 @@
            };
 
 
-          const setChargesV2 = (items) => {
-             const tgt = getChargeTarget();
-             if(!tgt) return;
-             const by = getChargesByCriminal();
-             by[tgt] = normalizeChargesV2(items);
-             setChargesByCriminal(by);
-             try{ renderSentencing(); }catch{}
+           const getSentencingByCriminalMaybe = () => {
+             const f = wrap.querySelector('[data-field="sentencingByCriminal"]');
+             if(!f) return {};
+             try{
+               const raw = JSON.parse(String(f.value || '{}'));
+               return (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+             }catch{
+               return {};
+             }
            };
+
+           const isChargeAdditionLockedFor = (name) => {
+             const n = String(name || '').trim();
+             if(!n) return false;
+             const rec = getSentencingByCriminalMaybe()[n];
+             const disp = String(rec?.disposition || '').trim().toLowerCase();
+             return disp === 'prison' || disp === 'sip';
+           };
+
+           const isChargeAddOperation = (prevItems, nextItems) => {
+             const a = normalizeChargesV2(prevItems);
+             const b = normalizeChargesV2(nextItems);
+
+             const prev = new Map(a.map(it => [normalizeChargeToken(it.token), Math.max(1, Math.round(Number(it.count || 1)))]));
+             for(const it of b){
+               const tok = normalizeChargeToken(it.token);
+               const cnt = Math.max(1, Math.round(Number(it.count || 1)));
+               const prevCnt = prev.get(tok) || 0;
+               if(!prev.has(tok)) return true;
+               if(cnt > prevCnt) return true;
+             }
+             return false;
+           };
+
+           const setChargesV2 = (items, opts = {}) => {
+              const tgt = getChargeTarget();
+              if(!tgt) return;
+              const by = getChargesByCriminal();
+              const prev = normalizeChargesV2(by[tgt] || []);
+              const next = normalizeChargesV2(items);
+
+              // After prison/SIP: allow removing/decreasing charges (for record cleanup),
+              // but block any additions (new charges or increasing counts).
+              if(isChargeAdditionLockedFor(tgt) && isChargeAddOperation(prev, next)){
+                if(!opts.silent) showMdtToast('Charges are locked after prison/SIP (no additions).');
+                return;
+              }
+
+              by[tgt] = next;
+              setChargesByCriminal(by);
+              try{ renderSentencing(); }catch{}
+            };
 
 
 
@@ -6299,15 +6362,20 @@
                   `;
             }).join('');
 
-            listHost.querySelectorAll('[data-charge-inc]').forEach(btn => {
-              btn.onclick = () => {
-                const tok = btn.dataset.chargeInc;
-                const next = chargesV2Adjust(getChargesV2(), tok, +1);
-                setChargesV2(next);
-                renderChargesPanelFromEditor(next);
-                refreshPenalOverlayCurrentCharges();
-              };
-            });
+             listHost.querySelectorAll('[data-charge-inc]').forEach(btn => {
+               btn.onclick = () => {
+                 if(isChargeAdditionLockedFor(getChargeTarget())){
+                   showMdtToast('Charges are locked after prison/SIP (no additions).');
+                   return;
+                 }
+
+                 const tok = btn.dataset.chargeInc;
+                 const next = chargesV2Adjust(getChargesV2(), tok, +1);
+                 setChargesV2(next);
+                 renderChargesPanelFromEditor(next);
+                 refreshPenalOverlayCurrentCharges();
+               };
+             });
 
             listHost.querySelectorAll('[data-charge-dec]').forEach(btn => {
               btn.onclick = () => {
@@ -6335,20 +6403,29 @@
 
           };
 
-           const updateChargesUiEnabledState = () => {
-             const target = getChargeTarget();
-             const enabled = Boolean(target);
+            const updateChargesUiEnabledState = () => {
+              const target = getChargeTarget();
+              const hasTarget = Boolean(target);
+              const addLocked = hasTarget && isChargeAdditionLockedFor(target);
 
-             const openPenalBtn = wrap.querySelector('[data-open-penal-overlay]');
-             if(openPenalBtn) openPenalBtn.disabled = !enabled;
+              const openPenalBtn = wrap.querySelector('[data-open-penal-overlay]');
+              if(openPenalBtn) openPenalBtn.disabled = !hasTarget || addLocked;
 
-             // Disable the add-charge picker input when there's no target.
-             const chargePicker = wrap.querySelector('.mdtPicker[data-picker="chargesV2"]');
-             const chargeInput = chargePicker ? chargePicker.querySelector('[data-picker-input]') : null;
-             if(chargeInput) chargeInput.disabled = !enabled;
+              // Disable the add-charge picker input when there's no target (or additions are locked).
+              const chargePicker = wrap.querySelector('.mdtPicker[data-picker="chargesV2"]');
+              const chargeInput = chargePicker ? chargePicker.querySelector('[data-picker-input]') : null;
+              if(chargeInput) chargeInput.disabled = !hasTarget || addLocked;
 
-             // The +/- buttons are created by renderChargesPanelFromEditor; it already guards.
-           };
+              // The +/- buttons are created by renderChargesPanelFromEditor.
+              // We selectively disable only "add" operations.
+              const panelHost = wrap.querySelector('[data-charges-list]');
+              if(panelHost){
+                panelHost.querySelectorAll('[data-charge-inc]').forEach(btn => {
+                  btn.disabled = !hasTarget || addLocked;
+                  btn.title = addLocked ? 'Charges are locked after prison/SIP.' : (hasTarget ? '' : 'Select a criminal first.');
+                });
+              }
+            };
 
            const renderChargesPanel = () => {
              renderChargesPanelFromEditor(getChargesV2());
@@ -6370,11 +6447,14 @@
                openOnInput: true,
                disableEnterAdd: true,
                keepResultsOpen: true,
-               onBeforeAdd: (arr, val) => {
-                 const tok = normalizeChargeToken(val);
-                 if(!tok) return arr;
-                 return chargesV2Adjust(normalizeChargesV2(arr), tok, +1);
-               },
+                onBeforeAdd: (arr, val) => {
+                  const tgt = getChargeTarget();
+                  if(tgt && isChargeAdditionLockedFor(tgt)) return arr;
+
+                  const tok = normalizeChargeToken(val);
+                  if(!tok) return arr;
+                  return chargesV2Adjust(normalizeChargesV2(arr), tok, +1);
+                },
                onChange: (arr) => {
                  setChargesV2(arr);
                  renderChargesPanel();
@@ -6476,22 +6556,26 @@
            });
 
 
-          bindPicker('arrests', 'chargesV2', {
-            type: 'penal',
-            openOnInput: true,
-            disableEnterAdd: true,
-            keepResultsOpen: true,
-            onBeforeAdd: (arr, val) => {
-              // Picker stores an array; for chargesV2 that's [{token,count}].
-              const tok = normalizeChargeToken(val);
-              if(!tok) return arr;
-              return chargesV2Adjust(normalizeChargesV2(arr), tok, +1);
-            },
-            onChange: (arr) => {
-              // Ensure legacy hidden field stays in sync for back-compat.
-              setChargesV2(arr);
-              renderChargesPanelFromEditor(arr);
-            },
+           bindPicker('arrests', 'chargesV2', {
+             type: 'penal',
+             openOnInput: true,
+             disableEnterAdd: true,
+             keepResultsOpen: true,
+             onBeforeAdd: (arr, val) => {
+               const tgt = getChargeTarget();
+               if(tgt && isChargeAdditionLockedFor(tgt)) return arr;
+
+               // Picker stores an array; for chargesV2 that's [{token,count}].
+               const tok = normalizeChargeToken(val);
+               if(!tok) return arr;
+               return chargesV2Adjust(normalizeChargesV2(arr), tok, +1);
+             },
+             onChange: (arr) => {
+               // Ensure legacy hidden field stays in sync for back-compat.
+               setChargesV2(arr);
+               renderChargesPanelFromEditor(getChargesV2());
+               updateChargesUiEnabledState();
+             },
           });
 
           bindPicker('arrests', 'relatedPaperwork', {
@@ -6805,13 +6889,42 @@
                }
              })();
 
-             for(const name of criminals){
-               if(!isEligible(name)) continue;
-               if(bySent[name]) continue;
-               // Default: no delta offset from charges.
-               bySent[name] = { deltaJail: 0, deltaFine: 0 };
-               mutated = true;
-             }
+              for(const name of criminals){
+                if(!isEligible(name)) continue;
+                if(bySent[name]) continue;
+                // Default: no delta offset from charges.
+                bySent[name] = { deltaJail: 0, deltaFine: 0 };
+                mutated = true;
+              }
+
+              // Ensure prison/SIP dispositions always have frozen totals.
+              // This makes later charge edits (removals/cleanup) unable to change the applied sentence.
+              for(const [name, rec] of Object.entries(bySent)){
+                if(!isEligible(name)) continue;
+                const disp = String(rec?.disposition || '').trim().toLowerCase();
+                if(disp !== 'prison' && disp !== 'sip') continue;
+
+                const hasLocked = Number.isFinite(Number(rec.lockedJailMonths)) && Number.isFinite(Number(rec.lockedFine));
+                if(hasLocked) continue;
+
+                const chargesTotals = computeChargeTotals(normalizeChargesV2(byCharges[name] || []));
+                const baseMonths = Math.max(0, Math.round(Number(chargesTotals.jailMaxMonths ?? chargesTotals.jailMonths ?? 0)));
+                const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
+                if(baseMonths >= 999999) continue;
+
+                const clampOld = (val, min, max) => {
+                  const n = Number(val);
+                  if(!Number.isFinite(n)) return min;
+                  return Math.min(max, Math.max(min, n));
+                };
+
+                const lockedJailMonths = clampOld(baseMonths + Number(rec.deltaJail || 0), 0, baseMonths);
+                const lockedFine = clampOld(baseFine + Number(rec.deltaFine || 0), 0, baseFine);
+
+                bySent[name] = { ...rec, lockedJailMonths, lockedFine };
+                mutated = true;
+              }
+
 
 
              // Also back-fill from any chargesByCriminal entries.
@@ -7139,9 +7252,13 @@
                       `;
                     }
 
-                    const canPrison = hasAnyCharges;
+                    const canPrison = hasAnyCharges && jailMonthsFinal > 0;
                     const canSip = hasAnyCharges;
-                    const prisonTitle = !hasAnyCharges ? 'Add at least one charge before sentencing.' : '';
+
+                    const prisonTitle = !hasAnyCharges
+                      ? 'Add at least one charge before sentencing.'
+                      : (jailMonthsFinal <= 0 ? 'Prison time must be at least 1 month.' : '');
+
                     const sipTitle = !hasAnyCharges ? 'Add at least one charge before sentencing.' : '';
                     return `
                       <button type="button" class="mdtBtn mdtBadgeOk" data-action-prison="${escapeHtml(n)}" ${canPrison ? '' : 'disabled'} title="${escapeHtml(prisonTitle)}" style="height:28px; padding:0 8px; font-size:12px;">SEND TO PRISON</button>
@@ -7255,15 +7372,22 @@
                    }else if(d === 'hut'){
                      // HUT does not apply time/fine at this stage, but we keep any manual locked values.
                      by[n] = { ...cur, disposition: 'hut', dispositionAt: new Date().toISOString() };
-                   }else if(d === 'prison' || d === 'sip'){
-                     // Prison/SIP only apply to normal ranges (not HUT/∞).
-                     if(baseMonths >= 999999) return;
+                    }else if(d === 'prison' || d === 'sip'){
+                      // Prison/SIP only apply to normal ranges (not HUT/∞).
+                      if(baseMonths >= 999999) return;
 
-                     const lockedJailMonths = clampNum(baseMonths + Number(cur.deltaJail || 0), 0, baseMonths);
-                     const lockedFine = clampNum(baseFine + Number(cur.deltaFine || 0), 0, baseFine);
+                      const lockedJailMonths = clampNum(baseMonths + Number(cur.deltaJail || 0), 0, baseMonths);
+                      const lockedFine = clampNum(baseFine + Number(cur.deltaFine || 0), 0, baseFine);
 
-                     by[n] = { ...cur, disposition: d, dispositionAt: new Date().toISOString(), lockedJailMonths, lockedFine };
-                   }
+                      if(d === 'prison' && lockedJailMonths <= 0) return;
+
+                      const lockedChargesV2 = normalizeChargesV2(chargeList).map(it => ({
+                        token: normalizeChargeToken(it.token),
+                        count: Math.max(1, Math.round(Number(it.count || 1)))
+                      })).filter(it => it.token);
+
+                      by[n] = { ...cur, disposition: d, dispositionAt: new Date().toISOString(), lockedJailMonths, lockedFine, lockedChargesV2 };
+                    }
 
                   setSentencingByCriminal(by);
 
@@ -7276,37 +7400,67 @@
                   try{ saveArrestEdits(id, { manual: true }); }catch{}
                 };
 
-              const syncInputsFor = (name, { jailMonths, fine }) => {
-                const n = String(name || '').trim();
-                if(!n) return;
-                const mInp = sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(n)}"]`);
-                const mSl = sentencingHost.querySelector(`[data-sentence-months-slider="${CSS.escape(n)}"]`);
-                const fInp = sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(n)}"]`);
-                const fSl = sentencingHost.querySelector(`[data-sentence-fine-slider="${CSS.escape(n)}"]`);
+               const syncInputsFor = (name, { jailMonths, fine }) => {
+                 const n = String(name || '').trim();
+                 if(!n) return;
+                 const mInp = sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(n)}"]`);
+                 const mSl = sentencingHost.querySelector(`[data-sentence-months-slider="${CSS.escape(n)}"]`);
+                 const fInp = sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(n)}"]`);
+                 const fSl = sentencingHost.querySelector(`[data-sentence-fine-slider="${CSS.escape(n)}"]`);
 
-                const byCharges = getChargesByCriminal();
-                const totals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
-                const baseMonths = Math.max(0, Math.round(Number(totals.jailMaxMonths ?? totals.jailMonths ?? 0)));
-                const hut = baseMonths >= 999999;
+                 const byCharges = getChargesByCriminal();
+                 const totals = computeChargeTotals(normalizeChargesV2(byCharges[n] || []));
+                 const baseMonths = Math.max(0, Math.round(Number(totals.jailMaxMonths ?? totals.jailMonths ?? 0)));
+                 const hut = baseMonths >= 999999;
 
-                if(mInp) mInp.value = String(jailMonths ?? '0');
-                if(mSl){
-                  if(hut){
-                    const nextMax = Math.max(0, Math.round(Number(jailMonths ?? 0)));
-                    mSl.max = String(nextMax);
-                  }
-                  mSl.value = String(jailMonths ?? '0');
-                }
-                if(fInp) fInp.value = String(fine ?? '0');
-                if(fSl){
-                  if(hut){
-                    const nextMax = Math.max(0, Math.round(Number(fine ?? 0)));
-                    fSl.max = String(nextMax);
-                    fSl.step = '1';
-                  }
-                  fSl.value = String(fine ?? '0');
-                }
-              };
+                 if(mInp) mInp.value = String(jailMonths ?? '0');
+                 if(mSl){
+                   if(hut){
+                     const nextMax = Math.max(0, Math.round(Number(jailMonths ?? 0)));
+                     mSl.max = String(nextMax);
+                   }
+                   mSl.value = String(jailMonths ?? '0');
+                 }
+                 if(fInp) fInp.value = String(fine ?? '0');
+                 if(fSl){
+                   if(hut){
+                     const nextMax = Math.max(0, Math.round(Number(fine ?? 0)));
+                     fSl.max = String(nextMax);
+                     fSl.step = '1';
+                   }
+                   fSl.value = String(fine ?? '0');
+                 }
+               };
+
+               const syncPrisonButtonEnabledState = (name) => {
+                 const n = String(name || '').trim();
+                 if(!n) return;
+
+                 const btn = sentencingHost.querySelector(`[data-action-prison="${CSS.escape(n)}"]`);
+                 if(!btn) return;
+
+                 const byCharges = getChargesByCriminal();
+                 const chargeList = byCharges[n] || [];
+                 const hasAnyCharges = Array.isArray(chargeList) && chargeList.length > 0;
+
+                 const curRec = getSentencingByCriminal()[n] || {};
+                 const disp = String(curRec?.disposition || '').trim().toLowerCase();
+                 const isLocked = (disp === 'finalized' || disp === 'prison' || disp === 'sip');
+
+                 // Do not interfere with HUT/∞ (they don't have a usable prison button anyway).
+                 const totals = computeChargeTotals(normalizeChargesV2(chargeList));
+                 const baseMonths = Math.max(0, Math.round(Number(totals.jailMaxMonths ?? totals.jailMonths ?? 0)));
+                 if(baseMonths >= 999999) return;
+
+                 const jailCurRaw = Math.round(Number(sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(n)}"]`)?.value || 0));
+                 const jailCur = clampNum(jailCurRaw, 0, baseMonths);
+
+                 const canPrison = hasAnyCharges && !isLocked && jailCur > 0;
+                 btn.disabled = !canPrison;
+                 btn.title = !hasAnyCharges
+                   ? 'Add at least one charge before sentencing.'
+                   : (jailCur <= 0 ? 'Prison time must be at least 1 month.' : '');
+               };
 
               sentencingHost.querySelectorAll('[data-sentence-months]').forEach(inp => {
                 inp.oninput = () => {
@@ -7323,10 +7477,11 @@
  
                    // Keep current fine input/sliders as-is (but clamp to charges max unless HUT).
                    const fineCurRaw = Math.round(Number(String(sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(name)}"]`)?.value || '0').replace(/,/g, '') || 0));
-                   const fineCur = isHut ? Math.max(0, fineCurRaw) : clampNum(fineCurRaw, 0, baseFine);
- 
-                   setSentenceDeltaFromFinal(name, { jailMonthsFinal, fineFinal: fineCur });
-                   syncInputsFor(name, { jailMonths: jailMonthsFinal, fine: fineCur });
+                    const fineCur = isHut ? Math.max(0, fineCurRaw) : clampNum(fineCurRaw, 0, baseFine);
+  
+                    setSentenceDeltaFromFinal(name, { jailMonthsFinal, fineFinal: fineCur });
+                    syncInputsFor(name, { jailMonths: jailMonthsFinal, fine: fineCur });
+                    syncPrisonButtonEnabledState(name);
                 };
               });
 
@@ -7343,10 +7498,11 @@
                     const jailMonthsFinal = clampNum(Math.round(Number(sl.value || 0)), 0, baseMonths);
  
                    const fineCurRaw = Math.round(Number(String(sentencingHost.querySelector(`[data-sentence-fine="${CSS.escape(name)}"]`)?.value || '0').replace(/,/g, '') || 0));
-                   const fineCur = clampNum(fineCurRaw, 0, baseFine);
- 
-                   setSentenceDeltaFromFinal(name, { jailMonthsFinal, fineFinal: fineCur });
-                   syncInputsFor(name, { jailMonths: jailMonthsFinal, fine: fineCur });
+                    const fineCur = clampNum(fineCurRaw, 0, baseFine);
+  
+                    setSentenceDeltaFromFinal(name, { jailMonthsFinal, fineFinal: fineCur });
+                    syncInputsFor(name, { jailMonths: jailMonthsFinal, fine: fineCur });
+                    syncPrisonButtonEnabledState(name);
                 };
               });
 
@@ -7364,9 +7520,10 @@
 
                     const jailCurRaw = Math.round(Number(sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(name)}"]`)?.value || 0));
                     const jailCur = isHut ? Math.max(0, jailCurRaw) : clampNum(jailCurRaw, 0, baseMonths);
- 
-                   setSentenceDeltaFromFinal(name, { jailMonthsFinal: jailCur, fineFinal });
-                   syncInputsFor(name, { jailMonths: jailCur, fine: fineFinal });
+  
+                    setSentenceDeltaFromFinal(name, { jailMonthsFinal: jailCur, fineFinal });
+                    syncInputsFor(name, { jailMonths: jailCur, fine: fineFinal });
+                    syncPrisonButtonEnabledState(name);
                 };
               });
 
@@ -7383,10 +7540,11 @@
                     const fineFinal = clampNum(Math.round(Number(sl.value || 0)), 0, baseFine);
  
                    const jailCurRaw = Math.round(Number(sentencingHost.querySelector(`[data-sentence-months="${CSS.escape(name)}"]`)?.value || 0));
-                   const jailCur = clampNum(jailCurRaw, 0, baseMonths);
- 
-                   setSentenceDeltaFromFinal(name, { jailMonthsFinal: jailCur, fineFinal });
-                   syncInputsFor(name, { jailMonths: jailCur, fine: fineFinal });
+                    const jailCur = clampNum(jailCurRaw, 0, baseMonths);
+  
+                    setSentenceDeltaFromFinal(name, { jailMonthsFinal: jailCur, fineFinal });
+                    syncInputsFor(name, { jailMonths: jailCur, fine: fineFinal });
+                    syncPrisonButtonEnabledState(name);
                 };
               });
 
@@ -7460,10 +7618,10 @@
                      return;
                    }
  
-                   const jailMonths = clampNum(Math.round(baseMonths + Number(delta.deltaJail || 0)), 0, baseMonths);
-                   const fine = clampNum(Math.round(baseFine + Number(delta.deltaFine || 0)), 0, baseFine);
+                    const jailMonths = clampNum(Math.round(baseMonths + Number(delta.deltaJail || 0)), 0, baseMonths);
+                    const fine = clampNum(Math.round(baseFine + Number(delta.deltaFine || 0)), 0, baseFine);
  
-                   openConfirm({
+                    openConfirm({
                      criminalName: name,
                      action: 'finalize',
                      jailMonths,
@@ -7489,18 +7647,24 @@
                    const baseFine = Math.max(0, Math.round(Number(chargesTotals.fine || 0)));
                    if(baseMonths >= 999999) return;
 
-                   const jailMonths = clampNum(Math.round(baseMonths + Number(delta.deltaJail || 0)), 0, baseMonths);
-                   const fine = clampNum(Math.round(baseFine + Number(delta.deltaFine || 0)), 0, baseFine);
+                    const jailMonths = clampNum(Math.round(baseMonths + Number(delta.deltaJail || 0)), 0, baseMonths);
+                    const fine = clampNum(Math.round(baseFine + Number(delta.deltaFine || 0)), 0, baseFine);
 
-                   openConfirm({
-                     criminalName: name,
-                     action: 'prison',
+                    if(jailMonths <= 0){
+                      showMdtToast('Prison time must be at least 1 month.');
+                      return;
+                    }
+
+                    openConfirm({
+                      criminalName: name,
+                      action: 'prison',
                      jailMonths,
                      fine,
-                     onConfirm: () => {
-                       setSentenceDisposition(name, 'prison');
-                       try{ renderSentencing(); }catch{}
-                     }
+                      onConfirm: () => {
+                        setSentenceDisposition(name, 'prison');
+                        try{ renderSentencing(); }catch{}
+                        try{ updateChargesUiEnabledState(); }catch{}
+                      }
                    });
                  };
                });
@@ -7526,10 +7690,11 @@
                      action: 'sip',
                      jailMonths,
                      fine,
-                     onConfirm: () => {
-                       setSentenceDisposition(name, 'sip');
-                       try{ renderSentencing(); }catch{}
-                     }
+                      onConfirm: () => {
+                        setSentenceDisposition(name, 'sip');
+                        try{ renderSentencing(); }catch{}
+                        try{ updateChargesUiEnabledState(); }catch{}
+                      }
                    });
                  };
                });
@@ -7644,15 +7809,21 @@
                 `;
               }).join('');
 
-              currentListHost.querySelectorAll('[data-penal-charge-inc]').forEach(btn => {
-                btn.onclick = () => {
-                  const tok = btn.dataset.penalChargeInc;
-                  const next = chargesV2Adjust(getChargesV2(), tok, +1);
-                  setChargesV2(next);
-                  renderChargesPanelFromEditor(next);
-                  renderCurrentCharges();
-                };
-              });
+               currentListHost.querySelectorAll('[data-penal-charge-inc]').forEach(btn => {
+                 btn.onclick = () => {
+                   const target = getChargeTarget();
+                   if(target && isChargeAdditionLockedFor(target)){
+                     showMdtToast('Charges are locked after prison/SIP (no additions).');
+                     return;
+                   }
+
+                   const tok = btn.dataset.penalChargeInc;
+                   const next = chargesV2Adjust(getChargesV2(), tok, +1);
+                   setChargesV2(next);
+                   renderChargesPanelFromEditor(next);
+                   renderCurrentCharges();
+                 };
+               });
 
               currentListHost.querySelectorAll('[data-penal-charge-dec]').forEach(btn => {
                 btn.onclick = () => {
@@ -7712,15 +7883,21 @@
               }).join('');
 
               listHost.querySelectorAll('[data-penal-pick]').forEach(row => {
-                row.onclick = () => {
-                  const id = Number(row.dataset.penalPick);
-                  if(Number.isNaN(id)) return;
-                  const tok = `PENAL:${id}`;
-                  const next = chargesV2Adjust(getChargesV2(), tok, +1);
-                  setChargesV2(next);
-                  renderChargesPanelFromEditor(next);
-                  renderCurrentCharges();
-                };
+                 row.onclick = () => {
+                   const target = getChargeTarget();
+                   if(target && isChargeAdditionLockedFor(target)){
+                     showMdtToast('Charges are locked after prison/SIP (no additions).');
+                     return;
+                   }
+
+                   const id = Number(row.dataset.penalPick);
+                   if(Number.isNaN(id)) return;
+                   const tok = `PENAL:${id}`;
+                   const next = chargesV2Adjust(getChargesV2(), tok, +1);
+                   setChargesV2(next);
+                   renderChargesPanelFromEditor(next);
+                   renderCurrentCharges();
+                 };
               });
 
               bindCopyButtons();
@@ -8789,7 +8966,9 @@
         for(const cat of CATEGORIES){
           const main = document.createElement('button');
           main.type = 'button';
-          main.className = 'mdtCat' + (cat.key === 'arrests' ? ' mdtCat--arrests' : '');
+          main.className = 'mdtCat'
+            + (cat.key === 'arrests' ? ' mdtCat--arrests' : '')
+            + (cat.key === 'citizen_profiles' ? ' mdtCat--citizen_profiles' : '');
           main.setAttribute('role', 'listitem');
           main.innerHTML = `<span>${escapeHtml(cat.label)}</span>`;
           main.addEventListener('click', () => navigateActiveTabTo(cat.key));

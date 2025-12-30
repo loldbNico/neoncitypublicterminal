@@ -105,7 +105,7 @@
         const regions = svgEl.querySelectorAll(".region, [data-region='true']");
         regions.forEach(r => {
           r.classList.add("region");
-          r.style.cursor = "pointer";
+          r.style.cursor = "";
           if(safeOnRegionMove) r.addEventListener("mousemove", safeOnRegionMove);
           if(safeOnRegionEnter) r.addEventListener("mouseenter", safeOnRegionEnter);
           if(safeOnRegionLeave) r.addEventListener("mouseleave", safeOnRegionLeave);

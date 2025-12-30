@@ -1,0 +1,6 @@
+﻿[IBeam]
+Path=aero_beam_yellow_cyan.cur
+
+[AppStarting]
+Path=aero_working_yellow_cyan.ani
+

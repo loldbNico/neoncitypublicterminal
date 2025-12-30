@@ -19,7 +19,7 @@
       border: 0;
       background: transparent;
       padding: 0;
-      cursor: pointer;
+      cursor: var(--cur-link), pointer;
       position: relative;
       width: 320px;
       height: 78px;
