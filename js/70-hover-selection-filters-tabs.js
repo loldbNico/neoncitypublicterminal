@@ -1429,11 +1429,11 @@
                item => `${item.firstName} ${item.lastName}`, 
                item => `ID: ${fmtId6(item.id)} | DOB: ${item.dob} | License: ${item.licenseStatus}`);
              break;
-           case 'organizations':
-             html = renderSearchPage('organizations', 'Organizations', ['id','name','type','hq','employees'],
-               item => item.name,
-               item => `${item.type || 'Organization'} | HQ: ${item.hq || '—'} | Employees: ${(item.employees || []).length}`);
-             break;
+            case 'organizations':
+              html = renderSearchPage('organizations', 'Organizations', ['id','name','type','employees'],
+                item => item.name,
+                item => `${item.type || 'Organization'} | Employees: ${(item.employees || []).length}`);
+              break;
           case 'properties':
             html = renderSearchPage('properties', 'Properties', ['id','address','type','owner','value','taxStatus'],
               item => item.address,
@@ -1742,22 +1742,70 @@
           const filtered = sortNewestFirst(applyFilter(items));
           if(filtered.length === 0) return '<div class="mdtNoResults">No results match this filter.</div>';
 
-          if(dataKey === 'citizens'){
-            return `<div class="mdtCardGrid">${filtered.map(renderCitizenCard).join('')}</div>`;
-          }
-           if(dataKey === 'vehicles'){
-             return `<div class="mdtCardGrid mdtVehicleGrid">${filtered.map(renderVehicleCard).join('')}</div>`;
+           if(dataKey === 'citizens'){
+             return `<div class="mdtCardGrid">${filtered.map(renderCitizenCard).join('')}</div>`;
            }
-           if(dataKey === 'medicalProfiles'){
-             return `<div class="mdtCardGrid mdtMedicalGrid">${filtered.map(renderMedicalProfileCard).join('')}</div>`;
-           }
-             if(dataKey === 'penalCode'){
-               return `<div class="mdtPenal">${filtered.map(renderPenalRow).join('')}</div>`;
-             }
+            if(dataKey === 'vehicles'){
+              return `<div class="mdtCardGrid mdtVehicleGrid">${filtered.map(renderVehicleCard).join('')}</div>`;
+            }
+            if(dataKey === 'medicalProfiles'){
+              return `<div class="mdtCardGrid mdtMedicalGrid">${filtered.map(renderMedicalProfileCard).join('')}</div>`;
+            }
+ 
+              if(dataKey === 'organizations'){
+              const classifyOrgKind = (org) => {
+                const raw = String(org?.kind || org?.category || org?.type || '').trim();
+                const t = raw.toLowerCase();
+                if(t.includes('gov') || t.includes('agency') || t.includes('government') || ['ncpd','tacmed','city council','neon city council'].includes(t)) return 'government';
+                if(
+                  t.includes('corp') ||
+                  t.includes('corporation') ||
+                  t.includes('holdings') ||
+                  t.includes('industries') ||
+                  t.includes('inc') ||
+                  t.includes('llc') ||
+                  t.includes('security') ||
+                  t.includes('logistics') ||
+                  t.includes('research')
+                ) return 'corporation';
+                return 'small_business';
+              };
 
-             if(dataKey === 'weapons'){
-               return `<div class="mdtCardGrid mdtWeaponGrid">${filtered.map(renderWeaponCard).join('')}</div>`;
-             }
+              const labelFor = (k) => ({ corporation: 'CORPORATION', government: 'GOVERNMENT AGENCY', small_business: 'SMALL BUSINESS' }[k] || 'ORGANIZATION');
+
+              const groups = {
+                corporation: [],
+                government: [],
+                small_business: [],
+              };
+
+              filtered.forEach(org => {
+                const k = classifyOrgKind(org);
+                (groups[k] || groups.small_business).push(org);
+              });
+
+              const section = (k) => {
+                const list = groups[k] || [];
+                if(!list.length) return '';
+                const cards = list.map(o => renderOrgCard(o, { kind: k })).join('');
+                return `
+                  <div class="mdtOrgSection mdtOrgSection--${k}">
+                    <div class="mdtOrgSectionHead">${escapeHtml(labelFor(k))}<span class="mdtOrgSectionCount">${escapeHtml(String(list.length))}</span></div>
+                    <div class="mdtCardGrid mdtOrgGrid">${cards}</div>
+                  </div>
+                `;
+              };
+
+              return `<div class="mdtOrgSections">${section('government')}${section('corporation')}${section('small_business')}</div>`;
+            }
+ 
+              if(dataKey === 'penalCode'){
+                return `<div class="mdtPenal">${filtered.map(renderPenalRow).join('')}</div>`;
+              }
+ 
+              if(dataKey === 'weapons'){
+                return `<div class="mdtCardGrid mdtWeaponGrid">${filtered.map(renderWeaponCard).join('')}</div>`;
+              }
 
              if(dataKey === 'arrests'){
                const badgeClassForType = (t) => {
@@ -1873,7 +1921,34 @@
         }
 
 
-          function renderVehicleCard(v){
+          function renderOrgCard(org, opts = {}){
+            const orgName = String(org?.name || 'Organization').trim() || 'Organization';
+            const type = String(org?.type || 'Organization').trim() || 'Organization';
+            const employeeCount = Array.isArray(org?.employees) ? org.employees.length : 0;
+            const logoSrc = String(org?.logo || '').trim();
+            const initials = String(orgName).split(/\s+/).filter(Boolean).slice(0, 3).map(s => s[0]).join('').toUpperCase() || 'ORG';
+
+            const media = logoSrc
+               ? `<img class="mdtOrgGlyphImg" src="${escapeHtml(logoSrc)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null; this.remove();" />`
+               : `<div class="mdtOrgGlyphFallback">${escapeHtml(initials)}</div>`;
+
+            const kind = String(opts?.kind || '').trim() || 'small_business';
+            const kindAttr = escapeHtml(kind);
+
+            return `
+              <div class="mdtCard mdtOrgCard" data-id="${org.id}" data-key="organizations" data-org-kind="${kindAttr}" role="button" tabindex="0" aria-label="Open organization ${escapeHtml(orgName)}">
+                <div class="mdtOrgGlyph">${media}</div>
+                <div class="mdtOrgText">
+                  <div class="mdtCardTitle">${escapeHtml(orgName)}</div>
+                  <div class="mdtOrgType">${escapeHtml(type)}</div>
+                  <div class="mdtMeta">${escapeHtml(String(employeeCount))} employees</div>
+                </div>
+              </div>
+            `;
+          }
+
+
+           function renderVehicleCard(v){
             const hasFlags = Boolean(v.flags && v.flags.length);
             const statusClass = (v.status && v.status !== 'Registered') ? 'mdtBadgeWarn' : 'mdtBadgeOk';
             const vehicleLabel = `${v.year} ${v.make} ${v.model}`;
@@ -2123,6 +2198,26 @@
               if(e.key !== 'Enter' && e.key !== ' ') return;
               e.preventDefault();
               navigateToDetail('citizens', id);
+            });
+          });
+
+          viewHost.querySelectorAll('.mdtOrgCard[data-key="organizations"]').forEach(card => {
+            if(card.dataset.boundClick === '1') return;
+            card.dataset.boundClick = '1';
+
+            const id = Number(card.dataset.id);
+            if(Number.isNaN(id)) return;
+
+            card.addEventListener('click', (e) => {
+              const clickable = e.target && e.target.closest && e.target.closest('button, a, input, textarea, select, [data-link-target]');
+              if(clickable) return;
+              navigateToDetail('organizations', id);
+            });
+
+            card.addEventListener('keydown', (e) => {
+              if(e.key !== 'Enter' && e.key !== ' ') return;
+              e.preventDefault();
+              navigateToDetail('organizations', id);
             });
           });
         }
@@ -3986,102 +4081,211 @@
        }
 
       
-       function renderOrganizationDetail(org){
-         const props = (window.MDT_DATA?.properties || []).filter(p => String(p.owner || '') === String(org.name || ''));
-         const vehicles = (window.MDT_DATA?.vehicles || []).filter(v => String(v.owner || '') === String(org.name || ''));
-         const employees = Array.isArray(org.employees) ? org.employees : [];
+        function getRuntimeOwnerNote(dataKey, id){
+          const key = `ownerNote:${dataKey}:${id}`;
+          const val = mdtRuntime.notes?.[key];
+          return (val == null) ? '' : String(val);
+        }
 
-         const orgInitials = String(org.name || 'ORG')
-           .split(/\s+/)
-           .filter(Boolean)
-           .slice(0, 2)
-           .map(s => s[0].toUpperCase())
-           .join('');
+        function setRuntimeOwnerNote(dataKey, id, text){
+          if(!mdtRuntime.notes) mdtRuntime.notes = {};
+          const key = `ownerNote:${dataKey}:${id}`;
+          mdtRuntime.notes[key] = String(text ?? '');
+          saveMdtRuntime(mdtRuntime);
+        }
 
-         const logo = org.logo ? `<img class="mdtOrgLogoImg" src="${escapeHtml(org.logo)}" alt="${escapeHtml(org.name || 'Organization')}"/>`
-           : `<div class="mdtOrgLogoFallback">${escapeHtml(orgInitials || 'ORG')}</div>`;
+        function bindOwnerNotes(){
+          viewHost.querySelectorAll('.mdtDetailNotes[data-owner-note-for]').forEach(wrap => {
+            const dataKey = wrap.dataset.ownerNoteFor;
+            const id = Number(wrap.dataset.ownerNoteId);
+            if(!dataKey || Number.isNaN(id)) return;
 
-         const employeeRows = employees.length
-           ? employees.map(e => {
-               const cid = e.citizenId;
-               const c = (window.MDT_DATA?.citizens || []).find(x => x.id === cid);
-               const name = c ? `${c.firstName} ${c.lastName}` : `Citizen #${fmtId6(cid)}`;
-               const rank = e.rank || 'Employee';
-               return `<div class="mdtResultItem mdtOrgEmployeeRow">
-                 <div class="mdtResultPrimary mdtLinkish" data-link-target="citizens" data-link-id="${cid}">${escapeHtml(name)}</div>
-                 <div class="mdtResultSecondary">${escapeHtml(rank)}</div>
-                 <div class="mdtResultActions">
-                   <button type="button" class="mdtResultView" data-id="${cid}" data-key="citizens">VIEW</button>
-                 </div>
-               </div>`;
-             }).join('')
-           : '<div class="mdtNoResults">No employees listed.</div>';
+            const area = wrap.querySelector('[data-owner-note-area]');
+            if(!area) return;
 
-         const propRows = props.length
-           ? props.map(p => `<div class="mdtResultItem">
-                 <div class="mdtResultPrimary mdtLinkish" data-link-target="properties" data-link-id="${p.id}">${escapeHtml(p.address)}</div>
-                 <div class="mdtResultSecondary">${escapeHtml(p.type || 'Property')} | ${escapeHtml(p.taxStatus || '—')}</div>
-                 <div class="mdtResultActions">
-                   <button type="button" class="mdtResultView" data-id="${p.id}" data-key="properties">VIEW</button>
-                 </div>
-               </div>`).join('')
-           : '<div class="mdtNoResults">No properties found.</div>';
+            const initial = getRuntimeOwnerNote(dataKey, id);
+            if(String(area.value || '') !== String(initial || '')){
+              area.value = String(initial || '');
+            }
 
-          const vehicleRows = vehicles.length
-            ? vehicles.map(v => `<div class="mdtResultItem">
-                  <div class="mdtResultPrimary mdtLinkish" data-link-target="vehicles" data-link-id="${v.id}">${escapeHtml(v.plate)}</div>
-                  <div class="mdtResultSecondary">${escapeHtml(v.year)} ${escapeHtml(v.make)} ${escapeHtml(v.model)} | ${escapeHtml(v.status || '—')}</div>
+            const saveBtn = wrap.querySelector('[data-owner-note-save]');
+            if(saveBtn){
+              saveBtn.onclick = () => {
+                const val = String(area.value || '');
+                setRuntimeOwnerNote(dataKey, id, val);
+                setUpdatedRecord(dataKey, id, { ownerNote: val });
+              };
+            }
+
+            // Live update in owner modes.
+            area.addEventListener('input', () => {
+              if(activeMode === 'ncpd') return;
+              const val = String(area.value || '');
+              setRuntimeOwnerNote(dataKey, id, val);
+              setUpdatedRecord(dataKey, id, { ownerNote: val });
+            });
+          });
+        }
+
+        function bindCollapsibles(){
+          viewHost.querySelectorAll('[data-collapsible-toggle]').forEach(btn => {
+            if(btn.dataset.boundClick === '1') return;
+            btn.dataset.boundClick = '1';
+
+            btn.onclick = () => {
+              const key = String(btn.dataset.collapsibleToggle || '').trim();
+              if(!key) return;
+
+              const host = btn.closest('.mdtCollapsible');
+              if(!host) return;
+
+              const body = host.querySelector('.mdtCollapsibleBody');
+              const collapsed = host.dataset.collapsed !== '0';
+              host.dataset.collapsed = collapsed ? '0' : '1';
+              if(body) body.style.display = collapsed ? '' : 'none';
+              btn.textContent = collapsed ? 'HIDE' : 'SHOW';
+            };
+          });
+        }
+
+        function renderOrganizationDetail(org){
+          const props = (window.MDT_DATA?.properties || []).filter(p => String(p.owner || '') === String(org.name || ''));
+          const vehicles = (window.MDT_DATA?.vehicles || []).filter(v => String(v.owner || '') === String(org.name || ''));
+          const employees = Array.isArray(org.employees) ? org.employees : [];
+
+          const orgInitials = String(org.name || 'ORG')
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(s => s[0].toUpperCase())
+            .join('');
+
+          const logo = org.logo ? `<img class="mdtOrgLogoImg" src="${escapeHtml(org.logo)}" alt="${escapeHtml(org.name || 'Organization')}"/>`
+            : `<div class="mdtOrgLogoFallback">${escapeHtml(orgInitials || 'ORG')}</div>`;
+
+          const employeeRows = employees.length
+            ? employees.map(e => {
+                const cid = e.citizenId;
+                const c = (window.MDT_DATA?.citizens || []).find(x => x.id === cid);
+                const name = c ? `${c.firstName} ${c.lastName}` : `Citizen #${fmtId6(cid)}`;
+                const rank = e.rank || 'Employee';
+                return `<div class="mdtResultItem mdtOrgEmployeeRow">
+                  <div class="mdtResultPrimary mdtLinkish" data-link-target="citizens" data-link-id="${cid}">${escapeHtml(name)}</div>
+                  <div class="mdtResultSecondary">${escapeHtml(rank)}</div>
                   <div class="mdtResultActions">
-                    <button type="button" class="mdtResultView" data-id="${v.id}" data-key="vehicles">VIEW</button>
+                    <button type="button" class="mdtResultView" data-id="${cid}" data-key="citizens">VIEW</button>
+                  </div>
+                </div>`;
+              }).join('')
+            : '<div class="mdtNoResults">No employees listed.</div>';
+
+          const propRows = props.length
+            ? props.map(p => `<div class="mdtResultItem">
+                  <div class="mdtResultPrimary mdtLinkish" data-link-target="properties" data-link-id="${p.id}">${escapeHtml(p.address)}</div>
+                  <div class="mdtResultSecondary">${escapeHtml(p.type || 'Property')} | ${escapeHtml(p.taxStatus || '—')}</div>
+                  <div class="mdtResultActions">
+                    <button type="button" class="mdtResultView" data-id="${p.id}" data-key="properties">VIEW</button>
                   </div>
                 </div>`).join('')
-            : '<div class="mdtNoResults">No vehicles found.</div>';
+            : '<div class="mdtNoResults">No properties found.</div>';
 
-         return `
-           <div class="mdtDetail">
-             <div class="mdtDetailHead">
-               <div class="mdtOrgHead">
-                 <div class="mdtOrgLogo">${logo}</div>
-                 <div class="mdtOrgHeadText">
-                   <div class="mdtDetailTitle">${escapeHtml(org.name || '—')}</div>
-                   <div class="mdtDetailSubtitle">${escapeHtml(org.type || 'Organization')} • HQ: ${escapeHtml(org.hq || '—')}</div>
-                 </div>
-               </div>
-             </div>
+           const vehicleRows = vehicles.length
+             ? vehicles.map(v => `<div class="mdtResultItem">
+                   <div class="mdtResultPrimary mdtLinkish" data-link-target="vehicles" data-link-id="${v.id}">${escapeHtml(v.plate)}</div>
+                   <div class="mdtResultSecondary">${escapeHtml(v.year)} ${escapeHtml(v.make)} ${escapeHtml(v.model)} | ${escapeHtml(v.status || '—')}</div>
+                   <div class="mdtResultActions">
+                     <button type="button" class="mdtResultView" data-id="${v.id}" data-key="vehicles">VIEW</button>
+                   </div>
+                 </div>`).join('')
+             : '<div class="mdtNoResults">No vehicles found.</div>';
 
-             <div class="mdtDetailGrid">
-               <div class="mdtDetailSection">
-                 <div class="mdtDetailSectionTitle">OVERVIEW</div>
-                 ${detailRow('TYPE', org.type || '—')}
-                 ${detailRow('HQ', org.hq || '—')}
-               </div>
+          const ownerNoteEditable = activeMode !== 'ncpd';
 
-               <div class="mdtDetailSection">
-                 <div class="mdtDetailSectionTitle">OWNED ASSETS</div>
-                 ${detailRow('PROPERTIES', String(props.length))}
-                 ${detailRow('VEHICLES', String(vehicles.length))}
-               </div>
-             </div>
+          const ownerNoteHtml = ownerNoteEditable
+            ? `
+              <div class="mdtDetailNotes" data-owner-note-for="organizations" data-owner-note-id="${Number(org.id)}">
+                <div class="mdtDetailNotesHead" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                  <div class="mdtDetailSectionTitle">OWNER NOTE</div>
+                  <div class="mdtDetailNotesActions" style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" class="mdtBtn" data-owner-note-save="1" style="height:28px; padding:0 10px; font-size:11px;">SAVE</button>
+                  </div>
+                </div>
+                <textarea class="mdtInput" data-owner-note-area style="min-height: 120px; width:100%;"></textarea>
+              </div>
+            `
+            : `
+              <div class="mdtDetailNotes">
+                <div class="mdtDetailSectionTitle">OWNER NOTE</div>
+                <div class="mdtDetailNotesText">${escapeHtml(getRuntimeOwnerNote('organizations', Number(org.id)) || 'No owner note.')}</div>
+              </div>
+            `;
 
-              ${renderNotesEditor(org, 'organizations', { editable: canEditNotesFor('organizations') })}
+          const ownedAssetsNumbers = `
+            <div class="mdtDetailSection">
+              <div class="mdtDetailSectionTitle">OWNED ASSETS</div>
+              ${detailRow('PROPERTIES', String(props.length))}
+              ${detailRow('VEHICLES', String(vehicles.length))}
+              ${detailRow('EMPLOYEES', String(employees.length))}
+            </div>
+          `;
 
-             <div class="mdtPanel" style="margin-top: 12px;">
-               <div class="mdtH">EMPLOYEES</div>
-               <div class="mdtResults">${employeeRows}</div>
-             </div>
+          const collapsiblePanel = (title, count, key, bodyHtml, emptyHtml) => {
+            const safeKey = escapeHtml(key);
+            const safeTitle = escapeHtml(title);
+            const safeCount = escapeHtml(String(count));
 
-             <div class="mdtPanel" style="margin-top: 12px;">
-               <div class="mdtH">PROPERTIES</div>
-               <div class="mdtResults">${propRows}</div>
-             </div>
+            const hasItems = Number(count) > 0;
+            const toggleHtml = hasItems
+              ? `<button type="button" class="mdtBtn" data-collapsible-toggle="${safeKey}" style="height:28px; padding:0 10px; font-size:11px;">SHOW</button>`
+              : '';
 
-             <div class="mdtPanel" style="margin-top: 12px;">
-               <div class="mdtH">VEHICLES</div>
-               <div class="mdtResults">${vehicleRows}</div>
-             </div>
-           </div>
-         `;
-       }
+            const body = hasItems
+              ? `<div class="mdtCollapsibleBody" style="display:none;"><div class="mdtResults">${bodyHtml}</div></div>`
+              : `<div class="mdtNoResults" style="margin-top:8px;">${escapeHtml(emptyHtml || `No ${title.toLowerCase()} found.`)}</div>`;
+
+            return `
+              <div class="mdtPanel mdtCollapsible" data-collapsible="${safeKey}" data-collapsed="1" style="margin-top: 12px;">
+                <div class="mdtH" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0; border:0;">
+                  <span>${safeTitle} <span class="mdtMeta" style="opacity:.8;">(${safeCount})</span></span>
+                  ${toggleHtml}
+                </div>
+                ${body}
+              </div>
+            `;
+          };
+
+          return `
+            <div class="mdtDetail">
+              <div class="mdtDetailHead mdtOrgDetailHead">
+                <div class="mdtOrgHead">
+                  <div class="mdtOrgLogo">${logo}</div>
+                  <div class="mdtOrgHeadText">
+                    <div class="mdtDetailTitle">${escapeHtml(org.name || '—')}</div>
+                    <div class="mdtDetailSubtitle">${escapeHtml(org.type || 'Organization')}</div>
+                  </div>
+                </div>
+
+                <div class="mdtOrgTopNotes">
+                  ${renderNotesEditor(org, 'organizations', {
+                    editable: canEditNotesFor('organizations'),
+                    showUndoRedo: false,
+                    showHistory: false,
+                    label: 'NOTES'
+                  })}
+                </div>
+              </div>
+
+              <div class="mdtDetailGrid">
+                ${ownerNoteHtml}
+                ${ownedAssetsNumbers}
+              </div>
+
+              ${collapsiblePanel('EMPLOYEES', employees.length, 'org_employees', employeeRows, 'No employees listed.')}
+              ${collapsiblePanel('PROPERTIES', props.length, 'org_properties', propRows, 'No properties found.')}
+              ${collapsiblePanel('VEHICLES', vehicles.length, 'org_vehicles', vehicleRows, 'No vehicles found.')}
+            </div>
+          `;
+        }
 
         function renderCitizenDetail(c){
            const activeWarrantEntries = getActiveWarrantEntriesForCitizen(c);
@@ -7216,17 +7420,45 @@
 
                   const dispAt = String(delta?.dispositionAt || '').trim();
                     const actionHtml = (() => {
-                    if(isLocked){
-                      const when = dispAt ? ` • ${escapeHtml(shortDateTime(dispAt))}` : '';
-                      const bg = isSip ? 'rgba(255,175,60,.12)' : isPrison ? 'rgba(60,255,120,.12)' : 'rgba(60,255,120,.12)';
-                      const bd = isSip ? 'rgba(255,175,60,.45)' : isPrison ? 'rgba(60,255,120,.45)' : 'rgba(60,255,120,.45)';
-                      const label = isSip ? 'Served in place' : isPrison ? 'Sent to prison' : 'Finalized';
-                      return `
-                        <div style="width:100%; text-align:right; padding:6px 10px; border:1px solid ${bd}; background:${bg}; font-size:12px; letter-spacing:.4px;">
-                          <span style="font-weight:700;">${label}</span>${when}
-                        </div>
-                      `;
-                    }
+                     if(isLocked){
+                       const when = dispAt ? ` • ${escapeHtml(shortDateTime(dispAt))}` : '';
+                       const bg = isSip ? 'rgba(255,175,60,.12)' : isPrison ? 'rgba(60,255,120,.12)' : 'rgba(60,255,120,.12)';
+                       const bd = isSip ? 'rgba(255,175,60,.45)' : isPrison ? 'rgba(60,255,120,.45)' : 'rgba(60,255,120,.45)';
+                       const label = isSip ? 'Served in place' : isPrison ? 'Sent to prison' : 'Finalized';
+
+                       const getFallbackLockedCharges = () => {
+                         // Back-compat: old saved records may not have lockedChargesV2.
+                         if(Array.isArray(delta?.lockedChargesV2) && delta.lockedChargesV2.length) return normalizeChargesV2(delta.lockedChargesV2);
+                         const live = normalizeChargesV2((byCharges[n] || []));
+                         return live;
+                       };
+
+                       const lockedCharges = getFallbackLockedCharges();
+                       const lockedTotals = computeChargeTotals(lockedCharges);
+                       // For locked banner, show the actually-served sentence (lockedJailMonths/lockedFine)
+                       // and show max-from-charges as a reference.
+                       const servedMonths = Math.max(0, Math.round(Number(delta?.lockedJailMonths ?? jailMonthsFinal ?? 0)));
+                       const servedFine = Math.max(0, Math.round(Number(delta?.lockedFine ?? fineFinal ?? 0)));
+
+                       const servedText = formatJailMonths(servedMonths);
+                       const maxText = formatJailMonthsRange({ min: lockedTotals.jailMinMonths, max: lockedTotals.jailMaxMonths });
+
+                       const chargesLines = lockedCharges.length
+                         ? lockedCharges.map(it => `${chargeLabelFromToken(it.token)} x${it.count}`).join('\\n')
+                         : '';
+
+                       const chargesTitle = lockedCharges.length
+                         ? `Charges at sentencing:\\n${chargesLines}`
+                         : 'Charges at sentencing: (none)';
+
+                       return `
+                         <div data-sentence-locked-summary="${escapeHtml(n)}" style="width:100%; text-align:right; padding:6px 10px; border:1px solid ${bd}; background:${bg}; font-size:12px; letter-spacing:.4px; cursor:help;" title="">
+                           <span style="font-weight:700;">${label}</span>${when}
+                             <div class=\\"mdtMeta mdtServedLine\\" style=\\"margin-top:4px;\\">Served: <span class=\\"mdtServedValue\\">${escapeHtml(servedText)} • ${escapeHtml(formatMoney(servedFine))}</span></div>
+                             <div class=\\"mdtMeta mdtMaxLine\\" style=\\"margin-top:2px;\\">Max from charges: ${escapeHtml(maxText)} • ${escapeHtml(formatMoney(lockedTotals.fine))}</div>
+                         </div>
+                       `;
+                     }
 
                     const chargeList = byCharges[n] || [];
                     const hasAnyCharges = Array.isArray(chargeList) && chargeList.length > 0;
@@ -7267,32 +7499,34 @@
                   })();
 
 
-                return `
-                  <div class="mdtDetailRow" style="align-items:flex-start; gap:10px;">
-                    <div style="flex:1; min-width:150px;">
-                       <div class="mdtDetailKey" style="font-size:12px;">${escapeHtml(n)}</div>
-                        <div class="mdtMeta" style="opacity:.8; font-size:12px; margin-top:4px;">From charges: ${escapeHtml(formatJailMonthsRange({ min: chargesTotals.jailMinMonths, max: chargesTotals.jailMaxMonths }))} • ${escapeHtml(formatMoney(chargesTotals.fine))}</div>
- 
-                    </div>
-                    <div style="display:grid; gap:10px; min-width:260px;">
-                      <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; position:relative;">
-                        <span class="mdtMeta" style="opacity:.85; font-size:12px;">Time</span>
-                        <input class="mdtInput" data-sentence-months="${escapeHtml(n)}" value="${escapeHtml(String(jailMonthsFinal))}" inputmode="numeric" ${isLocked ? 'disabled' : ''} style="width:86px; height:28px; padding:0 8px; font-size:12px;" />
-                        <input class="mdtRange" type="range" data-sentence-months-slider="${escapeHtml(n)}" min="0" max="${escapeHtml(String(maxMonths))}" step="1" value="${escapeHtml(String(jailMonthsFinal))}" ${isLocked || hasHutCharge ? 'disabled' : ''} style="width:140px;" />
-                        <span class="mdtMeta" style="opacity:.75; font-size:12px;">mo</span>
-                      </div>
-                      <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; position:relative;">
-                        <span class="mdtMeta" style="opacity:.85; font-size:12px;">Fine</span>
-                        <input class="mdtInput" data-sentence-fine="${escapeHtml(n)}" value="${escapeHtml(String(fineFinal))}" inputmode="numeric" ${isLocked ? 'disabled' : ''} style="width:110px; height:28px; padding:0 8px; font-size:12px;" />
-                        <input class="mdtRange" type="range" data-sentence-fine-slider="${escapeHtml(n)}" min="0" max="${escapeHtml(String(maxFine))}" step="${escapeHtml(String(fineStep))}" value="${escapeHtml(String(fineFinal))}" ${isLocked || hasHutCharge ? 'disabled' : ''} style="width:140px;" />
-                      </div>
-                       <div data-sentence-actions="${escapeHtml(n)}" style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
-                         ${actionHtml}
+                 return `
+                   <div class="mdtDetailRow" style="align-items:flex-start; gap:10px;">
+                     <div style="flex:1; min-width:150px;">
+                        <div class="mdtDetailKey" style="font-size:12px;">${escapeHtml(n)}</div>
+                         <div class="mdtMeta" style="opacity:.8; font-size:12px; margin-top:4px;">From charges: ${escapeHtml(formatJailMonthsRange({ min: chargesTotals.jailMinMonths, max: chargesTotals.jailMaxMonths }))} • ${escapeHtml(formatMoney(chargesTotals.fine))}</div>
+  
+                     </div>
+                     <div style="display:grid; gap:10px; min-width:260px;">
+                       ${isLocked ? '' : `
+                       <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; position:relative;">
+                         <span class="mdtMeta" style="opacity:.85; font-size:12px;">Time</span>
+                         <input class="mdtInput" data-sentence-months="${escapeHtml(n)}" value="${escapeHtml(String(jailMonthsFinal))}" inputmode="numeric" style="width:86px; height:28px; padding:0 8px; font-size:12px;" />
+                         <input class="mdtRange" type="range" data-sentence-months-slider="${escapeHtml(n)}" min="0" max="${escapeHtml(String(maxMonths))}" step="1" value="${escapeHtml(String(jailMonthsFinal))}" ${hasHutCharge ? 'disabled' : ''} style="width:140px;" />
+                         <span class="mdtMeta" style="opacity:.75; font-size:12px;">mo</span>
                        </div>
- 
-                    </div>
-                  </div>
-                `;
+                       <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; position:relative;">
+                         <span class="mdtMeta" style="opacity:.85; font-size:12px;">Fine</span>
+                         <input class="mdtInput" data-sentence-fine="${escapeHtml(n)}" value="${escapeHtml(String(fineFinal))}" inputmode="numeric" style="width:110px; height:28px; padding:0 8px; font-size:12px;" />
+                         <input class="mdtRange" type="range" data-sentence-fine-slider="${escapeHtml(n)}" min="0" max="${escapeHtml(String(maxFine))}" step="${escapeHtml(String(fineStep))}" value="${escapeHtml(String(fineFinal))}" ${hasHutCharge ? 'disabled' : ''} style="width:140px;" />
+                       </div>
+                       `}
+                        <div data-sentence-actions="${escapeHtml(n)}" style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+                          ${actionHtml}
+                        </div>
+  
+                     </div>
+                   </div>
+                 `;
              }).join('');
 
 
@@ -7551,17 +7785,138 @@
 
 
 
-             sentencingHost.querySelectorAll('[data-action-autosync]').forEach(btn => {
-               btn.onclick = () => {
-                 const name = String(btn.dataset.actionAutosync || '').trim() || 'Unknown';
-                 const by = getSentencingByCriminal();
-                 const cur = by[name] || { jailMonths: 0, fine: 0, manual: false };
-                 by[name] = { ...cur, manual: false };
-                 setSentencingByCriminal(by);
-                 // Re-render so auto-sync totals apply immediately.
-                 try{ renderSentencing(); }catch{}
-               };
-             });
+                // --- Locked sentencing snapshot tooltip (follows cursor) ---
+                const ensureSentenceSnapshotTip = () => {
+                  let tip = document.querySelector('[data-sentence-snapshot-tip]');
+                  if(tip && tip.isConnected) return tip;
+                  tip = document.createElement('div');
+                  tip.setAttribute('data-sentence-snapshot-tip', '1');
+                  tip.style.cssText = 'position:fixed; left:0; top:0; display:none; pointer-events:none; z-index:99999; max-width:min(420px, 72vw); background:rgba(8,10,16,.92); border:1px solid rgba(96,143,255,.42); box-shadow:0 0 18px rgba(96,143,255,.16); padding:10px 12px; font-size:12px; line-height:1.25;';
+                  document.body.appendChild(tip);
+                  return tip;
+                };
+
+                const chargeSeverityRank = (chargeToken) => {
+                  const tok = normalizeChargeToken(chargeToken);
+                  const src = (window.MDT_DATA?.penalCode || []).find(p => normalizeChargeToken(p.token) === tok);
+                  const cat = String(src?.category || '').toLowerCase();
+                  if(cat.includes('felony')) return 3;
+                  if(cat.includes('misdemeanor')) return 2;
+                  if(cat.includes('infraction')) return 1;
+                  return 0;
+                };
+
+                const chargeSeverityColor = (chargeToken) => {
+                  const r = chargeSeverityRank(chargeToken);
+                  if(r >= 3) return 'rgba(255,85,85,.98)';
+                  if(r === 2) return 'rgba(255,196,90,.98)';
+                  if(r === 1) return 'rgba(110,205,255,.98)';
+                  return 'rgba(210,220,255,.92)';
+                };
+
+                const renderSentenceSnapshotTipHtml = (name) => {
+                  const n = String(name || '').trim();
+                  const by = getSentencingByCriminal();
+                  const rec = by[n] || {};
+
+                  const byCharges = getChargesByCriminal();
+                  const lockedCharges = (Array.isArray(rec.lockedChargesV2) && rec.lockedChargesV2.length)
+                    ? normalizeChargesV2(rec.lockedChargesV2)
+                    : normalizeChargesV2(byCharges[n] || []);
+
+                  const totals = computeChargeTotals(lockedCharges);
+                  const jailText = formatJailMonthsRange({ min: totals.jailMinMonths, max: totals.jailMaxMonths });
+
+                  const sorted = lockedCharges.slice().sort((a, b) => {
+                    const ra = chargeSeverityRank(a.token);
+                    const rb = chargeSeverityRank(b.token);
+                    if(rb !== ra) return rb - ra;
+                    const la = String(chargeLabelFromToken(a.token) || '').toLowerCase();
+                    const lb = String(chargeLabelFromToken(b.token) || '').toLowerCase();
+                    return la.localeCompare(lb);
+                  });
+
+                  const listHtml = sorted.length
+                    ? sorted.map(it => {
+                      const label = chargeLabelFromToken(it.token);
+                      const color = chargeSeverityColor(it.token);
+                      return `<div style=\"display:flex; justify-content:space-between; gap:10px; padding:2px 0;\"><span style=\"color:${color};\">${escapeHtml(label)}</span><span style=\"opacity:.8; white-space:nowrap;\">x${escapeHtml(String(it.count))}</span></div>`;
+                    }).join('')
+                    : `<div class=\"mdtMeta\" style=\"opacity:.85;\">No charges at snapshot time.</div>`;
+
+                  const dispAt = String(rec?.dispositionAt || '').trim();
+                  const when = dispAt ? shortDateTime(dispAt) : '';
+
+                  return `
+                    <div style=\"font-weight:800; letter-spacing:.6px; text-transform:uppercase;\">Charges Snapshot</div>
+                    <div class=\"mdtMeta\" style=\"margin-top:4px; opacity:.85;\">${escapeHtml(n)}${when ? ` • ${escapeHtml(when)}` : ''}</div>
+                    <div class=\"mdtMeta\" style=\"margin-top:6px; opacity:.92;\">${escapeHtml(jailText)} • ${escapeHtml(formatMoney(totals.fine))}</div>
+                    <div style=\"margin-top:8px; border-top:1px solid rgba(255,255,255,.08); padding-top:8px;\">${listHtml}</div>
+                  `;
+                };
+
+                const positionSentenceSnapshotTip = (tip, e) => {
+                  const pad = 14;
+                  const vw = window.innerWidth || 0;
+                  const vh = window.innerHeight || 0;
+                  const rect = tip.getBoundingClientRect();
+
+                  let left = (e?.clientX ?? 0) + pad;
+                  let top = (e?.clientY ?? 0) + pad;
+                  if(left + rect.width + pad > vw) left = Math.max(pad, (e?.clientX ?? 0) - rect.width - pad);
+                  if(top + rect.height + pad > vh) top = Math.max(pad, (e?.clientY ?? 0) - rect.height - pad);
+
+                  tip.style.left = `${Math.round(left)}px`;
+                  tip.style.top = `${Math.round(top)}px`;
+                };
+
+                sentencingHost.querySelectorAll('[data-sentence-locked-summary]').forEach(el => {
+                  const applyLockedBannerEmphasis = () => {
+                    // Hard force the color in case any parent CSS overrides it.
+                    const servedVal = el.querySelector('.mdtServedValue');
+                    if(servedVal){
+                      servedVal.style.setProperty('color', '#FFEE98', 'important');
+                      servedVal.style.setProperty('font-weight', '900', 'important');
+                      servedVal.style.setProperty('text-shadow', '0 0 10px rgba(255,238,152,.22)', 'important');
+                    }
+                    const maxLine = el.querySelector('.mdtMaxLine');
+                    if(maxLine){
+                      maxLine.style.setProperty('opacity', '.72', 'important');
+                    }
+                  };
+
+                  // Apply immediately in case the element is already visible.
+                  applyLockedBannerEmphasis();
+
+                  el.addEventListener('mouseenter', (e) => {
+                    applyLockedBannerEmphasis();
+                    const tip = ensureSentenceSnapshotTip();
+                    const name = String(el.getAttribute('data-sentence-locked-summary') || '').trim();
+                    tip.innerHTML = renderSentenceSnapshotTipHtml(name);
+                    tip.style.display = 'block';
+                    positionSentenceSnapshotTip(tip, e);
+                  });
+                  el.addEventListener('mousemove', (e) => {
+                    const tip = ensureSentenceSnapshotTip();
+                    if(String(tip.style.display || '') !== 'none') positionSentenceSnapshotTip(tip, e);
+                  });
+                  el.addEventListener('mouseleave', () => {
+                    const tip = ensureSentenceSnapshotTip();
+                    tip.style.display = 'none';
+                  });
+                });
+
+                sentencingHost.querySelectorAll('[data-action-autosync]').forEach(btn => {
+                btn.onclick = () => {
+                  const name = String(btn.dataset.actionAutosync || '').trim() || 'Unknown';
+                  const by = getSentencingByCriminal();
+                  const cur = by[name] || { jailMonths: 0, fine: 0, manual: false };
+                  by[name] = { ...cur, manual: false };
+                  setSentencingByCriminal(by);
+                  // Re-render so auto-sync totals apply immediately.
+                  try{ renderSentencing(); }catch{}
+                };
+              });
 
               sentencingHost.querySelectorAll('[data-action-hut]').forEach(btn => {
                 btn.onclick = () => {
@@ -9841,7 +10196,9 @@ const copyVal = (opts.copyValue != null) ? opts.copyValue : label;
           bindCopyButtons();
           bindLinkButtons();
            bindCreateButtons();
-              bindNotesEditors();
+               bindNotesEditors();
+               bindCollapsibles();
+               bindOwnerNotes();
 
                // Gallery page bindings
                viewHost.querySelectorAll('[data-gallery-photo-open]').forEach(img => {

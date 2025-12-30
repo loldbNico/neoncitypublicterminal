@@ -37,10 +37,10 @@ window.MDT_DATA = {
     {
       id: 2,
       name: 'Morrison Industries',
-      type: 'Corporation',
+      type: 'Small Business',
       logo: './77web.png',
       hq: '1200 Rockford Hills Estate',
-      notes: 'High-profile corporate entity with private security contracts.',
+      notes: 'High-profile private business entity with security contracts.',
       employees: [
         { citizenId: 5, rank: 'CEO' },
         { citizenId: 7, rank: 'Security Contractor' }
@@ -63,7 +63,7 @@ window.MDT_DATA = {
       id: 101,
       name: 'NCPD',
       type: 'Government',
-      logo: './DATA_SHARD.png',
+      logo: './NEON_CITY_PRISON.png',
       hq: 'NCPD Central',
       notes: 'Neon City Police Department. Sworn officers and civilian staff.',
       employees: [
@@ -84,8 +84,8 @@ window.MDT_DATA = {
     },
     {
       id: 103,
-      name: 'City Council',
-      type: 'Government',
+      name: 'Neon City Council',
+      type: 'Government Agency',
       logo: './77web.png',
       hq: 'City Hall',
       notes: 'Municipal governance and permitting authority.',
@@ -93,12 +93,30 @@ window.MDT_DATA = {
         { citizenId: 5, rank: 'Council Liaison' }
       ]
     },
+    {
+      id: 108,
+      name: 'APEX',
+      type: 'Government Agency',
+      logo: './APEX_HQ.png',
+      hq: 'APEX HQ',
+      notes: 'Advanced Projects & Executive eXtractions (APEX). High-clearance operations and special projects.',
+      employees: []
+    },
+    {
+      id: 109,
+      name: 'Neon Net Authority',
+      type: 'Government Agency',
+      logo: './DATA_SHARD.png',
+      hq: 'Neon Net Exchange',
+      notes: 'Network oversight, communications infrastructure, data compliance and warrants.',
+      employees: []
+    },
 
     /* Major factions / agencies */
     {
       id: 104,
       name: 'Merryweather',
-      type: 'Security / PMC',
+      type: 'Corporation',
       logo: './MERRYWEATHER_BASE.png',
       hq: 'Merryweather Base',
       notes: 'Private military contractor. Restricted facilities and high-risk operations.',
@@ -109,7 +127,7 @@ window.MDT_DATA = {
     {
       id: 105,
       name: 'SecuroServ',
-      type: 'Security / Logistics',
+      type: 'Corporation',
       logo: './SECUROSERV_PORT.png',
       hq: 'Neon City Ports (SecuroServ)',
       notes: 'Security and logistics across port facilities. Restricted access.',
@@ -122,7 +140,7 @@ window.MDT_DATA = {
     {
       id: 106,
       name: 'Humane Labs',
-      type: 'Research',
+      type: 'Corporation',
       logo: './HUMANE_LABS.png',
       hq: 'Humane Labs Campus',
       notes: 'Biomedical research and lab operations. Restricted access for authorized staff only.',

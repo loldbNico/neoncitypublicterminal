@@ -736,11 +736,119 @@
       gap: 8px;
     }
 
-    .mdtCardGrid{
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-    }
+     .mdtCardGrid{
+       display:grid;
+       grid-template-columns: repeat(3, minmax(0, 1fr));
+       gap: 10px;
+     }
+
+     /* Organizations search: compact glyph cards (like citizen profiles, smaller) */
+     .mdtOrgSections{ display:grid; gap: 12px; }
+
+     .mdtOrgSection{
+       border: 1px solid var(--mdt-border, rgba(96,143,255,.14));
+       background: rgba(0,0,0,.10);
+       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+       padding: 10px;
+     }
+
+     .mdtOrgSectionHead{
+       display:flex;
+       align-items:center;
+       justify-content:space-between;
+       padding: 0 2px 10px;
+       font-weight: 900;
+       letter-spacing: 2px;
+       text-transform: uppercase;
+       font-size: 12px;
+       opacity: .92;
+     }
+
+     .mdtOrgSectionCount{
+       margin-left: 10px;
+       padding: 2px 8px;
+       border-radius: 999px;
+       border: 1px solid rgba(255,255,255,.12);
+       background: rgba(0,0,0,.22);
+       font-size: 11px;
+       letter-spacing: 1px;
+       opacity: .9;
+     }
+
+     .mdtOrgSection--government{ border-color: rgba(80, 255, 190, .18); }
+     .mdtOrgSection--government .mdtOrgSectionHead{ color: rgba(120, 255, 210, .92); }
+
+     .mdtOrgSection--corporation{ border-color: rgba(255, 210, 90, .18); }
+     .mdtOrgSection--corporation .mdtOrgSectionHead{ color: rgba(255, 232, 170, .92); }
+
+     .mdtOrgSection--small_business{ border-color: rgba(140, 170, 255, .20); }
+     .mdtOrgSection--small_business .mdtOrgSectionHead{ color: rgba(190, 210, 255, .92); }
+
+     .mdtOrgGrid{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+     .mdtCard.mdtOrgCard{
+       display:flex;
+       gap: 10px;
+       align-items:center;
+       padding: 10px;
+       border: 1px solid var(--mdt-border, rgba(96,143,255,.18));
+       background: rgba(0,0,0,.18);
+       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+       cursor: var(--cur-link), pointer;
+       transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+     }
+
+     .mdtCard.mdtOrgCard[data-org-kind="government"]{ border-color: rgba(80, 255, 190, .30); }
+     .mdtCard.mdtOrgCard[data-org-kind="corporation"]{ border-color: rgba(255, 210, 90, .28); }
+     .mdtCard.mdtOrgCard[data-org-kind="small_business"]{ border-color: rgba(140, 170, 255, .28); }
+
+     .mdtCard.mdtOrgCard:hover{
+       transform: translateY(-1px);
+       border-color: var(--mdt-border-strong, rgba(96,143,255,.55));
+       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 18px var(--mdt-glow-strong, rgba(96,143,255,.12));
+     }
+
+     .mdtOrgGlyph{
+       width: 44px;
+       height: 44px;
+       border-radius: 10px;
+       border: 1px solid var(--mdt-border, rgba(96,143,255,.22));
+       background: rgba(0,0,0,.22);
+       display:flex;
+       align-items:center;
+       justify-content:center;
+       overflow:hidden;
+       flex: 0 0 auto;
+     }
+
+     .mdtOrgGlyphImg{ width: 100%; height: 100%; object-fit: cover; }
+
+     .mdtOrgGlyphFallback{
+       font-weight: 900;
+       letter-spacing: 1.4px;
+       color: rgba(255, 232, 170, .92);
+       text-shadow: 0 0 14px rgba(255, 200, 80, .10);
+       font-size: 13px;
+       text-transform: uppercase;
+     }
+
+      .mdtOrgText{ min-width: 0; }
+      .mdtOrgText .mdtCardTitle{ font-size: 14px; line-height: 1.1; }
+      .mdtOrgType{
+        margin-top: 2px;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: .8px;
+        text-transform: uppercase;
+        color: rgba(255, 232, 170, .95);
+        text-shadow: 0 0 14px rgba(255, 200, 80, .12);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .mdtCard.mdtOrgCard[data-org-kind="government"] .mdtOrgType{ color: rgba(120, 255, 210, .95); text-shadow: 0 0 14px rgba(80, 255, 190, .10); }
+      .mdtCard.mdtOrgCard[data-org-kind="small_business"] .mdtOrgType{ color: rgba(190, 210, 255, .95); text-shadow: 0 0 14px rgba(120, 170, 255, .10); }
+      .mdtOrgText .mdtMeta{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .mdtVehicleGrid{
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
@@ -871,6 +979,12 @@
       display: flex;
       gap: 12px;
       align-items: center;
+      flex: 1 1 320px;
+      min-width: 260px;
+    }
+
+    .mdtDetailHead.mdtOrgDetailHead{
+      align-items: flex-start;
     }
 
     .mdtOrgLogo{
@@ -1503,29 +1617,53 @@
     .mdtCitizenBadges{ display: flex; flex-wrap: wrap; gap: 8px; }
     .mdtPronouns{ color: rgba(215,230,255,.70); letter-spacing: .8px; font-size: 12px; }
 
-    /* Citizen header: compact notes box on the right */
-    .mdtCitizenTopNotes{
+    /* Header notes box on the right (citizens + organizations) */
+    .mdtCitizenTopNotes,
+    .mdtOrgTopNotes{
       flex: 1 1 360px;
       min-width: 260px;
       max-width: 520px;
       align-self: stretch;
       display: flex;
     }
-    .mdtCitizenTopNotes .mdtDetailNotes{
+    .mdtCitizenTopNotes .mdtDetailNotes,
+    .mdtOrgTopNotes .mdtDetailNotes{
       margin: 0;
       width: 100%;
       padding: 10px;
     }
-    .mdtCitizenTopNotes .mdtDetailNotesHead{ gap: 8px; }
-    .mdtCitizenTopNotes .mdtDetailNotesActions{ gap: 6px; }
+    .mdtCitizenTopNotes .mdtDetailNotesHead,
+    .mdtOrgTopNotes .mdtDetailNotesHead{ gap: 8px; }
+    .mdtCitizenTopNotes .mdtDetailNotesActions,
+    .mdtOrgTopNotes .mdtDetailNotesActions{ gap: 6px; }
 
     /* Keep header notes compact: hide formatting toolbar */
-    .mdtCitizenTopNotes .mdtRichbar{ display: none !important; }
+    .mdtCitizenTopNotes .mdtRichbar,
+    .mdtOrgTopNotes .mdtRichbar{ display: none !important; }
 
-    .mdtCitizenTopNotes .mdtRichEditor{
+    .mdtCitizenTopNotes .mdtRichEditor,
+    .mdtOrgTopNotes .mdtRichEditor{
       min-height: 90px !important;
       max-height: 160px;
       overflow: auto;
+    }
+
+    /* Collapsible panels */
+    .mdtPanel.mdtCollapsible{
+      padding: 8px 12px;
+    }
+    .mdtPanel.mdtCollapsible .mdtH{
+      user-select: none;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      line-height: 1.1;
+    }
+    .mdtPanel.mdtCollapsible .mdtCollapsibleBody{ margin-top: 10px; }
+    .mdtPanel.mdtCollapsible[data-collapsed="1"] .mdtCollapsibleBody{ display:none; }
+    .mdtPanel.mdtCollapsible[data-collapsed="1"]{
+      padding-top: 6px;
+      padding-bottom: 6px;
     }
 
     .mdtDetailSubhead{ font-size: 11px; letter-spacing: 1px; font-weight: 800; color: rgba(96,143,255,.75); margin: 10px 0 6px; }

@@ -55,6 +55,16 @@
     /* Ensure controls inherit the global UI font (buttons often default otherwise). */
     button, input, textarea, select{ font-family: inherit; font-size: inherit; }
 
+     /* MDT sentencing locked banner emphasis */
+     .mdtServedLine{ opacity: 1 !important; }
+     .mdtServedValue{
+       color: #FFEE98 !important;
+       font-weight: 900 !important;
+       text-shadow: 0 0 10px rgba(255,238,152,.22) !important;
+     }
+     /* Extra-specific to beat any inline opacity or other rules */
+     .mdtMeta.mdtMaxLine{ opacity: .55 !important; }
+
     html, body{
       height:100%;
       margin:0;
