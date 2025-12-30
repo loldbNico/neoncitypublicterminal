@@ -9323,24 +9323,14 @@
           main.type = 'button';
           main.className = 'mdtCat'
             + (cat.key === 'arrests' ? ' mdtCat--arrests' : '')
-            + (cat.key === 'citizen_profiles' ? ' mdtCat--citizen_profiles' : '');
+            + (cat.key === 'citizen_profiles' ? ' mdtCat--citizen_profiles' : '')
+            + (cat.key === 'organizations' ? ' mdtCat--organizations' : '');
           main.setAttribute('role', 'listitem');
           main.innerHTML = `<span>${escapeHtml(cat.label)}</span>`;
-          main.addEventListener('click', () => navigateActiveTabTo(cat.key));
 
-          const add = document.createElement('button');
-          add.type = 'button';
-          add.className = 'mdtCatAdd';
-          add.setAttribute('aria-label', `Open new ${cat.label} tab`);
-          add.textContent = '+';
-          add.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            openNewTab(cat.key);
-          });
+          // Clicking a category always opens a NEW tab.
+          main.addEventListener('click', () => openNewTab(cat.key));
 
-          // Place the + button into the right grid cell of .mdtCat.
-          main.appendChild(add);
           catsHost.appendChild(main);
         }
       }

@@ -78,7 +78,8 @@
 
     /* Highlight "finished" categories with a subtle gold glint */
     .mdtCat.mdtCat--arrests,
-    .mdtCat.mdtCat--citizen_profiles{
+    .mdtCat.mdtCat--citizen_profiles,
+    .mdtCat.mdtCat--organizations{
       border-color: rgba(255, 205, 85, .38);
       color: rgba(255, 232, 170, .90);
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 18px rgba(255, 200, 80, .10);
@@ -87,14 +88,16 @@
     }
 
     .mdtCat.mdtCat--arrests:hover,
-    .mdtCat.mdtCat--citizen_profiles:hover{
+    .mdtCat.mdtCat--citizen_profiles:hover,
+    .mdtCat.mdtCat--organizations:hover{
       border-color: rgba(255, 210, 90, .68);
       color: rgba(255, 242, 205, .98);
       box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 26px rgba(255, 200, 80, .16);
     }
 
     .mdtCat.mdtCat--arrests::after,
-    .mdtCat.mdtCat--citizen_profiles::after{
+    .mdtCat.mdtCat--citizen_profiles::after,
+    .mdtCat.mdtCat--organizations::after{
       content: '';
       position: absolute;
       inset: -2px;
