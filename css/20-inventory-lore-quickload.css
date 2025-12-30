@@ -923,7 +923,220 @@
     .mdtCitizenCard{
       display: grid;
       gap: 10px;
+      cursor: pointer;
     }
+
+    .mdtCitizenCard:focus{
+      outline: none;
+      border-color: var(--mdt-border-strong, rgba(96,143,255,.65));
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 20px var(--mdt-glow-strong, rgba(96,143,255,.14));
+    }
+
+    /* New Citizen card layout: name above big photo */
+    .mdtCitizenCard--photo{
+      gap: 10px;
+    }
+
+    /* WARRANT visuals: red outline + red title */
+    .mdtCitizenCard--warrant{
+      border-color: rgba(255, 60, 60, .55);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 22px rgba(255, 60, 60, .10);
+    }
+
+    .mdtCitizenCard--warrant .mdtCitizenBigPhoto{
+      border-color: rgba(255, 60, 60, .35);
+    }
+
+    .mdtCitizenCard--warrant .mdtCardTitle{
+      color: rgba(255, 140, 140, .95);
+      text-shadow: 0 0 18px rgba(255, 60, 60, .18);
+    }
+
+    .mdtCitizenCard--warrant .mdtCitizenIdNum{
+      color: rgba(255, 120, 120, .95);
+    }
+
+    .mdtCitizenCardTop{
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .mdtCitizenBigPhoto{
+      position: relative;
+      width: 100%;
+      height: 220px;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.18));
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+      background: rgba(0,0,0,.25);
+      overflow: hidden;
+    }
+
+    .mdtCitizenBigPhoto img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(1.05) contrast(1.05);
+      transform: scale(1.02);
+    }
+
+    .mdtCitizenCardOverlay{
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      padding: 10px;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0) 55%, rgba(0,0,0,.62));
+      z-index: 2;
+    }
+
+    /* Large alert stripe across the photo (BOLO / WARRANT) */
+    .mdtCitizenAlertStripe{
+      position: absolute;
+      left: -22%;
+      right: -22%;
+      top: 50%;
+      transform: translateY(-50%) rotate(-12deg);
+      height: 54px;
+      display: grid;
+      place-items: center;
+      z-index: 1;
+      border-top: 1px solid rgba(0,0,0,.55);
+      border-bottom: 1px solid rgba(0,0,0,.55);
+      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+      pointer-events: none;
+      opacity: .98;
+
+      background:
+        repeating-linear-gradient(
+          90deg,
+          rgba(255,255,255,.22) 0,
+          rgba(255,255,255,.22) 10px,
+          rgba(255,255,255,.10) 10px,
+          rgba(255,255,255,.10) 20px
+        );
+    }
+
+    /* When both warrant + bolo exist, show two stripes (stacked). */
+    .mdtCitizenAlertStripe--solo{ top: 50%; }
+    .mdtCitizenAlertStripe--primary{ top: 38%; }
+    .mdtCitizenAlertStripe--secondary{ top: 62%; }
+
+    .mdtCitizenAlertStripeText{
+      font-size: 18px;
+      font-weight: 1000;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.95);
+      text-shadow: 0 2px 10px rgba(0,0,0,.55);
+      mix-blend-mode: screen;
+    }
+
+    .mdtCitizenAlertStripe--warrant{
+      background-color: rgba(255, 60, 60, .62);
+      border-top-color: rgba(255, 60, 60, .85);
+      border-bottom-color: rgba(255, 60, 60, .85);
+    }
+
+    .mdtCitizenAlertStripe--bolo{
+      background-color: rgba(255, 180, 60, .55);
+      border-top-color: rgba(255, 180, 60, .75);
+      border-bottom-color: rgba(255, 180, 60, .75);
+    }
+
+    @media (max-width: 520px){
+      .mdtCitizenAlertStripe{ height: 46px; }
+      .mdtCitizenAlertStripeText{ font-size: 16px; letter-spacing: 3px; }
+    }
+
+    .mdtCitizenCardOverlayTop{
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .mdtCitizenCardOverlayBottom{
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .mdtCitizenOverlayBadges{
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .mdtCitizenCardMeta{
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+      color: rgba(215,230,255,.68);
+    }
+
+    .mdtCitizenIdLine{
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(215,230,255,.72);
+    }
+
+    .mdtCitizenIdNum{
+      color: rgba(96,143,255,.95);
+    }
+
+    /* Gov org logo strip (small icons) */
+    .mdtCitizenGovLogoStrip{
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .mdtCitizenGovLogoBtn{
+      appearance: none;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      cursor: pointer;
+      display: inline-flex;
+      border-radius: 8px;
+    }
+
+    .mdtCitizenGovLogoBtn:focus{
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(96,143,255,.45);
+    }
+
+    .mdtCitizenGovLogo{
+      width: 26px;
+      height: 26px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid rgba(96,143,255,.25);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+      background: rgba(0,0,0,.35);
+    }
+
+    .mdtCitizenGovLogoBtn:hover .mdtCitizenGovLogo{
+      border-color: rgba(96,143,255,.55);
+    }
+
+    .mdtCitizenGovLogoStrip--card .mdtCitizenGovLogo{
+      width: 28px;
+      height: 28px;
+    }
+
+    .mdtCitizenGovLogoStrip--detail{
+      margin: 8px 0 0;
+    }
+
+    /* Legacy citizen card layout bits (kept for compatibility) */
     .mdtCitizenHead{
       align-items: center;
       gap: 12px;
@@ -1173,12 +1386,112 @@
       pointer-events:none;
       mix-blend-mode:screen;
     }
+    .mdtCitizenPhoto{
+      cursor: zoom-in;
+    }
     .mdtCitizenPhoto img{
       width: 100%;
       height: 100%;
       object-fit: cover;
       filter: saturate(1.08) contrast(1.06);
     }
+
+    .mdtCitizenAlertStripe{
+      pointer-events: none;
+    }
+
+    .mdtBtn.mdtBtnIcon{
+      width: 40px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .mdtGalleryGrid{
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .mdtGalleryItem{
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.20));
+      background: rgba(0,0,0,.18);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset;
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .mdtGalleryThumb{
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border: 1px solid var(--mdt-border, rgba(96,143,255,.20));
+      cursor: zoom-in;
+      filter: saturate(1.06) contrast(1.04);
+    }
+
+    .mdtGalleryActions{
+      display:flex;
+      justify-content:flex-end;
+      gap: 8px;
+    }
+
+    /* Citizen detail WARRANT theme */
+    .mdtCitizenDetail--warrant .mdtDetailHead{
+      border-bottom-color: rgba(255, 60, 60, .28);
+      background: linear-gradient(180deg, rgba(255,60,60,.10), rgba(0,0,0,.18));
+    }
+
+    .mdtCitizenDetail--warrant .mdtDetailTitle{
+      color: rgba(255, 140, 140, .95);
+      text-shadow: 0 0 18px rgba(255, 60, 60, .18);
+    }
+
+    .mdtCitizenDetail--warrant .mdtDetailSubtitle,
+    .mdtCitizenDetail--warrant .mdtMeta,
+    .mdtCitizenDetail--warrant .mdtPronouns{
+      color: rgba(255, 165, 165, .70);
+    }
+
+    .mdtCitizenDetail--warrant .mdtDetailSectionTitle{
+      color: rgba(255, 165, 165, .80);
+      border-bottom-color: rgba(255, 60, 60, .18);
+    }
+
+    .mdtCitizenDetail--warrant .mdtDetailRow{
+      border-bottom-color: rgba(255, 60, 60, .08);
+    }
+
+    .mdtCitizenDetail--warrant .mdtDetailKey{
+      color: rgba(255, 165, 165, .55);
+    }
+
+    .mdtCitizenDetail--warrant .mdtDetailVal{
+      color: rgba(255, 165, 165, .92);
+    }
+
+    .mdtCitizenDetail--warrant .mdtDetailSection{
+      border-color: rgba(255, 60, 60, .22);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.62) inset, 0 0 20px rgba(255, 60, 60, .06);
+    }
+
+    /* Detail variant of the diagonal stripe (bigger and centered to portrait). */
+    .mdtCitizenAlertStripe--detail{
+      left: -30%;
+      right: -30%;
+      height: 62px;
+      transform: translateY(-50%) rotate(-14deg);
+      z-index: 2;
+    }
+
+    .mdtCitizenAlertStripe--detail .mdtCitizenAlertStripeText{
+      font-size: 18px;
+      letter-spacing: 5px;
+    }
+
     .mdtPhotoActions{
       display: flex;
       gap: 8px;
@@ -1249,6 +1562,18 @@
       letter-spacing: 1px;
       text-transform: uppercase;
       border: 1px solid;
+    }
+
+    .mdtBadge{
+      display: inline-block;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid;
+      background: rgba(0,0,0,.18);
+      color: rgba(215,230,255,.82);
     }
     .mdtBadgeAlert{
       background: rgba(255,60,60,.15);
@@ -1324,6 +1649,43 @@
       text-align: right;
       word-break: break-word;
     }
+
+    .mdtCopyText{
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: rgba(96,143,255,.55);
+      text-underline-offset: 2px;
+    }
+
+    .mdtCopyText:hover{
+      color: rgba(96,143,255,.95);
+      text-decoration-color: rgba(96,143,255,.85);
+    }
+
+    .mdtToast{
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(10px);
+      padding: 10px 14px;
+      background: rgba(0,0,0,.78);
+      border: 1px solid rgba(96,143,255,.35);
+      box-shadow: 0 0 16px rgba(96,143,255,.12), 0 0 0 1px rgba(0,0,0,.75) inset;
+      color: rgba(215,230,255,.92);
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: opacity .12s ease, transform .12s ease;
+    }
+
+    .mdtToast.on{
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     .mdtValWarn{
       color: rgba(255,180,80,.95);
     }

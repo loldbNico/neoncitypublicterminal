@@ -37,12 +37,15 @@
     *{ box-sizing:border-box; }
     /* Ensure controls inherit the global UI font (buttons often default otherwise). */
     button, input, textarea, select{ font-family: inherit; font-size: inherit; }
-    html, body{ height:100%; margin:0; color:var(--text); overflow:hidden; }
+    html, body{ height:100%; margin:0; color:var(--text); overflow:hidden; cursor: url("../cursor-32.png") 0 0, default !important; }
     body{
       font-family: "Rajdhani", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
       background: var(--bg0);
       position: relative;
     }
+
+    /* Force the custom cursor everywhere (overrides pointer/zoom/grab/text/etc). */
+    *, *::before, *::after{ cursor: url("../cursor-32.png") 0 0, default !important; }
 
     /* Top tabs (game-like) */
     .topnav{

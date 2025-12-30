@@ -887,6 +887,126 @@
       const modeToggle = document.getElementById('mdtModeToggle');
       if(!catsHost || !tabstrip || !newTabBtn || !backBtn || !fwdBtn || !viewHost || !modeToggle) return;
 
+      // Fullscreen zoomable photo viewer (shared across MDT pages)
+      // Ensures citizen profile photos and Gallery thumbnails can open fullscreen
+      // even if the user never opened the evidence overlay.
+      let evidencePhotoViewerGlobalRef = null;
+      const ensureEvidencePhotoViewerGlobal = () => {
+        let viewer = (evidencePhotoViewerGlobalRef && evidencePhotoViewerGlobalRef.isConnected)
+          ? evidencePhotoViewerGlobalRef
+          : document.querySelector('[data-evidence-photo-viewer]');
+        if(viewer){
+          evidencePhotoViewerGlobalRef = viewer;
+          return viewer;
+        }
+
+        viewer = document.createElement('div');
+        viewer.setAttribute('data-evidence-photo-viewer', '1');
+        viewer.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:10000; display:none;';
+        viewer.innerHTML = `
+          <div style="position:absolute; inset:20px; border:1px solid var(--mdt-border-strong); box-shadow:0 0 22px var(--mdt-glow-strong); background:rgba(10,10,14,.98); display:flex; flex-direction:column; overflow:hidden;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; border-bottom:1px solid var(--mdt-border);">
+              <div class="mdtDetailSectionTitle" style="margin:0;">EVIDENCE PHOTO</div>
+              <button type="button" class="mdtBtn" data-evidence-photo-viewer-close>CLOSE</button>
+            </div>
+            <div data-evidence-photo-viewer-stage style="position:relative; flex:1; overflow:hidden;">
+              <img data-evidence-photo-viewer-img alt="Evidence photo" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) scale(1); transform-origin:center center; max-width:none; max-height:none; width:auto; height:auto; user-select:none; -webkit-user-drag:none;" />
+            </div>
+            <div class="mdtMeta" style="opacity:.85; padding:10px; border-top:1px solid var(--mdt-border);">
+              Scroll to zoom | Drag to pan | ESC to close
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(viewer);
+        evidencePhotoViewerGlobalRef = viewer;
+
+        const close = () => { viewer.style.display = 'none'; };
+        const closeBtn = viewer.querySelector('[data-evidence-photo-viewer-close]');
+        if(closeBtn) closeBtn.onclick = close;
+
+        viewer.onclick = (e) => {
+          if(e.target === viewer) close();
+        };
+
+        document.addEventListener('keydown', (e) => {
+          if(viewer.style.display === 'none') return;
+          if(String(e.key || '').toLowerCase() === 'escape') close();
+        }, true);
+
+        return viewer;
+      };
+
+      const openEvidencePhotoViewerGlobal = (src) => {
+        const viewer = ensureEvidencePhotoViewerGlobal();
+        const img = viewer.querySelector('[data-evidence-photo-viewer-img]');
+        const stage = viewer.querySelector('[data-evidence-photo-viewer-stage]');
+        if(!img || !stage) return;
+
+        const url = String(src || '').trim();
+        if(!url) return;
+
+        viewer.style.display = '';
+
+        let scale = 1;
+        let panX = 0;
+        let panY = 0;
+        let dragging = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        const apply = () => {
+          img.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) scale(${scale})`;
+        };
+
+        img.src = url;
+        scale = 1;
+        panX = 0;
+        panY = 0;
+        apply();
+
+        const onWheel = (e) => {
+          e.preventDefault();
+          const delta = e.deltaY;
+          const factor = delta > 0 ? 0.9 : 1.1;
+          const next = Math.min(10, Math.max(0.15, scale * factor));
+          if(next === scale) return;
+          scale = next;
+          apply();
+        };
+
+        const onDown = (e) => {
+          dragging = true;
+          lastX = e.clientX;
+          lastY = e.clientY;
+          try{ stage.setPointerCapture(e.pointerId); }catch{}
+        };
+        const onMove = (e) => {
+          if(!dragging) return;
+          const dx = e.clientX - lastX;
+          const dy = e.clientY - lastY;
+          lastX = e.clientX;
+          lastY = e.clientY;
+          panX += dx;
+          panY += dy;
+          apply();
+        };
+        const onUp = () => { dragging = false; };
+
+        stage.onwheel = onWheel;
+        stage.onpointerdown = onDown;
+        stage.onpointermove = onMove;
+        stage.onpointerup = onUp;
+        stage.onpointercancel = onUp;
+        stage.onpointerleave = onUp;
+      };
+
+      // Expose viewer globally so other MDT pages can reuse it.
+      try{
+        if(typeof window.ensureEvidencePhotoViewer !== 'function') window.ensureEvidencePhotoViewer = ensureEvidencePhotoViewerGlobal;
+        if(typeof window.openEvidencePhotoViewer !== 'function') window.openEvidencePhotoViewer = openEvidencePhotoViewerGlobal;
+      }catch{}
+
       const MODE_CONFIGS = {
         ncpd: {
           label: 'NCPD',
@@ -901,6 +1021,7 @@
             { key: 'ncpd_reports', label: 'NCPD Reports' },
             { key: 'penal_code', label: 'Penal Code' },
             { key: 'state_laws', label: 'State Laws' },
+            { key: 'gallery', label: 'Gallery' },
           ],
         },
         medical: {
@@ -910,6 +1031,7 @@
             { key: 'medical_profiles', label: 'Medical Profiles' },
             { key: 'medical_reports', label: 'Medical Reports' },
             { key: 'state_laws', label: 'State Laws' },
+            { key: 'gallery', label: 'Gallery' },
           ],
         },
         council: {
@@ -926,6 +1048,7 @@
             { key: 'ncc_reports', label: 'NCC Reports' },
             { key: 'penal_code', label: 'Penal Code' },
             { key: 'state_laws', label: 'State Laws' },
+            { key: 'gallery', label: 'Gallery' },
           ],
         },
       };
@@ -1009,29 +1132,52 @@
        // ==================================================
        const MDT_STORAGE_KEY = 'NEONCITY_MDT_RUNTIME_V1';
 
-       function loadMdtRuntime(){
-          try{
-            const raw = localStorage.getItem(MDT_STORAGE_KEY);
-            if(!raw) return { created: {}, notes: {}, updated: {}, history: {} };
-            const parsed = JSON.parse(raw);
-            return {
-              created: parsed?.created || {},
-              notes: parsed?.notes || {},
-              updated: parsed?.updated || {},
-              history: parsed?.history || {},
-            };
-          }catch{
-            return { created: {}, notes: {}, updated: {}, history: {} };
-          }
+        function loadMdtRuntime(){
+           try{
+             const raw = localStorage.getItem(MDT_STORAGE_KEY);
+             if(!raw) return { created: {}, notes: {}, updated: {}, history: {}, gallery: { photos: [] } };
+             const parsed = JSON.parse(raw);
+             return {
+               created: parsed?.created || {},
+               notes: parsed?.notes || {},
+               updated: parsed?.updated || {},
+               history: parsed?.history || {},
+               gallery: (parsed?.gallery && typeof parsed.gallery === 'object') ? parsed.gallery : { photos: [] },
+             };
+           }catch{
+             return { created: {}, notes: {}, updated: {}, history: {}, gallery: { photos: [] } };
+           }
+         }
+
+
+        function saveMdtRuntime(rt){
+          try{ localStorage.setItem(MDT_STORAGE_KEY, JSON.stringify(rt || {})); }catch{}
         }
 
-       function saveMdtRuntime(rt){
-         try{ localStorage.setItem(MDT_STORAGE_KEY, JSON.stringify(rt || {})); }catch{}
-       }
+        function cleanupStaleCitizenPhotoOverrides(rt){
+          // If a citizen photo was previously saved as the generic placeholder
+          // in localStorage, it will override updated seed data photos.
+          // Clean this up for Annabelle specifically so the new file path applies.
+          try{
+            const updatedCitizens = rt?.updated?.citizens;
+            if(!updatedCitizens || typeof updatedCitizens !== 'object') return;
+            const ann = updatedCitizens?.[11];
+            if(!ann || typeof ann !== 'object') return;
 
-       const mdtRuntime = loadMdtRuntime();
-       // Allow the dataset search helper (js/10-data-mdt.js) to include created records.
-       window.MDT_DATA_RUNTIME = mdtRuntime;
+            const rawPhoto = String(ann.photo || '').trim();
+            const isPlaceholder = !rawPhoto || rawPhoto === './77web.png' || rawPhoto === '77web.png';
+            if(!isPlaceholder) return;
+
+            delete ann.photo;
+            if(Object.keys(ann).length === 0) delete updatedCitizens[11];
+            saveMdtRuntime(rt);
+          }catch{}
+        }
+
+        const mdtRuntime = loadMdtRuntime();
+        cleanupStaleCitizenPhotoOverrides(mdtRuntime);
+        // Allow the dataset search helper (js/10-data-mdt.js) to include created records.
+        window.MDT_DATA_RUNTIME = mdtRuntime;
 
         function runtimeListFor(dataKey){
           const arr = mdtRuntime.created?.[dataKey];
@@ -1165,6 +1311,19 @@
         return id;
       }
 
+       function fmtId6(id){
+         const n = Number(id);
+         if(!Number.isFinite(n)) return String(id ?? '');
+         return String(Math.trunc(n)).padStart(6, '0');
+       }
+
+       function fmtMaybeId6(id){
+         const raw = String(id ?? '').trim();
+         if(!raw) return '';
+         return /^\d+$/.test(raw) ? fmtId6(raw) : raw;
+       }
+
+
         function titleForKey(key){
           // Handle create pages (e.g., "create_arrests")
           if(key && key.startsWith('create_')){
@@ -1187,10 +1346,10 @@
               const data = getMdtData(dataKey);
               const item = data?.find(d => d.id === id);
               const label = (dataKey === 'ncpdReports')
-                ? (item?.caseNum || `#${id}`)
+                ? (item?.caseNum || `#${fmtId6(id)}`)
                 : (dataKey === 'citizens')
-                  ? (citizenFullName(item) || `#${id}`)
-                  : `#${id}`;
+                  ? (citizenFullName(item) || `#${fmtId6(id)}`)
+                  : `#${fmtId6(id)}`;
               return `History ${label}`;
             }
             return 'History';
@@ -1220,7 +1379,7 @@
                 if(dataKey === 'organizations') return item.name;
              }
            }
-           return `Record #${id}`;
+           return `Record #${fmtMaybeId6(id)}`;
          }
          const hit = CATEGORIES.find(c => c.key === key);
          return hit ? hit.label : String(key || 'Dashboard');
@@ -1258,14 +1417,17 @@
            
            // Build page based on category
           let html = '';
-           switch(key){
-           case 'dashboard':
-             html = renderDashboard();
-             break;
+            switch(key){
+            case 'dashboard':
+              html = renderDashboard();
+              break;
+            case 'gallery':
+              html = renderGallery();
+              break;
            case 'citizen_profiles':
              html = renderSearchPage('citizens', 'Citizen Profiles', ['id','firstName','lastName','dob','phone','licenseStatus'], 
                item => `${item.firstName} ${item.lastName}`, 
-               item => `ID: ${item.id} | DOB: ${item.dob} | License: ${item.licenseStatus}`);
+               item => `ID: ${fmtId6(item.id)} | DOB: ${item.dob} | License: ${item.licenseStatus}`);
              break;
            case 'organizations':
              html = renderSearchPage('organizations', 'Organizations', ['id','name','type','hq','employees'],
@@ -1275,25 +1437,25 @@
           case 'properties':
             html = renderSearchPage('properties', 'Properties', ['id','address','type','owner','value','taxStatus'],
               item => item.address,
-              item => `ID: ${item.id} | ${item.type} | Owner: ${item.owner} | ${item.taxStatus}`);
+              item => `ID: ${fmtId6(item.id)} | ${item.type} | Owner: ${item.owner} | ${item.taxStatus}`);
             break;
           case 'vehicles':
             html = renderSearchPage('vehicles', 'Vehicles', ['id','plate','make','model','year','color','owner','status'],
               item => `${item.plate} - ${item.year} ${item.make} ${item.model}`,
-              item => `ID: ${item.id} | ${item.color} | Owner: ${item.owner} | ${item.status}${item.flags.length ? ' | FLAGS: '+item.flags.join(', ') : ''}`);
+              item => `ID: ${fmtId6(item.id)} | ${item.color} | Owner: ${item.owner} | ${item.status}${item.flags.length ? ' | FLAGS: '+item.flags.join(', ') : ''}`);
             break;
           case 'weapons':
             html = renderSearchPage('weapons', 'Weapons Registry', ['id','serial','type','make','model','caliber','owner','status'],
               item => `${item.serial} - ${item.make} ${item.model}`,
-              item => `ID: ${item.id} | ${item.type} | ${item.caliber} | Owner: ${item.owner} | ${item.status}${item.ccw ? ' | CCW' : ''}`);
+              item => `ID: ${fmtId6(item.id)} | ${item.type} | ${item.caliber} | Owner: ${item.owner} | ${item.status}${item.ccw ? ' | CCW' : ''}`);
             break;
               case 'arrests':
                 html = renderSearchPage(
                   'arrests',
                   'Arrests',
                   ['id','arrestNum','title','type','date','location','status'],
-                  item => `${String(item.title || '').trim() || (item.arrestNum || `ARREST #${item.id}`)}`,
-                  item => `ID: ${item.id} | ${(item.arrestNum || '—')} | ${shortDate(item.date)} ${item.time || ''} | ${(item.status || 'Ongoing')}`,
+                  item => `${String(item.title || '').trim() || (item.arrestNum || `ARREST #${fmtMaybeId6(item.id)}`)}`,
+                  item => `ID: ${fmtId6(item.id)} | ${(item.arrestNum || '—')} | ${shortDate(item.date)} ${item.time || ''} | ${(item.status || 'Ongoing')}`,
                   { allowCreate: activeMode === 'ncpd' }
                 );
                 break;
@@ -1303,7 +1465,7 @@
                'Medical Profiles',
                ['id','patientId','name','bloodType','allergies','conditions'],
                item => `${item.name} (${item.patientId})`,
-               item => `ID: ${item.id} | Blood: ${item.bloodType} | Allergies: ${item.allergies.length ? item.allergies.join(', ') : 'None'}`,
+               item => `ID: ${fmtId6(item.id)} | Blood: ${item.bloodType} | Allergies: ${item.allergies.length ? item.allergies.join(', ') : 'None'}`,
                { allowCreate: activeMode === 'medical' }
              );
              break;
@@ -1330,19 +1492,19 @@
             case 'ncpd_reports':
               html = renderSearchPage('ncpdReports', 'NCPD Reports', ['id','caseNum','title','type','date','location','officer','status'],
                 item => `${item.caseNum} - ${(item.title || item.type || '—')}`,
-                item => `ID: ${item.id} | ${shortDate(item.date)} | ${item.location} | ${item.status}`,
+                item => `ID: ${fmtId6(item.id)} | ${shortDate(item.date)} | ${item.location} | ${item.status}`,
                 { allowCreate: activeMode === 'ncpd' });
               break;
            case 'medical_reports':
              html = renderSearchPage('medicalReports', 'Medical Reports', ['id','reportNum','date','patient','facility','type','diagnosis'],
                item => `${item.reportNum} - ${item.patient}`,
-               item => `ID: ${item.id} | ${item.date} | ${item.facility} | ${item.diagnosis}`,
+               item => `ID: ${fmtId6(item.id)} | ${item.date} | ${item.facility} | ${item.diagnosis}`,
                { allowCreate: activeMode === 'medical' });
              break;
            case 'ncc_reports':
              html = renderSearchPage('nccReports', 'NCC Reports', ['id','reportNum','date','type','location','status'],
                item => `${item.reportNum} - ${item.type}`,
-               item => `ID: ${item.id} | ${item.date} | ${item.location} | ${item.status}`,
+               item => `ID: ${fmtId6(item.id)} | ${item.date} | ${item.location} | ${item.status}`,
                { allowCreate: activeMode === 'council' });
              break;
           case 'penal_code':
@@ -1364,6 +1526,11 @@
         
         viewHost.innerHTML = html;
         bindSearchHandlers(key);
+
+        // Non-search pages still need inline handlers.
+        if(key === 'gallery'){
+          bindAllInlineHandlers();
+        }
       }
       
        function renderDashboard(){
@@ -1426,6 +1593,38 @@
                  `).join('') || '<div class="mdtP">No recent activity.</div>'}
                </div>
              </div>
+           </div>
+         `;
+       }
+
+       function renderGallery(){
+         const photos = Array.isArray(mdtRuntime?.gallery?.photos) ? mdtRuntime.gallery.photos : [];
+
+         const grid = photos.length
+           ? `<div class="mdtGalleryGrid">${photos.map((src, idx) => {
+               const u = String(src || '').trim();
+               const safe = escapeHtml(u);
+               return `
+                 <div class="mdtGalleryItem">
+                   <img class="mdtGalleryThumb" src="${safe}" alt="Saved photo" data-gallery-photo-open="${safe}" />
+                   <div class="mdtGalleryActions">
+                     <button type="button" class="mdtBtn" data-gallery-photo-remove-index="${idx}" style="height:28px; padding:0 10px; font-size:11px;">REMOVE</button>
+                   </div>
+                 </div>
+               `;
+             }).join('')}</div>`
+           : `<div class="mdtDetailItem mdtItemNone">No saved photos yet. Use the download icon on a citizen profile.</div>`;
+
+         const clearBtn = photos.length
+           ? `<button type="button" class="mdtBtn" data-gallery-clear style="height:30px; padding:0 12px; font-size:11px;">CLEAR ALL</button>`
+           : '';
+
+         return `
+           <div class="mdtPanel">
+             <div class="mdtH">MDT GALLERY</div>
+             <div class="mdtMeta" style="opacity:.85; margin-top:-4px;">Saved profile photos (stored in localStorage).</div>
+             <div style="display:flex; justify-content:flex-end; margin:12px 0;">${clearBtn}</div>
+             ${grid}
            </div>
          `;
        }
@@ -1608,38 +1807,59 @@
         }
 
         function renderCitizenCard(c){
-          const fullName = `${c.firstName} ${c.lastName}`;
+          const fullName = citizenFullName(c) || `${c.firstName} ${c.lastName}`.trim();
           const hasWarrants = getActiveWarrantEntriesForCitizen(c).length > 0;
           const hasBolos = getActiveBoloEntriesForCitizen(c).length > 0;
-          const hasPriors = Boolean(c.priors && c.priors.length);
-          const statusClass = (c.licenseStatus === 'Suspended') ? 'mdtBadgeWarn' : (c.licenseStatus === 'Provisional') ? 'mdtBadgeInfo' : 'mdtBadgeOk';
+
+          const arrests = getArrestsForCitizen(c);
+          const chargeTokenSummary = aggregateChargeTokenCountsForPerson(arrests, fullName);
+          const hasPriors = Boolean((chargeTokenSummary && chargeTokenSummary.length) || (c.priors && c.priors.length));
+
           const photoSrc = escapeHtml(c.photo || './77web.png');
- 
+          const govLogoStrip = renderCitizenGovOrgLogos(c, {
+            className: 'mdtCitizenGovLogoStrip mdtCitizenGovLogoStrip--card'
+          });
+
+          const recordBadge = hasPriors
+            ? '<span class="mdtBadge mdtBadgeWarn">PRIORS</span>'
+            : '<span class="mdtBadge mdtBadgeOk">CLEAN RECORD</span>';
+
+          const bothAlerts = hasWarrants && hasBolos;
+          const stripeHtml = [
+            hasWarrants
+              ? `<div class="mdtCitizenAlertStripe mdtCitizenAlertStripe--warrant ${bothAlerts ? 'mdtCitizenAlertStripe--primary' : 'mdtCitizenAlertStripe--solo'}"><div class="mdtCitizenAlertStripeText">WARRANT</div></div>`
+              : '',
+            hasBolos
+              ? `<div class="mdtCitizenAlertStripe mdtCitizenAlertStripe--bolo ${bothAlerts ? 'mdtCitizenAlertStripe--secondary' : 'mdtCitizenAlertStripe--solo'}"><div class="mdtCitizenAlertStripeText">BOLO</div></div>`
+              : ''
+          ].filter(Boolean).join('');
+
+          const cardCls = `mdtCard mdtCitizenCard mdtCitizenCard--photo${hasWarrants ? ' mdtCitizenCard--warrant' : ''}`;
+
           return `
-            <div class="mdtCard mdtCitizenCard" data-id="${c.id}">
-              <div class="mdtCardHead mdtCitizenHead">
-                <div class="mdtAvatar">
-                  <img src="${photoSrc}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='./77web.png';" />
-                </div>
-                <div class="mdtCardHeadText">
-                  <div class="mdtCardTitle">${escapeHtml(fullName)}</div>
-                  <div class="mdtCardBadges">
-                    <span class="mdtBadge ${statusClass}">${escapeHtml(c.licenseStatus || '—')}</span>
-                    ${hasWarrants ? '<span class="mdtBadge mdtBadgeAlert">WARRANT</span>' : ''}
-                    ${hasBolos ? '<span class="mdtBadge mdtBadgeWarn">BOLO</span>' : ''}
-                    ${hasPriors ? '<span class="mdtBadge mdtBadgeWarn">PRIORS</span>' : ''}
+            <div class="${cardCls}" data-id="${c.id}" data-key="citizens" role="button" tabindex="0" aria-label="Open citizen ${escapeHtml(fullName)} profile">
+              <div class="mdtCitizenCardTop">
+                <div class="mdtCardTitle">${escapeHtml(fullName)}</div>
+              </div>
+
+              <div class="mdtCitizenBigPhoto">
+                <img src="${photoSrc}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='./77web.png';" />
+                ${stripeHtml}
+                <div class="mdtCitizenCardOverlay">
+                  <div class="mdtCitizenCardOverlayTop">
+                    ${govLogoStrip}
+                  </div>
+                  <div class="mdtCitizenCardOverlayBottom">
+                    <div class="mdtCitizenOverlayBadges">
+                      ${recordBadge}
+                    </div>
                   </div>
                 </div>
               </div>
-              <div class="mdtCardBody mdtCitizenBody">
-                 <div class="mdtField"><span class="k">ID</span><span class="v">${c.id}</span></div>
-                 <div class="mdtField"><span class="k">DOB</span><span class="v">${escapeHtml(c.dob)}</span></div>
-                 <div class="mdtField"><span class="k">PHONE</span><span class="v">${escapeHtml(c.phone)}</span></div>
-                 <div class="mdtField"><span class="k">ADDRESS</span><span class="v">${escapeHtml(c.address)}</span></div>
+
+              <div class="mdtCitizenCardMeta">
+                <div class="mdtCitizenIdLine">ID <span class="mdtCitizenIdNum">${fmtId6(c.id)}</span></div>
               </div>
-               <div class="mdtCardActions">
-                 <button type="button" class="mdtResultView" data-id="${c.id}" data-key="citizens">VIEW</button>
-               </div>
             </div>
           `;
         }
@@ -1875,10 +2095,42 @@
             };
           });
         }
+
+        function bindCitizenCards(){
+          viewHost.querySelectorAll('.mdtCitizenCard[data-key="citizens"]').forEach(card => {
+            if(card.dataset.boundClick === '1') return;
+            card.dataset.boundClick = '1';
+
+            const id = Number(card.dataset.id);
+            if(Number.isNaN(id)) return;
+
+            card.addEventListener('click', (e) => {
+              // If we ever re-introduce inner actionable controls, don't hijack them.
+              const clickable = e.target && e.target.closest && e.target.closest('button, a, input, textarea, select, [data-link-target]');
+              if(clickable) return;
+              navigateToDetail('citizens', id);
+            });
+
+            card.addEventListener('keydown', (e) => {
+              if(e.key !== 'Enter' && e.key !== ' ') return;
+              e.preventDefault();
+              navigateToDetail('citizens', id);
+            });
+          });
+        }
  
          function bindCopyButtons(){
            viewHost.querySelectorAll('.mdtCopy').forEach(btn => {
              btn.onclick = () => safeCopy(btn, btn.dataset.copy || '');
+           });
+
+           viewHost.querySelectorAll('[data-copy-text]').forEach(el => {
+             el.onclick = () => safeCopy(null, el.dataset.copyText || el.textContent || '', { toast: el.dataset.copyToast || 'Copied' });
+             el.onkeydown = (e) => {
+               if(e.key !== 'Enter' && e.key !== ' ') return;
+               e.preventDefault();
+               safeCopy(null, el.dataset.copyText || el.textContent || '', { toast: el.dataset.copyToast || 'Copied' });
+             };
            });
          }
 
@@ -1945,7 +2197,7 @@
          const map = {
            citizens: {
               primary: item => `${item.firstName} ${item.lastName}`,
-              secondary: item => `ID: ${item.id} | DOB: ${item.dob} | License: ${item.licenseStatus}`
+              secondary: item => `ID: ${fmtId6(item.id)} | DOB: ${item.dob} | License: ${item.licenseStatus}`
             },
             organizations: {
               primary: item => item.name,
@@ -1953,36 +2205,37 @@
             },
            properties: {
              primary: item => item.address,
-             secondary: item => `ID: ${item.id} | ${item.type} | Owner: ${item.owner}`
+             secondary: item => `ID: ${fmtId6(item.id)} | ${item.type} | Owner: ${item.owner}`
            },
            vehicles: {
              primary: item => `${item.plate} - ${item.year} ${item.make} ${item.model}`,
-             secondary: item => `ID: ${item.id} | ${item.color} | Owner: ${item.owner}`
+             secondary: item => `ID: ${fmtId6(item.id)} | ${item.color} | Owner: ${item.owner}`
            },
            weapons: {
              primary: item => `${item.serial} - ${item.make} ${item.model}`,
-             secondary: item => `ID: ${item.id} | ${item.type} | Owner: ${item.owner}`
+             secondary: item => `ID: ${fmtId6(item.id)} | ${item.type} | Owner: ${item.owner}`
            },
            medicalProfiles: {
              primary: item => `${item.name} (${item.patientId})`,
-             secondary: item => `ID: ${item.id} | Blood: ${item.bloodType}`
+             secondary: item => `ID: ${fmtId6(item.id)} | Blood: ${item.bloodType}`
            },
             ncpdReports: {
               primary: item => `${item.caseNum} - ${(item.title || item.type || '—')}`,
-              secondary: item => `ID: ${item.id} | ${item.date} | ${item.status}`
+              secondary: item => `ID: ${fmtId6(item.id)} | ${item.date} | ${item.status}`
             },
            medicalReports: {
              primary: item => `${item.reportNum} - ${item.patient}`,
-             secondary: item => `ID: ${item.id} | ${item.date} | ${item.diagnosis}`
+             secondary: item => `ID: ${fmtId6(item.id)} | ${item.date} | ${item.diagnosis}`
            },
             nccReports: {
               primary: item => `${item.reportNum} - ${item.type}`,
-              secondary: item => `ID: ${item.id} | ${item.date} | ${item.status}`
+              secondary: item => `ID: ${fmtId6(item.id)} | ${item.date} | ${item.status}`
             },
-            arrests: {
-              primary: item => `${(item.title || '').trim() || (item.arrestNum || `ARREST #${item.id}`)}`,
-              secondary: item => `ID: ${item.id} | ${(item.arrestNum || '—')} | ${(item.status || 'Ongoing')} | ${(item.location || '—')}`
-            },
+             arrests: {
+               primary: item => `${(item.title || '').trim() || (item.arrestNum || `ARREST #${fmtMaybeId6(item.id)}`)}`,
+               secondary: item => `ID: ${fmtId6(item.id)} | ${(item.arrestNum || '—')} | ${(item.status || 'Ongoing')} | ${(item.location || '—')}`
+             },
+
             penalCode: {
               primary: item => `${item.code} - ${item.title}`,
               secondary: item => {
@@ -2523,18 +2776,102 @@
        }
 
        function getCitizenOrganizations(c){
-         if(!c) return [];
-         const orgs = getMdtData('organizations') || [];
-         const cid = c.id;
-         return orgs
-           .map(org => {
-             const employees = Array.isArray(org.employees) ? org.employees : [];
-             const match = employees.find(e => e && Number(e.citizenId) === cid);
-             if(!match) return null;
-             return { org, rank: match.rank || 'Member' };
-           })
-           .filter(Boolean);
-       }
+          if(!c) return [];
+          const orgs = getMdtData('organizations') || [];
+          const cid = c.id;
+          return orgs
+            .map(org => {
+              const employees = Array.isArray(org.employees) ? org.employees : [];
+              const match = employees.find(e => e && Number(e.citizenId) === cid);
+              if(!match) return null;
+              return { org, rank: match.rank || 'Member' };
+            })
+            .filter(Boolean);
+        }
+
+        function normalizeOrgName(name){
+          return String(name || '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, ' ');
+        }
+
+        function isGovOrgName(name){
+          const n = normalizeOrgName(name);
+          return n === 'ncpd'
+            || n === 'tacmed'
+            || n === 'city council'
+            || n === 'merryweather'
+            || n === 'securoserv'
+            || n === 'humane labs'
+            || n === 'humane research'
+            || n === 'humane labs & research';
+        }
+
+        function getGovOrgSortWeight(name){
+          const n = normalizeOrgName(name);
+          if(n === 'ncpd') return 10;
+          if(n === 'tacmed') return 20;
+          if(n === 'city council') return 30;
+          if(n === 'securoserv') return 40;
+          if(n === 'merryweather') return 50;
+          if(n === 'humane labs') return 60;
+          if(n === 'humane research' || n === 'humane labs & research') return 70;
+          return 999;
+        }
+
+        function getCitizenGovOrganizations(c){
+          const memberships = getCitizenOrganizations(c)
+            .map(({ org, rank }) => ({ org, rank }))
+            .filter(({ org }) => isGovOrgName(org?.name));
+
+          // Dedupe by org id/name to avoid repeated logos.
+          const seen = new Set();
+          const deduped = memberships.filter(({ org }) => {
+            const key = String(org?.id || normalizeOrgName(org?.name));
+            if(!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+
+          return deduped.sort((a, b) => {
+            return getGovOrgSortWeight(a?.org?.name) - getGovOrgSortWeight(b?.org?.name);
+          });
+        }
+
+        function renderCitizenGovOrgLogos(c, opts = {}){
+          const memberships = getCitizenGovOrganizations(c);
+          if(!memberships.length) return '';
+
+          const className = String(opts.className || 'mdtCitizenGovLogoStrip');
+          const max = Number.isFinite(Number(opts.max)) ? Math.max(0, Number(opts.max)) : Infinity;
+          const clickable = Boolean(opts.clickable);
+
+          const logosHtml = memberships
+            .slice(0, max)
+            .map(({ org }) => {
+              const src = String(org?.logo || '').trim();
+              if(!src) return '';
+
+              const title = String(org?.name || '').trim();
+              const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
+
+              const imgHtml = `<img class="mdtCitizenGovLogo" src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none';" />`;
+
+              if(!clickable) return imgHtml;
+
+              const orgId = Number(org?.id);
+              if(Number.isNaN(orgId)) return imgHtml;
+
+              const aria = title ? ` aria-label="Open organization ${escapeHtml(title)}"` : ' aria-label="Open organization"';
+              return `<button type="button" class="mdtCitizenGovLogoBtn" data-link-target="organizations" data-link-id="${orgId}"${titleAttr}${aria}>${imgHtml}</button>`;
+            })
+            .filter(Boolean)
+            .join('');
+
+          return logosHtml ? `<div class="${escapeHtml(className)}">${logosHtml}</div>` : '';
+        }
+
 
        function ownsRecordForCitizen(c, ownerValue){
          if(!c) return false;
@@ -2569,7 +2906,7 @@
            if(!data) return `<div class="mdtPanel"><div class="mdtH">ERROR</div><div class="mdtP">Data not found.</div></div>`;
  
            const item = data.find(d => d.id === id);
-          if(!item) return `<div class="mdtPanel"><div class="mdtH">NOT FOUND</div><div class="mdtP">Record ID ${id} not found.</div></div>`;
+          if(!item) return `<div class="mdtPanel"><div class="mdtH">NOT FOUND</div><div class="mdtP">Record ID ${escapeHtml(fmtId6(id))} not found.</div></div>`;
 
           // Route to specific detail renderer
             switch(dataKey){
@@ -2826,9 +3163,9 @@
               const citizens = window.MDT_DATA?.citizens || [];
               matches = citizens
                 .map(c => ({
-                  label: `${c.firstName} ${c.lastName} (ID ${c.id})`,
+                  label: `${c.firstName} ${c.lastName} (ID ${fmtId6(c.id)})`,
                   value: `${c.firstName} ${c.lastName}`,
-                  hay: `${c.firstName} ${c.lastName} ${c.id}`.toLowerCase(),
+                  hay: `${c.firstName} ${c.lastName} ${fmtId6(c.id)} ${c.id}`.toLowerCase(),
                 }))
                 .filter(x => x.hay.includes(q))
                 .slice(0, limit);
@@ -2858,15 +3195,15 @@
               // Store a normalized reference that can always be linked.
               // Display a friendly label in the dropdown.
               const reportMatches = reports.map(r => ({
-                label: `CASE ${r.caseNum} - ${(r.title || r.type || '—')} (ID ${r.id})`,
+                label: `CASE ${r.caseNum} - ${(r.title || r.type || '—')} (ID ${fmtId6(r.id)})`,
                 value: `NCPD:${r.id}`,
-                hay: `${r.id} ${r.caseNum} ${r.title || r.type || ''}`.toLowerCase(),
+                hay: `${fmtId6(r.id)} ${r.id} ${r.caseNum} ${r.title || r.type || ''}`.toLowerCase(),
               }));
 
               const arrestMatches = arrests.map(a => ({
-                label: `ARREST ${a.arrestNum || `#${a.id}`} - ${(a.title || '—')} (ID ${a.id})`,
+                label: `ARREST ${a.arrestNum || `#${fmtMaybeId6(a.id)}`} - ${(a.title || '—')} (ID ${fmtId6(a.id)})`,
                 value: `ARREST:${a.id}`,
-                hay: `${a.id} ${a.arrestNum || ''} ${a.title || ''}`.toLowerCase(),
+                hay: `${fmtId6(a.id)} ${a.id} ${a.arrestNum || ''} ${a.title || ''}`.toLowerCase(),
               }));
 
               matches = reportMatches.concat(arrestMatches)
@@ -3411,7 +3748,7 @@
                   <button type="button" class="mdtBtn" data-mini-select="status" style="height:28px; padding:0 8px; min-width:86px; font-size:12px;"></button>
 
                   <div class="mdtMeta" style="white-space:nowrap; opacity:.85; font-size:12px;">
-                    <span style="opacity:.85;">${escapeHtml(a.arrestNum || `#${a.id}`)}</span>
+                    <span style="opacity:.85;">${escapeHtml(a.arrestNum || `#${fmtMaybeId6(a.id)}`)}</span>
                     ${copyBtn(a.arrestNum || '', 'COPY #')}
                   </div>
 
@@ -3594,10 +3931,14 @@
           const linkTarget = opts.linkTarget || null;
           const linkId = (opts.linkId != null) ? opts.linkId : null;
           const copyValue = (opts.copyValue != null) ? opts.copyValue : v;
+          const copyToast = String(opts.copyToast || 'Copied');
 
           let valHtml = `<span class="mdtDetailVal${valClass}">${escapeHtml(v || '—')}</span>`;
           if(linkTarget && linkId && !Number.isNaN(Number(linkId))){
             valHtml = `<span class="mdtDetailVal${valClass} mdtLinkish" data-link-target="${escapeHtml(linkTarget)}" data-link-id="${Number(linkId)}">${escapeHtml(v || '—')}</span>`;
+          }else if(opts.copyInline){
+            const t = escapeHtml(normalizeTextCopyValue(copyValue || v));
+            valHtml = `<span class="mdtDetailVal${valClass} mdtCopyText" data-copy-text="${t}" data-copy-toast="${escapeHtml(copyToast)}" role="button" tabindex="0">${escapeHtml(v || '—')}</span>`;
           }
 
           const copyHtml = opts.copy ? copyBtn(copyValue || v, opts.copyLabel || 'COPY') : '';
@@ -3656,7 +3997,7 @@
            ? employees.map(e => {
                const cid = e.citizenId;
                const c = (window.MDT_DATA?.citizens || []).find(x => x.id === cid);
-               const name = c ? `${c.firstName} ${c.lastName}` : `Citizen #${cid}`;
+               const name = c ? `${c.firstName} ${c.lastName}` : `Citizen #${fmtId6(cid)}`;
                const rank = e.rank || 'Employee';
                return `<div class="mdtResultItem mdtOrgEmployeeRow">
                  <div class="mdtResultPrimary mdtLinkish" data-link-target="citizens" data-link-id="${cid}">${escapeHtml(name)}</div>
@@ -3759,30 +4100,44 @@
            const hasAssets = properties.length || vehicles.length || weapons.length;
 
             const licenseWarnCls = (c.licenseStatus && c.licenseStatus.toLowerCase().includes('suspend')) ? 'mdtValWarn' : '';
-            const weaponWarnCls = (c.weaponLicense && c.weaponLicense.toLowerCase().includes('suspend')) ? 'mdtValWarn' : '';
-            const licenseReason = c.licenseReason || '';
-            const weaponReason = c.weaponLicenseReason || '';
-            const licenseSuspended = Boolean(c.licenseStatus && c.licenseStatus.toLowerCase().includes('suspend'));
-            const weaponSuspended = Boolean(c.weaponLicense && c.weaponLicense.toLowerCase().includes('suspend'));
+             const weaponWarnCls = (c.weaponLicense && c.weaponLicense.toLowerCase().includes('suspend')) ? 'mdtValWarn' : '';
+             const licenseReason = c.licenseReason || '';
+             const weaponReason = c.weaponLicenseReason || '';
+             const licenseSuspended = Boolean(c.licenseStatus && c.licenseStatus.toLowerCase().includes('suspend'));
+             const weaponSuspended = Boolean(c.weaponLicense && c.weaponLicense.toLowerCase().includes('suspend'));
 
-            const dlButtons = licenseSuspended
-              ? `<button type="button" class="mdtBtn" data-license-action="reinstate" data-license-type="driver" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">REINSTATE DL</button>`
-              : `<button type="button" class="mdtBtn" data-license-action="suspend" data-license-type="driver" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">SUSPEND DL</button>`;
+             const dlReinstatedAt = String(c.licenseReinstatedAt || '').trim();
+             const wlReinstatedAt = String(c.weaponLicenseReinstatedAt || '').trim();
+             const dlIsReinstated = Boolean(dlReinstatedAt) && !licenseSuspended;
+             const wlIsReinstated = Boolean(wlReinstatedAt) && !weaponSuspended;
+             const dlReinstatedBadge = dlIsReinstated ? `<span class="mdtBadge mdtBadgeInfo" style="margin-left:8px;">REINSTATED</span>` : '';
+             const wlReinstatedBadge = wlIsReinstated ? `<span class="mdtBadge mdtBadgeInfo" style="margin-left:8px;">REINSTATED</span>` : '';
+             const dlReinstatedMeta = dlIsReinstated ? `<div class="mdtMeta" style="opacity:.85;">Reinstated: ${escapeHtml(shortDateTime(dlReinstatedAt))}</div>` : '';
+             const wlReinstatedMeta = wlIsReinstated ? `<div class="mdtMeta" style="opacity:.85;">Reinstated: ${escapeHtml(shortDateTime(wlReinstatedAt))}</div>` : '';
 
-            const wlButtons = weaponSuspended
-              ? `<button type="button" class="mdtBtn" data-license-action="reinstate" data-license-type="weapon" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">REINSTATE WL</button>`
-              : `<button type="button" class="mdtBtn" data-license-action="suspend" data-license-type="weapon" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">SUSPEND WL</button>`;
+             const dlButtons = licenseSuspended
+               ? `<button type="button" class="mdtBtn" data-license-action="reinstate" data-license-type="driver" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">REINSTATE DL</button>`
+               : `<button type="button" class="mdtBtn" data-license-action="suspend" data-license-type="driver" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">SUSPEND DL</button>${dlReinstatedBadge}`;
+
+             const wlButtons = weaponSuspended
+               ? `<button type="button" class="mdtBtn" data-license-action="reinstate" data-license-type="weapon" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">REINSTATE WL</button>`
+               : `<button type="button" class="mdtBtn" data-license-action="suspend" data-license-type="weapon" data-license-id="${c.id}" style="height:26px; padding:0 10px; font-size:11px;">SUSPEND WL</button>${wlReinstatedBadge}`;
 
             const dlReasonHtml = licenseReason ? `<div class="mdtMeta" style="opacity:.85;">Reason: ${escapeHtml(licenseReason)}</div>` : '';
             const wlReasonHtml = weaponReason ? `<div class="mdtMeta" style="opacity:.85;">Reason: ${escapeHtml(weaponReason)}</div>` : '';
 
 
            const bannerHtml = `
-             ${hasWarrants ? '<div class="mdtBanner mdtBannerAlert">ACTIVE WARRANT — detain and serve immediately</div>' : ''}
-             ${hasBolos ? '<div class="mdtBanner mdtBannerWarn">ACTIVE BOLO — notify dispatch</div>' : ''}
-           `;
+              ${hasWarrants ? '<div class="mdtBanner mdtBannerAlert">ACTIVE WARRANT — detain and serve immediately</div>' : ''}
+              ${hasBolos ? '<div class="mdtBanner mdtBannerWarn">ACTIVE BOLO — notify dispatch</div>' : ''}
+            `;
 
-           const photoSrc = c.photo || './77web.png';
+            const citizenDetailClass = hasWarrants ? ' mdtCitizenDetail--warrant' : '';
+            const warrantStripeHtml = hasWarrants
+              ? `<div class="mdtCitizenAlertStripe mdtCitizenAlertStripe--warrant mdtCitizenAlertStripe--solo mdtCitizenAlertStripe--detail"><div class="mdtCitizenAlertStripeText">WARRANT</div></div>`
+              : '';
+
+            const photoSrc = c.photo || './77web.png';
 
             const orgList = orgMemberships.length
               ? orgMemberships.map(({ org, rank }) => `<div class="mdtDetailRow"><span class="mdtDetailKey mdtLinkish" data-link-target="organizations" data-link-id="${org.id}" data-link-newtab="1">${escapeHtml(org.name || 'ORG')}</span><span class="mdtDetailVal">${escapeHtml(rank || 'Member')}</span></div>`).join('')
@@ -3806,29 +4161,28 @@
              return `<div class="mdtDetailItem mdtLinkish" data-link-target="weapons" data-link-id="${wid}"><div class="mdtDetailRow"><span class="mdtDetailKey">SERIAL</span><span class="mdtDetailVal">${escapeHtml(w.serial || '—')}</span></div><div class="mdtMeta" style="opacity:.8;">${escapeHtml(w.type || '')} • ${escapeHtml(w.status || '—')}</div></div>`;
            });
 
-          return `
-            <div class="mdtDetail mdtCitizenDetail" data-citizen-live-edit="${c.id}">
-              ${bannerHtml}
-
-              <div class="mdtDetailHead mdtCitizenHead">
-                <div class="mdtCitizenPortrait">
-                  <div class="mdtCitizenPhoto">
-                    <img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(fullName)}" onerror="this.src='./77web.png';" />
-                  </div>
-                  <div class="mdtPhotoActions" style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <button type="button" class="mdtBtn" data-set-citizen-photo="${c.id}">UPDATE PHOTO</button>
-                  </div>
-                </div>
-                 <div class="mdtCitizenMeta">
-                   <div class="mdtDetailTitle">${escapeHtml(fullName)}</div>
-                   <div class="mdtDetailSubtitle">CITIZEN PROFILE #${c.id} ${copyBtn(String(c.id), 'COPY ID')}</div>
-                   <div class="mdtMeta mdtPronouns">${escapeHtml(c.pronouns || c.gender || '')}</div>
-                   <div class="mdtCitizenBadges">
-                     ${hasWarrants ? '<div class="mdtDetailBadge mdtBadgeAlert">ACTIVE WARRANT</div>' : ''}
-                     ${hasBolos ? '<div class="mdtDetailBadge mdtBadgeWarn">ACTIVE BOLO</div>' : ''}
-                   </div>
+           return `
+             <div class="mdtDetail mdtCitizenDetail${citizenDetailClass}" data-citizen-live-edit="${c.id}">
+               ${bannerHtml}
  
-                    <div class="mdtFormActions" style="margin: 10px 0 0; justify-content:flex-start; gap:6px; flex-wrap:wrap;">
+               <div class="mdtDetailHead mdtCitizenHead">
+                  <div class="mdtCitizenPortrait">
+                    <div class="mdtCitizenPhoto" data-photo-open="${escapeHtml(photoSrc)}" title="Click to open full view">
+                      <img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(fullName)}" onerror="this.src='./77web.png';" />
+                      ${warrantStripeHtml}
+                    </div>
+                    <div class="mdtPhotoActions" style="display:flex; gap:8px; flex-wrap:nowrap; align-items:center;">
+                      <button type="button" class="mdtBtn" data-set-citizen-photo="${c.id}" style="height:30px; padding:0 12px; font-size:11px;">UPDATE PHOTO</button>
+                      <button type="button" class="mdtBtn mdtBtnIcon" data-download-citizen-photo="${c.id}" aria-label="Download photo" title="Download & save to Gallery" style="height:30px;">⬇</button>
+                    </div>
+                  </div>
+                  <div class="mdtCitizenMeta">
+                    <div class="mdtDetailTitle">${escapeHtml(fullName)}</div>
+                    ${renderCitizenGovOrgLogos(c, { className: 'mdtCitizenGovLogoStrip mdtCitizenGovLogoStrip--detail', clickable: true })}
+                    <div class="mdtDetailSubtitle">CITIZEN PROFILE #${fmtId6(c.id)} ${copyBtn(String(fmtId6(c.id)), 'COPY ID')}</div>
+                    <div class="mdtMeta mdtPronouns">${escapeHtml(c.pronouns || c.gender || '')}</div>
+ 
+                    <div class="mdtFormActions" style="margin: 10px 0 0; justify-content:flex-start; gap:6px; flex-wrap:wrap; ">
                       <button type="button" class="mdtBtn" data-edit-undo style="height:28px; padding:0 8px; font-size:11px; min-width:56px;">UNDO</button>
                       <button type="button" class="mdtBtn" data-edit-redo style="height:28px; padding:0 8px; font-size:11px; min-width:56px;">REDO</button>
                       <button type="button" class="mdtBtn" data-open-history="citizens" data-open-history-id="${c.id}" style="height:28px; padding:0 8px; font-size:11px; min-width:70px;">HISTORY</button>
@@ -3850,14 +4204,14 @@
                   <div class="mdtDetailSectionTitle">PERSONAL INFORMATION</div>
                   ${detailRow('DATE OF BIRTH', c.dob)}
                   ${detailRow('PRONOUNS', c.pronouns || '—')}
-                  ${detailRow('PHONE', c.phone, { copy: true, copyLabel: 'COPY PHONE', copyValue: c.phone })}
+                  ${detailRow('PHONE', c.phone, { copyInline: true, copyToast: 'Phone number copied', copyValue: c.phone })}
                   ${orgMemberships.length ? detailRow('ORGANIZATIONS', String(orgMemberships.length)) : ''}
                 </div>
 
                 <div class="mdtDetailSection">
                   <div class="mdtDetailSectionTitle">BIOMETRICS</div>
-                  ${detailRow('DNA', c.dna || '—', { copy: true, copyLabel: 'COPY DNA', copyValue: c.dna })}
-                  ${detailRow('FINGERPRINTS', c.fingerprints || '—', { copy: true, copyLabel: 'COPY PRINTS', copyValue: c.fingerprints })}
+                  ${detailRow('DNA', c.dna || '—', { copyInline: true, copyToast: 'DNA copied', copyValue: c.dna })}
+                  ${detailRow('FINGERPRINTS', c.fingerprints || '—', { copyInline: true, copyToast: 'Fingerprints copied', copyValue: c.fingerprints })}
                 </div>
 
                  <div class="mdtDetailSection">
@@ -3866,9 +4220,9 @@
                    <div style="display:grid; gap:10px;">
                      <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap;">
                        <div style="min-width:220px; flex:1;">
-                         ${detailRow('DRIVER LICENSE', c.licenseStatus || '—', { valClass: licenseWarnCls })}
-                         <div class="mdtMeta" style="opacity:.85;">Class: ${escapeHtml(c.licenseClass || '—')}</div>
-                         ${dlReasonHtml}
+                          ${detailRow('DRIVER LICENSE', c.licenseStatus || '—', { valClass: licenseWarnCls })}
+                          ${dlReinstatedMeta}
+                          ${dlReasonHtml}
                        </div>
                        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                          ${dlButtons}
@@ -3877,8 +4231,9 @@
 
                      <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap;">
                        <div style="min-width:220px; flex:1;">
-                         ${detailRow('WEAPON LICENSE', c.weaponLicense || '—', { valClass: weaponWarnCls })}
-                         ${wlReasonHtml}
+                          ${detailRow('WEAPON LICENSE', c.weaponLicense || '—', { valClass: weaponWarnCls })}
+                          ${wlReinstatedMeta}
+                          ${wlReasonHtml}
                        </div>
                        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                          ${wlButtons}
@@ -3948,7 +4303,7 @@
            <div class="mdtDetail">
              <div class="mdtDetailHead">
                 <div class="mdtDetailTitle">${escapeHtml(p.address)}</div>
-                <div class="mdtDetailSubtitle">PROPERTY RECORD #${p.id}</div>
+                <div class="mdtDetailSubtitle">PROPERTY RECORD #${fmtId6(p.id)}</div>
              </div>
              <div class="mdtDetailGrid">
                <div class="mdtDetailSection">
@@ -4051,7 +4406,8 @@
          return `
            <div class="mdtDetail">
              <div class="mdtDetailHead">
-               <div class="mdtDetailTitle">WARRANT ${escapeHtml(w.warrantNum || `#${w.id}`)} ${copyBtn(w.warrantNum || '', 'COPY #')}</div>
+                <div class="mdtDetailTitle">WARRANT ${escapeHtml(w.warrantNum || `#${fmtMaybeId6(w.id)}`)} ${copyBtn(w.warrantNum || '', 'COPY #')}</div>
+
                <div class="mdtDetailSubtitle">${escapeHtml(w.type || 'Warrant')} • Issued ${escapeHtml(shortDate(w.issuedDate))}</div>
                <div class="mdtDetailBadge ${badgeCls}">${escapeHtml(w.status || '—')}</div>
              </div>
@@ -4069,8 +4425,9 @@
 
                <div class="mdtDetailSection">
                  <div class="mdtDetailSectionTitle">SUBJECT</div>
-                 ${detailRow('CITIZEN', w.citizenName || (citizenId ? `Citizen #${citizenId}` : 'Unknown'), { linkTarget: citizenId ? 'citizens' : null, linkId: citizenId, copyValue: w.citizenName || '' })}
-                 ${citizenId ? detailRow('CITIZEN ID', String(citizenId), { copy: true, copyValue: String(citizenId) }) : ''}
+                  ${detailRow('CITIZEN', w.citizenName || (citizenId ? `Citizen #${fmtId6(citizenId)}` : 'Unknown'), { linkTarget: citizenId ? 'citizens' : null, linkId: citizenId, copyValue: w.citizenName || '' })}
+                  ${citizenId ? detailRow('CITIZEN ID', fmtId6(citizenId), { copy: true, copyValue: fmtId6(citizenId) }) : ''}
+
                  ${caseNum ? detailRow('RELATED CASE', caseNum, { linkTarget: caseId ? 'ncpdReports' : null, linkId: caseId, copyValue: caseNum }) : ''}
                </div>
 
@@ -4280,20 +4637,22 @@
         }
 
         function snapshotCitizenValuesFromData(id){
-          const citizen = getMdtData('citizens').find(x => x.id === id);
-          if(!citizen) return null;
-
-          // Only snapshot fields that this UI can mutate.
-          return {
-            photo: String(citizen.photo || '').trim(),
-            notes: String(citizen.notes || '').trim(),
-            notesHtml: String(citizen.notesHtml || '').trim(),
-            licenseStatus: String(citizen.licenseStatus || '').trim(),
-            licenseReason: String(citizen.licenseReason || '').trim(),
-            weaponLicense: String(citizen.weaponLicense || '').trim(),
-            weaponLicenseReason: String(citizen.weaponLicenseReason || '').trim(),
-          };
-        }
+           const citizen = getMdtData('citizens').find(x => x.id === id);
+           if(!citizen) return null;
+ 
+           // Only snapshot fields that this UI can mutate.
+           return {
+             photo: String(citizen.photo || '').trim(),
+             notes: String(citizen.notes || '').trim(),
+             notesHtml: String(citizen.notesHtml || '').trim(),
+             licenseStatus: String(citizen.licenseStatus || '').trim(),
+             licenseReason: String(citizen.licenseReason || '').trim(),
+             licenseReinstatedAt: String(citizen.licenseReinstatedAt || '').trim(),
+             weaponLicense: String(citizen.weaponLicense || '').trim(),
+             weaponLicenseReason: String(citizen.weaponLicenseReason || '').trim(),
+             weaponLicenseReinstatedAt: String(citizen.weaponLicenseReinstatedAt || '').trim(),
+           };
+         }
 
         function snapshotEditorValues(dataKey, id){
           if(dataKey === 'ncpdReports') return snapshotNcpdReportValuesFromEditor(id);
@@ -4905,17 +5264,19 @@
         }
 
         function snapshotCitizenValues(c){
-          const citizen = c || {};
-          return {
-            photo: String(citizen.photo || '').trim(),
-            notes: String(citizen.notes || '').trim(),
-            notesHtml: String(citizen.notesHtml || '').trim(),
-            licenseStatus: String(citizen.licenseStatus || '').trim(),
-            licenseReason: String(citizen.licenseReason || '').trim(),
-            weaponLicense: String(citizen.weaponLicense || '').trim(),
-            weaponLicenseReason: String(citizen.weaponLicenseReason || '').trim(),
-          };
-        }
+           const citizen = c || {};
+           return {
+             photo: String(citizen.photo || '').trim(),
+             notes: String(citizen.notes || '').trim(),
+             notesHtml: String(citizen.notesHtml || '').trim(),
+             licenseStatus: String(citizen.licenseStatus || '').trim(),
+             licenseReason: String(citizen.licenseReason || '').trim(),
+             licenseReinstatedAt: String(citizen.licenseReinstatedAt || '').trim(),
+             weaponLicense: String(citizen.weaponLicense || '').trim(),
+             weaponLicenseReason: String(citizen.weaponLicenseReason || '').trim(),
+             weaponLicenseReinstatedAt: String(citizen.weaponLicenseReinstatedAt || '').trim(),
+           };
+         }
 
         function beginEditSession(dataKey, id){
           const key = historyKeyFor(dataKey, id);
@@ -4987,13 +5348,23 @@
                       }
                       : {};
 
-              appendHistoryEntry(dataKey, id, {
-                ts: Date.now(),
-                actorStateId: actor.stateId || null,
-                actorName: actor.name || 'Unknown',
-                actorRank: actor.rank || '',
-                changes: fields.map(f => `updated ${labelMap[f] || f}`),
-              });
+               const rawChanges = fields.map(f => `updated ${labelMap[f] || f}`);
+               const changes = [];
+               const seen = new Set();
+               for(const ch of rawChanges){
+                 const k = String(ch || '').toLowerCase();
+                 if(!k || seen.has(k)) continue;
+                 seen.add(k);
+                 changes.push(ch);
+               }
+
+               appendHistoryEntry(dataKey, id, {
+                 ts: Date.now(),
+                 actorStateId: actor.stateId || null,
+                 actorName: actor.name || 'Unknown',
+                 actorRank: actor.rank || '',
+                 changes,
+               });
             }
 
             ncpdEditSessions.delete(key);
@@ -5410,12 +5781,12 @@
           const entries = getHistoryEntries(dataKey, id);
           const item = getMdtData(dataKey).find(x => x.id === id);
           const header = (dataKey === 'ncpdReports')
-            ? `CASE ${escapeHtml(item?.caseNum || `#${id}`)}`
+            ? `CASE ${escapeHtml(item?.caseNum || `#${fmtMaybeId6(id)}`)}`
             : (dataKey === 'arrests')
-              ? `ARREST ${escapeHtml(item?.arrestNum || `#${id}`)}`
+              ? `ARREST ${escapeHtml(item?.arrestNum || `#${fmtMaybeId6(id)}`)}`
               : (dataKey === 'citizens')
-                ? `CITIZEN ${escapeHtml(citizenFullName(item) || `#${id}`)}`
-                : `RECORD #${id}`;
+                ? `CITIZEN ${escapeHtml(citizenFullName(item) || `#${fmtMaybeId6(id)}`)}`
+                : `RECORD #${fmtId6(id)}`;
 
           const row = (e) => {
             const when = new Date(e.ts || Date.now());
@@ -5580,7 +5951,7 @@
          return `
            <div class="mdtDetail">
              <div class="mdtDetailHead">
-               <div class="mdtDetailTitle">RECORD #${item.id}</div>
+               <div class="mdtDetailTitle">RECORD #${fmtId6(item.id)}</div>
                <div class="mdtDetailSubtitle">${escapeHtml(dataKey.toUpperCase())}</div>
              </div>
              <div class="mdtDetailGrid">
@@ -5606,7 +5977,7 @@
           return `
             <div class="mdtDetail" data-arrest-edit-wrap="${a.id}" data-arrest="${a.id}">
               <div class="mdtDetailHead">
-                <div class="mdtDetailTitle">ARREST PAPERWORK ${escapeHtml(a.arrestNum || `#${a.id}`)} ${copyBtn(a.arrestNum || '', 'COPY #')}</div>
+                <div class="mdtDetailTitle">ARREST PAPERWORK ${escapeHtml(a.arrestNum || `#${fmtMaybeId6(a.id)}`)} ${copyBtn(a.arrestNum || '', 'COPY #')}</div>
                 <div class="mdtDetailSubtitle">Autosave: every 2s</div>
                 <div class="mdtDetailBadge mdtBadgeInfo">EDITING</div>
               </div>
@@ -7844,6 +8215,12 @@
               stage.onpointerleave = onUp;
             };
 
+            // Expose viewer globally so other MDT pages can reuse it.
+            try{
+              window.ensureEvidencePhotoViewer = ensureEvidencePhotoViewer;
+              window.openEvidencePhotoViewer = openEvidencePhotoViewer;
+            }catch{}
+
             const renderEvidenceViewOverlay = () => {
               const overlay = ensureEvidenceViewOverlay();
               const ev = getEvidence();
@@ -7889,7 +8266,10 @@
                   img.onclick = (e) => {
                     e.preventDefault();
                     const src = String(img.getAttribute('data-evidence-photo-open') || '').trim();
-                    openEvidencePhotoViewer(src);
+                    const fn = (window && typeof window.openEvidencePhotoViewer === 'function')
+                      ? window.openEvidencePhotoViewer
+                      : null;
+                    if(fn) fn(src);
                   };
                 });
 
@@ -8586,15 +8966,42 @@
          return s;
        }
 
-       function safeCopy(btn, text){
-         const txt = normalizeTextCopyValue(text);
-         if(!txt) return;
-         try{ navigator.clipboard.writeText(txt); }catch{}
-         if(btn){
-           btn.classList.add('copied');
-           setTimeout(() => btn.classList.remove('copied'), 800);
-         }
-       }
+        function showMdtToast(message){
+          const msg = String(message || '').trim();
+          if(!msg) return;
+
+          let el = document.getElementById('mdtToast');
+          if(!el){
+            el = document.createElement('div');
+            el.id = 'mdtToast';
+            el.className = 'mdtToast';
+            el.setAttribute('role', 'status');
+            el.setAttribute('aria-live', 'polite');
+            document.body.appendChild(el);
+          }
+
+          el.textContent = msg;
+          el.classList.add('on');
+
+          try{ clearTimeout(el.__mdt_toast_timer); }catch{}
+          el.__mdt_toast_timer = setTimeout(() => {
+            el.classList.remove('on');
+          }, 900);
+        }
+
+        function safeCopy(btn, text, opts = {}){
+          const txt = normalizeTextCopyValue(text);
+          if(!txt) return;
+          try{ navigator.clipboard.writeText(txt); }catch{}
+
+          const toast = String(opts.toast || '').trim();
+          if(toast) showMdtToast(toast);
+
+          if(btn){
+            btn.classList.add('copied');
+            setTimeout(() => btn.classList.remove('copied'), 800);
+          }
+        }
 
        function copyBtn(text, label = 'COPY'){
          const t = escapeHtml(normalizeTextCopyValue(text));
@@ -8608,14 +9015,23 @@
            const newtabAttr = opts.newTab ? ' data-link-newtab="1"' : '';
 
            if(id && target){
-             const copyVal = (opts.copyValue != null) ? opts.copyValue : label;
-             const copyHtml = opts.copy ? copyBtn(copyVal, opts.copyLabel || 'COPY') : '';
+const copyVal = (opts.copyValue != null) ? opts.copyValue : label;
+
+            // If an ID-like value is passed, prefer zero-padded display/copy.
+            // (Only affects explicit copy fields; does not touch names/plates/etc.)
+            const copyValNorm = normalizeTextCopyValue(copyVal);
+            const copyLooksNumeric = /^\d+$/.test(copyValNorm);
+            const effectiveCopyVal = copyLooksNumeric ? fmtId6(copyValNorm) : copyValNorm;
+const copyHtml = opts.copy ? copyBtn(effectiveCopyVal, opts.copyLabel || 'COPY') : '';
              return `<span class="mdtLinkish" data-link-target="${safeTarget}" data-link-id="${id}"${newtabAttr}>${safeLabel}</span>${copyHtml}`;
            }
 
-           const copyVal = (opts.copyValue != null) ? opts.copyValue : label;
-           const copyHtml = opts.copy ? copyBtn(copyVal, opts.copyLabel || 'COPY') : '';
-           return `<span class="mdtPlain">${safeLabel}</span>${copyHtml}`;
+const copyVal = (opts.copyValue != null) ? opts.copyValue : label;
+            const copyValNorm = normalizeTextCopyValue(copyVal);
+            const copyLooksNumeric = /^\d+$/.test(copyValNorm);
+            const effectiveCopyVal = copyLooksNumeric ? fmtId6(copyValNorm) : copyValNorm;
+            const copyHtml = opts.copy ? copyBtn(effectiveCopyVal, opts.copyLabel || 'COPY') : '';
+            return `<span class="mdtPlain">${safeLabel}</span>${copyHtml}`;
          }
 
         function resolveCitizenIdFromRecord(record){
@@ -8693,7 +9109,8 @@
             const id = Number(m[1]);
             if(!Number.isNaN(id)){
               const a = (window.MDT_DATA?.arrests || []).find(x => x.id === id);
-              const label = a ? `ARREST ${a.arrestNum || `#${a.id}`}` : `ARREST:${id}`;
+               const label = a ? `ARREST ${a.arrestNum || `#${fmtMaybeId6(a.id)}`}` : `ARREST:${id}`;
+
               return { target: 'arrests', id, label };
             }
           }
@@ -8728,7 +9145,8 @@
             }
 
             if(found){
-              return { target: 'arrests', id: found.id, label: `ARREST ${found.arrestNum || `#${found.id}`}` };
+               return { target: 'arrests', id: found.id, label: `ARREST ${found.arrestNum || `#${fmtMaybeId6(found.id)}`}` };
+
             }
           }
 
@@ -9154,29 +9572,33 @@
             if(reason == null) return; // cancelled
             const cleanReason = String(reason || '').trim();
 
-            if(t === 'driver'){
-              if(act === 'suspend'){
-                next.licenseStatus = 'Suspended';
-                next.licenseReason = cleanReason;
-              }else if(act === 'reinstate'){
-                next.licenseStatus = 'Valid';
-                next.licenseReason = cleanReason;
-              }
-              markEditedField('citizens', cid, 'licenseStatus');
-              markEditedField('citizens', cid, 'licenseReason');
-            }
+             if(t === 'driver'){
+               if(act === 'suspend'){
+                 next.licenseStatus = 'Suspended';
+                 next.licenseReason = cleanReason;
+               }else if(act === 'reinstate'){
+                 next.licenseStatus = 'Valid';
+                 next.licenseReason = cleanReason;
+                 next.licenseReinstatedAt = new Date().toISOString();
+               }
+               markEditedField('citizens', cid, 'licenseStatus');
+               markEditedField('citizens', cid, 'licenseReason');
+               if(act === 'reinstate') markEditedField('citizens', cid, 'licenseReinstatedAt');
+             }
   
-            if(t === 'weapon'){
-              if(act === 'suspend'){
-                next.weaponLicense = 'Suspended';
-                next.weaponLicenseReason = cleanReason;
-              }else if(act === 'reinstate'){
-                next.weaponLicense = 'Valid';
-                next.weaponLicenseReason = cleanReason;
-              }
-              markEditedField('citizens', cid, 'weaponLicense');
-              markEditedField('citizens', cid, 'weaponLicenseReason');
-            }
+             if(t === 'weapon'){
+               if(act === 'suspend'){
+                 next.weaponLicense = 'Suspended';
+                 next.weaponLicenseReason = cleanReason;
+               }else if(act === 'reinstate'){
+                 next.weaponLicense = 'Valid';
+                 next.weaponLicenseReason = cleanReason;
+                 next.weaponLicenseReinstatedAt = new Date().toISOString();
+               }
+               markEditedField('citizens', cid, 'weaponLicense');
+               markEditedField('citizens', cid, 'weaponLicenseReason');
+               if(act === 'reinstate') markEditedField('citizens', cid, 'weaponLicenseReinstatedAt');
+             }
   
             setUpdatedRecord('citizens', cid, next);
             const record = getMdtData('citizens').find(x => x.id === cid) || { ...citizenLive, ...next };
@@ -9236,22 +9658,131 @@
 
         function bindAllInlineHandlers(){
           bindViewButtons();
+          bindCitizenCards();
           bindCopyButtons();
           bindLinkButtons();
-          bindCreateButtons();
-             bindNotesEditors();
+           bindCreateButtons();
+              bindNotesEditors();
+
+               // Gallery page bindings
+               viewHost.querySelectorAll('[data-gallery-photo-open]').forEach(img => {
+                 img.onclick = (e) => {
+                   e.preventDefault();
+                   const src = String(img.dataset.galleryPhotoOpen || '').trim();
+                   if(!src) return;
+                   const fn = (window && typeof window.openEvidencePhotoViewer === 'function')
+                     ? window.openEvidencePhotoViewer
+                     : null;
+                   if(fn) fn(src);
+                 };
+               });
+
+              viewHost.querySelectorAll('[data-gallery-photo-remove-index]').forEach(btn => {
+                btn.onclick = () => {
+                  const idx = Number(btn.dataset.galleryPhotoRemoveIndex);
+                  if(Number.isNaN(idx)) return;
+
+                  const cur = Array.isArray(mdtRuntime?.gallery?.photos) ? mdtRuntime.gallery.photos : [];
+                  const next = cur.filter((_, i) => i !== idx);
+                  if(!mdtRuntime.gallery || typeof mdtRuntime.gallery !== 'object') mdtRuntime.gallery = { photos: [] };
+                  mdtRuntime.gallery.photos = next;
+                  saveMdtRuntime(mdtRuntime);
+
+                  // Re-render current page (if we're still on gallery)
+                  const tab = state.activeTabId ? state.tabs.get(state.activeTabId) : null;
+                  if(tab) renderContentFor(tab);
+                };
+              });
+
+              const clearBtn = viewHost.querySelector('[data-gallery-clear]');
+              if(clearBtn){
+                clearBtn.onclick = () => {
+                  if(!mdtRuntime.gallery || typeof mdtRuntime.gallery !== 'object') mdtRuntime.gallery = { photos: [] };
+                  mdtRuntime.gallery.photos = [];
+                  saveMdtRuntime(mdtRuntime);
+                  const tab = state.activeTabId ? state.tabs.get(state.activeTabId) : null;
+                  if(tab) renderContentFor(tab);
+                };
+              }
 
              // Citizen criminal history popup.
              viewHost.querySelectorAll('[data-open-citizen-history]').forEach(btn => {
                btn.onclick = () => openCitizenHistoryOverlay(btn.dataset.openCitizenHistory);
              });
 
-             // Citizen photo update
-             viewHost.querySelectorAll('[data-set-citizen-photo]').forEach(btn => {
-               const id = Number(btn.dataset.setCitizenPhoto);
-               if(Number.isNaN(id)) return;
-               btn.onclick = () => openCitizenPhotoPicker(id);
-             });
+              // Citizen photo update
+              viewHost.querySelectorAll('[data-set-citizen-photo]').forEach(btn => {
+                const id = Number(btn.dataset.setCitizenPhoto);
+                if(Number.isNaN(id)) return;
+                btn.onclick = () => openCitizenPhotoPicker(id);
+              });
+
+               // Citizen photo fullscreen view (same viewer as Evidence Locker)
+               viewHost.querySelectorAll('[data-photo-open]').forEach(el => {
+                 el.onclick = (e) => {
+                   e.preventDefault();
+                   const src = String(el.dataset.photoOpen || '').trim();
+                   if(!src) return;
+                   const fn = (window && typeof window.openEvidencePhotoViewer === 'function')
+                     ? window.openEvidencePhotoViewer
+                     : null;
+                   if(fn) fn(src);
+                 };
+               });
+
+              function safeFilenamePart(s){
+                return String(s || '')
+                  .trim()
+                  .replace(/\s+/g, '_')
+                  .replace(/[^a-zA-Z0-9_\-\.]+/g, '')
+                  .slice(0, 60);
+              }
+
+              function triggerDownload(url, filename){
+                const href = String(url || '').trim();
+                if(!href) return false;
+
+                try{
+                  const a = document.createElement('a');
+                  a.href = href;
+                  if(filename) a.download = filename;
+                  a.rel = 'noopener';
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  return true;
+                }catch{
+                  return false;
+                }
+              }
+
+              // Download citizen photo + add to Gallery
+              viewHost.querySelectorAll('[data-download-citizen-photo]').forEach(btn => {
+                const cid = Number(btn.dataset.downloadCitizenPhoto);
+                if(Number.isNaN(cid)) return;
+
+                btn.onclick = () => {
+                  const citizen = getMdtData('citizens').find(x => x.id === cid) || (window.MDT_DATA?.citizens || []).find(x => x.id === cid);
+                  if(!citizen) return;
+
+                  const src = String(citizen.photo || '').trim() || './77web.png';
+                  const fullName = citizenFullName(citizen);
+                  const base = `CITIZEN_${fmtId6(cid)}_${safeFilenamePart(fullName)}`;
+                  const extMatch = src.match(/\.([a-zA-Z0-9]+)(?:\?|#|$)/);
+                  const ext = extMatch ? extMatch[1].toLowerCase() : (String(src).startsWith('data:image/png') ? 'png' : String(src).startsWith('data:image/jpeg') ? 'jpg' : 'png');
+                  const filename = `${base}.${ext}`;
+
+                  // Persist in runtime gallery.
+                  if(!mdtRuntime.gallery || typeof mdtRuntime.gallery !== 'object') mdtRuntime.gallery = { photos: [] };
+                  const cur = Array.isArray(mdtRuntime.gallery.photos) ? mdtRuntime.gallery.photos : [];
+                  mdtRuntime.gallery.photos = dedupeStrings([ ...cur, src ]);
+                  saveMdtRuntime(mdtRuntime);
+
+                  // Attempt browser download. (May be blocked by CORS depending on src.)
+                  const ok = triggerDownload(src, filename);
+                  showMdtToast(ok ? 'Saved to Gallery + download started' : 'Saved to Gallery');
+                };
+              });
 
              // License actions
               viewHost.querySelectorAll('[data-license-action]').forEach(btn => {

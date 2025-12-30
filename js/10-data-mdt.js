@@ -16,6 +16,8 @@ window.MDT_DATA = {
     { id: 8, firstName: 'Maria', lastName: 'Santos', dob: '1988-06-17', gender: 'Female', pronouns: 'she/her', phone: '555-0108', address: '320 La Puerta St', occupation: 'Mechanic', licenseStatus: 'Valid', licenseClass: 'C', weaponLicense: 'Valid', dna: 'ATCG-5521-06T', fingerprints: 'NC-SAN-1988', priors: [], warrants: [], notes: 'Owns Santos Auto Repair.', photo: './77web.png' },
     { id: 9, firstName: 'Tyler', lastName: 'Reed', dob: '2001-04-25', gender: 'Male', pronouns: 'he/him', phone: '555-0109', address: '1800 Vinewood Hills Rd', occupation: 'Student', licenseStatus: 'Provisional', licenseClass: 'C', weaponLicense: 'Pending', dna: 'ATCG-8722-04M', fingerprints: 'NC-REE-2001', priors: ['Drug Possession (2024) - Pending'], warrants: ['WAR-2024-0001'], notes: 'Outstanding warrant for failure to appear. Vehicle flagged for unpaid citations.', photo: './77web.png' },
     { id: 10, firstName: 'Nina', lastName: 'Petrov', dob: '1990-08-12', gender: 'Female', pronouns: 'she/her', phone: '555-0110', address: '600 Palomino Lands Ranch', occupation: 'Veterinarian', licenseStatus: 'Valid', licenseClass: 'C', weaponLicense: 'Valid', dna: 'ATCG-2255-08C', fingerprints: 'NC-PET-1990', priors: [], warrants: [], notes: 'Rural area resident.', photo: './77web.png' },
+
+    { id: 11, firstName: 'Annabelle', lastName: 'Celestine', dob: '1982-02-08', gender: 'Female', pronouns: 'she/her', phone: '555-0144', address: 'Penthouse 1, Pacific Bluffs Tower', occupation: 'SecuroServ - Executive Director', licenseStatus: 'Valid', licenseClass: 'C', weaponLicense: 'Valid', dna: 'ATCG-1982-0208-AC', fingerprints: 'NC-CELE-1982', priors: [], warrants: [], notes: 'SecuroServ executive. Highest-ranking active leadership. High-value security risk.', photo: './mdt_citizen_0011.png' },
   ],
 
   // ========== ORGANIZATIONS ==========
@@ -54,6 +56,90 @@ window.MDT_DATA = {
       employees: [
         { citizenId: 7, rank: 'Contractor' }
       ]
+    },
+
+    /* Government entities (for badge/logo overlays) */
+    {
+      id: 101,
+      name: 'NCPD',
+      type: 'Government',
+      logo: './DATA_SHARD.png',
+      hq: 'NCPD Central',
+      notes: 'Neon City Police Department. Sworn officers and civilian staff.',
+      employees: [
+        { citizenId: 1, rank: 'Analyst' },
+        { citizenId: 7, rank: 'Contractor' }
+      ]
+    },
+    {
+      id: 102,
+      name: 'TacMed',
+      type: 'Government',
+      logo: './TACMED.png',
+      hq: 'Pillbox Hill Medical',
+      notes: 'Tactical medical response unit.',
+      employees: [
+        { citizenId: 2, rank: 'Medic' }
+      ]
+    },
+    {
+      id: 103,
+      name: 'City Council',
+      type: 'Government',
+      logo: './77web.png',
+      hq: 'City Hall',
+      notes: 'Municipal governance and permitting authority.',
+      employees: [
+        { citizenId: 5, rank: 'Council Liaison' }
+      ]
+    },
+
+    /* Major factions / agencies */
+    {
+      id: 104,
+      name: 'Merryweather',
+      type: 'Security / PMC',
+      logo: './MERRYWEATHER_BASE.png',
+      hq: 'Merryweather Base',
+      notes: 'Private military contractor. Restricted facilities and high-risk operations.',
+      employees: [
+        { citizenId: 7, rank: 'Contractor' }
+      ]
+    },
+    {
+      id: 105,
+      name: 'SecuroServ',
+      type: 'Security / Logistics',
+      logo: './SECUROSERV_PORT.png',
+      hq: 'Neon City Ports (SecuroServ)',
+      notes: 'Security and logistics across port facilities. Restricted access.',
+      employees: [
+        { citizenId: 11, rank: 'Executive Director' },
+        { citizenId: 7, rank: 'Contractor' },
+        { citizenId: 1, rank: 'Analyst' }
+      ]
+    },
+    {
+      id: 106,
+      name: 'Humane Labs',
+      type: 'Research',
+      logo: './HUMANE_LABS.png',
+      hq: 'Humane Labs Campus',
+      notes: 'Biomedical research and lab operations. Restricted access for authorized staff only.',
+      employees: [
+        { citizenId: 10, rank: 'Veterinary Consultant' }
+      ]
+    },
+    {
+      id: 107,
+      name: 'Humane Research',
+      type: 'Research',
+      logo: './HUMANE_LABS.png',
+      hq: 'Humane Research Annex',
+      notes: 'Special projects research division (HUMINT / biotech).',
+      employees: [
+        { citizenId: 2, rank: 'Research Nurse' }
+      ]
     }
   ],
 
@@ -68,7 +154,12 @@ window.MDT_DATA = {
     { id: 7, address: '999 Pacific Bluffs Way', type: 'Single Family Home', owner: 'Derek Stone', value: '₡2,100,000', taxStatus: 'Current', notes: 'Cliffside property. Security cameras.' },
     { id: 8, address: '320 La Puerta St', type: 'Commercial', owner: 'Santos Auto LLC', value: '₡540,000', taxStatus: 'Current', notes: 'Auto repair shop with residential above.' },
     { id: 9, address: 'Warehouse 7, Neon City Ports', type: 'Industrial', owner: 'SecuroServ Holdings', value: '₡3,200,000', taxStatus: 'Current', notes: 'RESTRICTED - SecuroServ property.' },
-    { id: 10, address: '600 Palomino Lands Ranch', type: 'Ranch', owner: 'Petrov Family', value: '₡890,000', taxStatus: 'Current', notes: '40 acres. Livestock permitted.' }
+    { id: 10, address: '600 Palomino Lands Ranch', type: 'Ranch', owner: 'Petrov Family', value: '₡890,000', taxStatus: 'Current', notes: '40 acres. Livestock permitted.' },
+
+    { id: 11, citizenId: 11, address: 'Penthouse 1, Pacific Bluffs Tower', type: 'Penthouse', owner: 'Annabelle Celestine', value: '₡18,900,000', taxStatus: 'Current', notes: 'Ultra-luxury high-rise penthouse. Private elevator.' },
+    { id: 12, citizenId: 11, address: 'Unit 44B, Mirror Hills Skyline', type: 'Luxury Apartment', owner: 'Annabelle Celestine', value: '₡6,200,000', taxStatus: 'Current', notes: 'High-rise unit with secured parking and concierge.' },
+    { id: 13, citizenId: 11, address: '12 Rockford Hills Crest', type: 'Estate', owner: 'Annabelle Celestine', value: '₡24,500,000', taxStatus: 'Current', notes: 'Gated estate property. Private security perimeter.' },
+    { id: 14, citizenId: 11, address: '101 Vespucci Beachfront Way', type: 'Luxury Condo', owner: 'Annabelle Celestine', value: '₡9,800,000', taxStatus: 'Current', notes: 'Beachfront property. Secure subterranean garage.' }
   ],
 
   // ========== VEHICLES ==========
@@ -82,7 +173,9 @@ window.MDT_DATA = {
     { id: 7, plate: 'PBW-9990', make: 'Gallivanter', model: 'Baller', year: 2022, color: 'Black', owner: 'Derek Stone', status: 'Registered', flags: [], notes: 'Tinted windows - exempt (security).' },
     { id: 8, plate: 'LPT-3200', make: 'Vapid', model: 'Bobcat XL', year: 2019, color: 'Orange', owner: 'Maria Santos', status: 'Registered', flags: [], notes: 'Commercial plates.' },
     { id: 9, plate: 'VWH-1800', make: 'Obey', model: 'Tailgater', year: 2023, color: 'Gray', owner: 'Tyler Reed', status: 'Suspended', flags: ['Unpaid citations'], notes: 'Registration suspended - unpaid fines.' },
-    { id: 10, plate: 'PLR-6000', make: 'Bravado', model: 'Bison', year: 2018, color: 'Green', owner: 'Nina Petrov', status: 'Registered', flags: [], notes: 'Ranch use vehicle.' }
+    { id: 10, plate: 'PLR-6000', make: 'Bravado', model: 'Bison', year: 2018, color: 'Green', owner: 'Nina Petrov', status: 'Registered', flags: [], notes: 'Ranch use vehicle.' },
+
+    { id: 11, citizenId: 11, plate: 'ACE-1982', make: 'Lampadati', model: 'Furore GT', year: 2024, color: 'Pearlescent White', owner: 'Annabelle Celestine', status: 'Registered', flags: [], notes: 'SecuroServ executive vehicle. Priority escort eligible.' }
   ],
 
   // ========== WEAPONS ==========
