@@ -70,7 +70,7 @@ A private provider scaled faster than public order:
 > SecuroServ
 
 Operations nodes you can still locate:
-- Enforcement core: LITTLE_SOEUL
+- Enforcement core: LITTLE_SEOUL
 - Containment oversight: NEON_CITY_PRISON
 - Maritime logistics: SECUROSERV_PORT
 

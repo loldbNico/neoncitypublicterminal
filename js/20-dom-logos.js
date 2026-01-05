@@ -42,7 +42,7 @@
       "./LA_PUERTA.png",
       "./LEX.png",
       "./LEXIES.png",
-      "./LITTLE_SOEUL.png",
+      "./LITTLE_SEOUL.png",
       "./MERRYWEATHER_BASE.png",
       "./MIRROR_HILLS.png",
       "./NEON_CITY_NATIONAL_AIRPORT.png",

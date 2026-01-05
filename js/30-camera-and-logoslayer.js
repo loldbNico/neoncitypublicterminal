@@ -355,11 +355,16 @@
     }
 
     function normalizeRegionKey(s){
-      return String(s || "")
+      const k = String(s || "")
         .trim()
         .toUpperCase()
         .replace(/[^A-Z0-9]+/g, "_")
         .replace(/^_+|_+$/g, "");
+
+      // Backward-compatible aliasing for legacy typos
+      if(k === "LITTLE_SOEUL") return "LITTLE_SEOUL";
+
+      return k;
     }
 
     function getRegionAccentColor(el){
@@ -395,7 +400,7 @@
         return { stroke: "#ff0000", fill: hexToRgba("360000", 0.68) };
       }
 
-      if(k === "LITTLE_SOEUL"){
+      if(k === "LITTLE_SEOUL"){
         // Keep the original district outline color, while matching SOUTH_SIDE fill.
         return { stroke: "#f2c25c", fill: hexToRgba("360000", 0.68) };
       }
@@ -715,7 +720,7 @@
             return { dx: -70, dy: 0 };
           }
         }
-        if(key === "LITTLE_SOEUL"){
+        if(key === "LITTLE_SEOUL"){ 
           return { dx: 14, dy: -10 };
         }
         if(key === "SOUTH_SIDE"){

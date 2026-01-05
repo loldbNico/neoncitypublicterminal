@@ -323,7 +323,7 @@ window.MDT_DATA = {
     { id: 6, label: 'Restricted Scan — APEX HQ Exterior', src: './APEX_HQ.png', takenAt: '2024-04-20 20:55', takenBy: 'Scanner Unit', tags: ['restricted','apex'] },
     { id: 7, label: 'Restricted Scan — Merryweather Base', src: './MERRYWEATHER_BASE.png', takenAt: '2024-04-20 21:01', takenBy: 'Scanner Unit', tags: ['restricted','merryweather'] },
     { id: 8, label: 'Facility Scan — Humane Labs Access Road', src: './HUMANE_LABS.png', takenAt: '2024-04-12 10:18', takenBy: 'Scanner Unit', tags: ['facility','labs'] },
-    { id: 9, label: 'Neighborhood Scan — Little Seoul Plaza', src: './LITTLE_SOEUL.png', takenAt: '2024-01-28 03:08', takenBy: 'Scanner Unit', tags: ['neighborhood'] },
+    { id: 9, label: 'Neighborhood Scan — Little Seoul Plaza', src: './LITTLE_SEOUL.png', takenAt: '2024-01-28 03:08', takenBy: 'Scanner Unit', tags: ['neighborhood'] },
     { id: 10, label: 'Neighborhood Scan — Mirror Hills', src: './MIRROR_HILLS.png', takenAt: '2024-04-02 09:54', takenBy: 'Scanner Unit', tags: ['neighborhood'] },
     { id: 11, label: 'Neighborhood Scan — Rockford Hills', src: './ROCKFORD_HILLS.png', takenAt: '2024-04-28 01:03', takenBy: 'Scanner Unit', tags: ['neighborhood'] },
     { id: 12, label: 'Facility Scan — Prison Exterior', src: './NEON_CITY_PRISON.png', takenAt: '2024-04-25 11:10', takenBy: 'Scanner Unit', tags: ['facility','prison'] },

@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RAID Alert Overlay</title>
+  <link rel="stylesheet" href="RAID.CSS" />
+</head>
+<body>
+  <!--
+    Trigger options:
+      1) URL params: RAID.HTML?raider=Name&amount=25
+      2) JS test:   triggerRaid({ raider: "Name", amount: 25 })
+      3) postMessage (OBS/alerts):
+         window.postMessage({ type: "RAID", raider: "Name", amount: 25 }, "*")
+  -->
+
+  <div id="stage" aria-hidden="true">
+    <div id="vignette" class="layer"></div>
+    <div id="fx" class="layer"></div>
+
+    <div id="popLayer" class="layer"></div>
+
+    <div id="crashLayer" class="layer">
+      <div class="crash-card">
+        <div class="crash-top">SecuroServ Kernel Guard</div>
+        <div class="crash-mid">
+          <div class="crash-title">FATAL EXCEPTION: RAID_EVENT_OVERFLOW</div>
+          <div class="crash-sub">STOP_CODE 0x00R41D · MEMORY_CORRUPTION · DISPLAY_PIPELINE_DESYNC</div>
+          <div id="crashLog" class="crash-log"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="blackout" class="layer"></div>
+
+    <div id="bootLayer" class="layer">
+      <div class="boot">
+        <div class="boot-top">
+          <span class="boot-tag">SYSTEM RECOVERY</span>
+          <div class="boot-title">NeonCity Terminal — Reinitializing Display Stack</div>
+          <div class="boot-sub">Validating memory sectors / repairing overlay hooks…</div>
+        </div>
+        <div class="boot-mid">
+          <div id="bootLines" class="boot-lines"></div>
+          <div class="boot-bar"><div id="bootFill" class="boot-bar-fill"></div></div>
+          <div class="boot-meta"><span>Progress</span><span id="bootPct">0%</span></div>
+        </div>
+        <div class="boot-foot"><span>Do not power off</span><span>RAID-RECOV</span></div>
+      </div>
+    </div>
+
+    <div id="finalLayer" class="layer">
+      <div class="final-popup" role="presentation">
+        <div class="final-titlebar">
+          <span>Incoming Raid</span>
+          <span class="winbtns" aria-hidden="true">
+            <span class="winbtn"></span>
+            <span class="winbtn"></span>
+            <span class="winbtn close"></span>
+          </span>
+        </div>
+        <div class="final-body">
+          <div id="finalHeadline" class="final-headline">RAID DETECTED</div>
+          <div class="final-rows">
+            <div>Raider: <b id="finalRaider">—</b></div>
+            <div>Viewers: <b id="finalAmount">—</b></div>
+          </div>
+          <div id="finalSub" class="final-foot">Signal stabilized · Stream restored</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const stage = document.getElementById('stage');
+      const popLayer = document.getElementById('popLayer');
+      const crashLog = document.getElementById('crashLog');
+      const bootLines = document.getElementById('bootLines');
+      const bootFill = document.getElementById('bootFill');
+      const bootPct = document.getElementById('bootPct');
+
+      const finalRaider = document.getElementById('finalRaider');
+      const finalAmount = document.getElementById('finalAmount');
+      const finalHeadline = document.getElementById('finalHeadline');
+      const finalSub = document.getElementById('finalSub');
+
+      let running = false;
+      let timers = [];
+
+      function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+      function rand(min, max){ return Math.random() * (max - min) + min; }
+      function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+      function clearTimers(){
+        for (const t of timers) clearTimeout(t);
+        timers = [];
+      }
+
+      function resetStage(){
+        clearTimers();
+        running = false;
+        stage.className = '';
+        stage.style.opacity = '';
+        popLayer.textContent = '';
+        crashLog.textContent = '';
+        bootLines.textContent = '';
+        bootFill.style.width = '0%';
+        bootPct.textContent = '0%';
+      }
+
+      function popupTemplate({ title, body, variant, glitch }){
+        const el = document.createElement('div');
+        el.className = 'popup' + (variant ? (' ' + variant) : '') + (glitch ? ' glitch' : '');
+        el.innerHTML =
+          '<div class="titlebar">' +
+            '<span>' + escapeHtml(title) + '</span>' +
+            '<span class="winbtns" aria-hidden="true">' +
+              '<span class="winbtn"></span>' +
+              '<span class="winbtn"></span>' +
+              '<span class="winbtn close"></span>' +
+            '</span>' +
+          '</div>' +
+          '<div class="popup-body">' + body + '</div>';
+        return el;
+      }
+
+      function escapeHtml(s){
+        return String(s)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function spawnPopup(kind){
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        const x = clamp(Math.floor(rand(10, w - 390)), 10, Math.max(10, w - 20));
+        const y = clamp(Math.floor(rand(10, h - 160)), 10, Math.max(10, h - 20));
+
+        const variants = {
+          info: { variant: '', glitch: Math.random() < 0.30 },
+          warn: { variant: 'warn', glitch: Math.random() < 0.45 },
+          fatal: { variant: 'fatal', glitch: Math.random() < 0.60 },
+        };
+
+        const msg = pick([
+          { t: 'Windows Security Center', b: '<div>Unauthorized overlay hook detected.</div><div class="sub">Attempting containment…</div>' },
+          { t: 'NeonCity Terminal', b: '<div class="code">inject() → streamBus.listen(RAID)</div><div class="sub">Buffer nearing limit.</div>' },
+          { t: 'SecuroServ', b: '<div>Suspicious signal surge on port 443.</div><div class="sub">Signature: RAID_EVENT</div>' },
+          { t: 'System Warning', b: '<div class="code">ERR_GLITCHPIPE: frame sync lost</div><div class="sub">Retrying render thread…</div>' },
+          { t: 'Memory Manager', b: '<div class="code">heap corruption @ 0x00R41D</div><div class="sub">Quarantining region…</div>' },
+          { t: 'Access Violation', b: '<div class="code">0xC0000005</div><div class="sub">A device driver attempted to access invalid address.</div>' },
+        ]);
+
+        const style = variants[kind] || variants.info;
+        const el = popupTemplate({ title: msg.t, body: msg.b, variant: style.variant, glitch: style.glitch });
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.zIndex = String(10 + Math.floor(rand(0, 5000)));
+
+        popLayer.appendChild(el);
+
+        // Auto-dismiss some to keep layer from going infinite.
+        const life = Math.floor(rand(800, 1800));
+        timers.push(setTimeout(() => {
+          el.classList.add('out');
+          timers.push(setTimeout(() => el.remove(), 300));
+        }, life));
+      }
+
+      function fillCrashLog(){
+        const lines = [];
+        const ts = () => {
+          const d = new Date();
+          const ms = String(d.getMilliseconds()).padStart(3,'0');
+          return d.toISOString().slice(11,19) + '.' + ms;
+        };
+
+        const samples = [
+          'alloc overlay surfaces…',
+          'validate shader cache…',
+          'syncing capture card…',
+          'handshake: raid bus…',
+          'decrypting payload…',
+          'patching render pipeline…',
+          'reconciling frame timing…',
+          'restoring audio graph…'
+        ];
+
+        for (let i=0;i<22;i++){
+          const hot = Math.random() < 0.18;
+          const text = '[' + ts() + '] ' + pick(samples);
+          lines.push(hot ? '<span class="hot">' + escapeHtml(text) + '</span>' : escapeHtml(text));
+        }
+
+        lines.push('<span class="hot">[' + ts() + '] panic: RAID_EVENT_OVERFLOW</span>');
+        lines.push(escapeHtml('[' + ts() + '] dumping state…'));
+        crashLog.innerHTML = lines.join('<br>');
+      }
+
+      function bootSequence(totalMs){
+        const bootMsgs = [
+          'mount /stream',
+          'verify overlay integrity',
+          'rebuild font atlas',
+          'reset compositor',
+          'warm-up shaders',
+          'reconnect websocket',
+          'calibrate capture timing',
+          'restore scene graph',
+          'finalize'
+        ];
+
+        bootLines.textContent = '';
+        bootFill.style.width = '0%';
+        bootPct.textContent = '0%';
+
+        const start = performance.now();
+        const tick = () => {
+          const now = performance.now();
+          const t = clamp((now - start) / totalMs, 0, 1);
+          const pct = Math.floor(t * 100);
+          bootFill.style.width = pct + '%';
+          bootPct.textContent = pct + '%';
+
+          if (Math.random() < 0.55){
+            const line = document.createElement('div');
+            line.textContent = '> ' + pick(bootMsgs) + '…';
+            bootLines.appendChild(line);
+            while (bootLines.childNodes.length > 11) bootLines.removeChild(bootLines.firstChild);
+          }
+
+          if (t < 1) {
+            timers.push(setTimeout(tick, 120));
+          }
+        };
+
+        tick();
+      }
+
+      function revealRaid({ raider, amount }){
+        finalRaider.textContent = raider || 'Unknown';
+        finalAmount.textContent = String(amount ?? '—');
+        finalHeadline.textContent = 'RAID DETECTED';
+        finalSub.textContent = 'Signal stabilized · Stream restored';
+      }
+
+      function runRaidSequence({ raider, amount }){
+        if (running) return;
+        running = true;
+
+        stage.className = 'active spam';
+        stage.style.opacity = '1';
+
+        // Spam phase
+        const spamMs = 4200;
+        const spamEvery = 120;
+        const spamCount = Math.floor(spamMs / spamEvery);
+
+        for (let i=0;i<spamCount;i++){
+          timers.push(setTimeout(() => {
+            const kind = i > spamCount * 0.65 ? (Math.random() < 0.6 ? 'fatal' : 'warn') : (Math.random() < 0.35 ? 'warn' : 'info');
+            spawnPopup(kind);
+          }, i * spamEvery));
+        }
+
+        // Escalation: crash
+        timers.push(setTimeout(() => {
+          stage.className = 'active crash';
+          fillCrashLog();
+        }, spamMs + 150));
+
+        // Blackout
+        timers.push(setTimeout(() => {
+          stage.className = 'active crash blackout';
+        }, spamMs + 2150));
+
+        // Boot
+        timers.push(setTimeout(() => {
+          stage.className = 'active booting';
+          bootSequence(3100);
+        }, spamMs + 2850));
+
+        // Reveal final popup
+        timers.push(setTimeout(() => {
+          stage.className = 'active reveal';
+          revealRaid({ raider, amount });
+        }, spamMs + 6200));
+
+        // Fade out + reset
+        timers.push(setTimeout(() => {
+          stage.className = 'active reveal fading';
+        }, spamMs + 14200));
+
+        timers.push(setTimeout(() => {
+          resetStage();
+        }, spamMs + 15050));
+      }
+
+      // Public testing API
+      window.triggerRaid = function(payload){
+        const raider = payload?.raider ?? payload?.name ?? 'Unknown';
+        const amountRaw = payload?.amount ?? payload?.viewers ?? payload?.count;
+        const amount = amountRaw === undefined ? undefined : Number(amountRaw);
+        runRaidSequence({ raider, amount: Number.isFinite(amount) ? amount : amountRaw });
+      };
+
+      // URL param autostart (optional)
+      const params = new URLSearchParams(location.search);
+      const raiderParam = params.get('raider') || params.get('name');
+      const amountParam = params.get('amount') || params.get('viewers');
+      if (raiderParam || amountParam){
+        window.triggerRaid({ raider: raiderParam || 'Unknown', amount: amountParam ? Number(amountParam) : undefined });
+      }
+
+      // postMessage trigger
+      window.addEventListener('message', (ev) => {
+        const data = ev?.data;
+        if (!data || typeof data !== 'object') return;
+        if (data.type === 'RAID' || data.type === 'raid'){
+          window.triggerRaid({ raider: data.raider ?? data.name, amount: data.amount ?? data.viewers ?? data.count });
+        }
+        if (data.type === 'TEST_RAID'){
+          window.triggerRaid({ raider: data.raider ?? 'TestRaider', amount: data.amount ?? 123 });
+        }
+      });
+
+      // Helpful: clear stage if reloaded while mid-animation.
+      resetStage();
+    })();
+  </script>
+</body>
+</html>
