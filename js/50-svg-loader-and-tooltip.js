@@ -9,7 +9,8 @@
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 second timeout
         
-        const res = await fetch(SVG_URL, { cache: "force-cache", signal: controller.signal });
+        // Avoid stale SVG when iterating locally; always revalidate.
+        const res = await fetch(SVG_URL, { cache: "no-store", signal: controller.signal });
         clearTimeout(timeoutId);
         if(!res.ok) throw new Error(`Failed to load SVG (${res.status})`);
 
@@ -188,11 +189,32 @@
     }
 
     function regionLabel(el){
-      const name = el.getAttribute("data-name") || el.id || "(unnamed)";
+      const rawName = el.getAttribute("data-name") || el.id || "(unnamed)";
       const id = el.id ? `#${el.id}` : "(no id)";
       const zone = el.getAttribute("data-zone");
+
+      const titleCase = (s) => {
+        const tokens = String(s || "")
+          .trim()
+          .replace(/[_\-]+/g, " ")
+          .replace(/\s+/g, " ")
+          .split(" ")
+          .filter(Boolean);
+        if(!tokens.length) return "(unnamed)";
+        const minor = new Set(["and", "or", "the", "of", "in", "on", "at", "to", "for", "a", "an"]);
+        return tokens.map((w, idx) => {
+          const lower = w.toLowerCase();
+          if(idx > 0 && minor.has(lower)) return lower;
+          return lower.charAt(0).toUpperCase() + lower.slice(1);
+        }).join(" ");
+      };
+
+      const name = titleCase(rawName);
       return { name, id, zone };
     }
+
+    // Used by other scripts (selection/details).
+    window.regionLabel = regionLabel;
 
     function refreshHoverTab(){
       const el = hoveredEl || selectedEl;

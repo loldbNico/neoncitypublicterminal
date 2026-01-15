@@ -11,19 +11,22 @@
     /* View switching (Top Tabs) */
     .mapstage,
     #mdtStage,
-    #loreStage{
+    #loreStage,
+    #deathStage{
       transition: opacity .22s ease, filter .28s ease;
       will-change: opacity, filter;
     }
     #mdtStage,
-    #loreStage{
+    #loreStage,
+    #deathStage{
       opacity: 0;
       pointer-events: none;
       filter: blur(8px);
     }
 
     body.view-lore .mapstage,
-    body.view-mdt .mapstage{
+    body.view-mdt .mapstage,
+    body.view-death .mapstage{
       opacity: 0;
       pointer-events: none;
       filter: blur(8px);
@@ -36,6 +39,12 @@
     }
 
     body.view-mdt #mdtStage{
+      opacity: 1;
+      pointer-events: auto;
+      filter: none;
+    }
+
+    body.view-death #deathStage{
       opacity: 1;
       pointer-events: auto;
       filter: none;
@@ -56,7 +65,15 @@ body.view-mdt #hackPrompt,
 body.view-mdt #cmdFeed,
 body.view-mdt #restrictedOverlay,
 body.view-mdt #securoservWall,
-body.view-mdt #counterhackFx{
+body.view-mdt #counterhackFx,
+body.view-death .sidemenu,
+body.view-death .layerToggles,
+body.view-death #popupDetails,
+body.view-death #hackPrompt,
+body.view-death #cmdFeed,
+body.view-death #restrictedOverlay,
+body.view-death #securoservWall,
+body.view-death #counterhackFx{
   display:none !important;
 }
 
@@ -66,7 +83,8 @@ body.view-lore:not(.securosserv-mode) #securoservMidbar,
 body.view-lore:not(.securosserv-mode) #screenGlitch,
 body.view-lore:not(.securosserv-mode) #screenOff,
 body.view-lore:not(.securosserv-mode) #inputBlocker,
-body.view-mdt #inputBlocker{
+body.view-mdt #inputBlocker,
+body.view-death #inputBlocker{
   display:none !important;
 }
 

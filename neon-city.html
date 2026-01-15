@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="css/30-mapstack-tooltip-logos.css" />
   <link rel="stylesheet" href="css/40-details-popup-hackprompt.css" />
   <link rel="stylesheet" href="css/50-securoserv-overlays.css" />
+  <link rel="stylesheet" href="css/55-death-simulation.css" />
   <link rel="stylesheet" href="css/60-boot-quickload.css" />
 </head>
 <body>
@@ -28,6 +29,7 @@
       <button class="tab" data-view="mdt" type="button" role="tab" aria-selected="false" tabindex="-1"><span>MDT</span></button>
       <button class="tab disabled" data-view="augments" type="button" role="tab" aria-selected="false" tabindex="-1" aria-disabled="true"><span>AUGMENTS</span></button>
       <button class="tab tab-lore" data-view="lore" type="button" role="tab" aria-selected="false" tabindex="-1"><span>LORE TERMINAL</span></button>
+      <button class="tab" data-view="death" type="button" role="tab" aria-selected="false" tabindex="-1"><span>DEATH SIMULATION</span></button>
     </div>
     <div class="topmeta right" aria-hidden="true">
       <div class="metaStat"><span class="metaIcon" aria-hidden="true"></span><span>200/100</span></div>
@@ -157,6 +159,234 @@
       </div>
     </main>
 
+    <main class="deathstage" id="deathStage" aria-hidden="true">
+      <div class="deathTier" id="deathTier" aria-label="Insurance tier" aria-hidden="false">
+        <div class="deathTierLabel">Choose your insurance level</div>
+        <div class="deathTierBtns" role="group" aria-label="Insurance level">
+          <button class="insBtn on" id="insBtnSilver" type="button" data-ins="silver">SILVER</button>
+          <button class="insBtn" id="insBtnGold" type="button" data-ins="gold">GOLD</button>
+          <button class="insBtn" id="insBtnPlatinum" type="button" data-ins="platinum">PLATINUM</button>
+        </div>
+      </div>
+      <div class="deathSim" id="deathSim" aria-label="Death simulation">
+        <div class="deathSimScanlines" aria-hidden="true"></div>
+        <section class="deathSimEmpty" id="deathSimEmpty" aria-label="Death simulation idle">
+          <div class="deathSimEmptyInner">
+            <div class="deathSimKicker">TRAINING MODULE</div>
+            <div class="deathSimTitle">DEATH SIMULATION</div>
+            <div class="deathSimSub">Start an immersive death-state UI preview.</div>
+            <button class="deathSimBtn" id="deathSimStart" type="button">START SIMULATION</button>
+          </div>
+        </section>
+
+        <div class="deathHud" id="deathHud" aria-hidden="true">
+          <div class="deathHudLeft">
+             <div class="deathHudPlus">
+               <svg viewBox="0 0 24 24" class="deathHudPlusIcon" aria-hidden="true"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+             </div>
+             <div class="deathHudRadial">
+               <svg viewBox="0 0 36 36" class="deathHudRadialSvg">
+                 <path class="deathHudRadialTrack" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2" />
+                 <path class="deathHudRadialFill" id="deathHudRadialFill" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="100, 100" />
+               </svg>
+             </div>
+             <div class="deathHudLines">
+                <div class="deathHudLine">ETA 0:54</div>
+                <div class="deathHudLine">ETA 0:54</div>
+                <div class="deathHudLine">ETA 0:54</div>
+             </div>
+          </div>
+          <div class="deathHudCenter">
+             <div class="deathHudLabel">HEALTH INDICATOR</div>
+             <div class="deathHudTopRow">
+                <span class="deathHudVal" id="deathHudHpPct">100</span>
+                <div class="deathHudPips">
+                   <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+             </div>
+             <div class="deathHudBarBox">
+                <div class="deathHudBarFill" id="deathHudHpFill"></div>
+             </div>
+          </div>
+          <div class="deathHudRight">
+            <div class="deathHudIconBox">
+               <svg viewBox="0 0 24 24" class="deathHudIcon" aria-hidden="true"><path fill="currentColor" d="M12 2L2 22h20L12 2zm0 3.5l6 12H6l6-12zM12 16c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/></svg>
+            </div>
+             <div class="deathHudIconBox">
+               <svg viewBox="0 0 24 24" class="deathHudIcon" aria-hidden="true"><path fill="currentColor" d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <section class="deathSimOverlay" id="deathSimOverlay" aria-hidden="true">
+          <div class="deathSimBg" aria-hidden="true">
+            <div class="deathSimBgText" id="deathSimBgText"></div>
+            <div class="deathSimGlitch" aria-hidden="true"></div>
+          </div>
+
+          <!-- Confirmation Popup -->
+          <div class="deathConfirmPopup" id="deathConfirmPopup" aria-hidden="true" role="dialog" aria-labelledby="deathConfirmTitle">
+            <div class="deathConfirmTitle" id="deathConfirmTitle">CONFIRM SERVICE REQUEST</div>
+            <div class="deathConfirmBody" id="deathConfirmBody">
+              You are about to request emergency medical services. This will dispatch an immediate response team to your location. Confirm to proceed.
+            </div>
+            <div class="deathConfirmActions">
+              <button class="deathConfirmBtn" id="deathConfirmCancel" type="button">CANCEL</button>
+              <button class="deathConfirmBtn deathConfirmBtn--confirm" id="deathConfirmConfirm" type="button">CONFIRM REQUEST</button>
+            </div>
+          </div>
+
+          <!-- EMS Banner (top) -->
+          <div class="deathEmsBanner" id="deathEmsBanner" aria-hidden="true" role="status" aria-live="polite">
+            <div class="deathEmsBannerTitle" id="deathEmsBannerTitle">EMS RESPONSE REQUESTED</div>
+            <div class="deathEmsBannerSub" id="deathEmsBannerSub">Emergency evacuation available in <span class="deathEmsBannerTimer" id="deathEmsBannerTimer">60</span>s</div>
+          </div>
+
+          <!-- Evacuation Hold Bar -->
+          <div class="deathEvacHold" id="deathEvacHold" aria-hidden="true" role="status" aria-live="polite">
+            <div class="deathEvacHoldTitle">EMERGENCY EVACUATION IN PROGRESS</div>
+            <div class="deathEvacHoldBarBox">
+              <div class="deathEvacHoldBarFill" id="deathEvacHoldBarFill"></div>
+            </div>
+            <div class="deathEvacHoldHint">HOLD "H" TO CONTINUE • RELEASE TO CANCEL</div>
+          </div>
+
+          <!-- Subtitles -->
+          <div class="deathSubtitles" id="deathSubtitles" aria-hidden="true" role="status" aria-live="polite">
+            <div class="deathSubtitleLine" id="deathSubtitleLine">
+              <span class="deathSubtitleName" id="deathSubtitleName"></span>
+              <span class="deathSubtitleText" id="deathSubtitleText"></span>
+            </div>
+          </div>
+
+          <div class="deathCritical" id="deathSimCritical" role="status" aria-live="polite">
+
+            <div class="deathSeg deathSeg--top" id="deathSegTop">
+              <div class="deathCriticalTop">
+              <div class="deathCriticalIcon" aria-hidden="true">!</div>
+              <div class="deathCriticalTag">ATTENTION</div>
+              </div>
+            </div>
+
+            <div class="deathSeg deathSeg--title" id="deathSegTitle">
+              <div class="deathCriticalTitle">CRITICAL SYSTEM FAILURE</div>
+            </div>
+
+            <div class="deathSeg deathSeg--body" id="deathSegBody">
+              <div class="deathCriticalBody">
+              <div class="deathCriticalLines" id="deathSimLog" aria-label="System log"></div>
+              <div class="deathCriticalBar" aria-label="Failure progression">
+                <div class="deathCriticalBarFill" id="deathSimProgress"></div>
+              </div>
+              <div class="deathCriticalMeta">
+                <span class="deathCriticalMetaLeft" id="deathSimMetaLeft">BUILD:// NCPD-OPS • REV:// 03</span>
+                <span class="deathCriticalMetaRight" id="deathSimMetaRight">STATUS:// DEGRADED</span>
+              </div>
+            </div>
+
+            <div class="deathSeg deathSeg--boot" id="deathSegBoot" aria-hidden="true">
+              <div class="deathBootCard">
+                <div class="deathBootKicker">INITIALIZING</div>
+                <div class="deathBootLine" id="deathBootLine">BOOT:// death-state preview</div>
+              </div>
+            </div>
+
+          </div>
+
+            </div>
+
+            <div class="deathSeg deathSeg--bottom" id="deathSegBottom">
+              <div class="deathCriticalBottom">
+              <div class="deathCriticalBottomLeft">
+                <div class="deathCriticalLabel">FATAL ERROR</div>
+                <div class="deathCriticalHint">Awaiting medical response…</div>
+              </div>
+              <div class="deathCriticalBottomRight">
+                <div class="deathCriticalLabel">LINK</div>
+                <div class="deathCriticalHint">SIGNAL:// WEAK</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="deathFlatlined" id="deathSimFlatlined" aria-hidden="true">
+            <div class="deathFlatlinedCols">
+              <div class="deathFlatlinedLeft">
+                <div class="deathFlatlinedTitleRow">
+                  <div class="deathFlatlinedSkull" aria-hidden="true"></div>
+                  <div class="deathFlatlinedTitle">INCAPACITATED</div>
+                </div>
+                <div class="deathFlatlinedSub">Critical failure detected, system functions limited.</div>
+                <button class="deathFlatlinedBtn deathFlatlinedBtn--ghost" id="deathSimReset" type="button">RESET SIMULATION</button>
+              </div>
+
+              <div class="deathServices" id="deathServices" aria-label="Insurance services">
+                <div class="deathServicesTitle" id="deathServicesTitle">EMS RESPONSE</div>
+
+                <div class="deathServicesList" id="deathServicesList">
+                  <div class="deathSvc" id="deathSvcSilver">
+                    <button class="deathSvcBtn deathSvcBtn--silver" id="deathInsuranceSilver" type="button">
+                      <span class="deathSvcName">SILVER SERVICE</span>
+                      <span class="deathSvcMeta">
+                        <span class="deathSvcPrice" id="deathInsuranceSilverPrice">₡250</span>
+                        <span class="deathSvcTimer" id="deathInsuranceSilverTimer" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="deathSvcDesc">Notify Neon City Medical Services of your injury</div>
+                  </div>
+
+                  <div class="deathSvc" id="deathSvcGold">
+                    <button class="deathSvcBtn deathSvcBtn--gold" id="deathInsuranceGold" type="button">
+                      <span class="deathSvcName">GOLD SERVICE</span>
+                      <span class="deathSvcMeta">
+                        <span class="deathSvcPrice" id="deathInsuranceGoldPrice">₡200–₡1,000</span>
+                        <span class="deathSvcTimer" id="deathInsuranceGoldTimer" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                    <div class="deathSvcDesc">Request expedited TACMED response</div>
+                  </div>
+
+                  <div class="deathSvc" id="deathSvcPlatinum">
+                    <button class="deathSvcBtn deathSvcBtn--platinum" id="deathInsurancePlatinum" type="button">
+                      <span class="deathSvcName">PLATINUM SERVICE</span>
+                      <span class="deathSvcMeta">
+                        <span class="deathSvcPrice" id="deathInsurancePlatinumPrice">₡0</span>
+                      </span>
+                    </button>
+                    <div class="deathSvcDesc">Premium rescue and recovery service! Your life at any cost!</div>
+                  </div>
+                </div>
+
+                <div class="deathServicesAck" id="deathServicesAck" aria-hidden="true">
+                  <div class="deathServicesAckCard" role="status" aria-live="polite">
+                    <div class="deathServicesAckKicker">TRANSMISSION</div>
+                    <div class="deathServicesAckTitle" id="deathServicesAckTitle">SERVICE REQUEST QUEUED</div>
+                    <div class="deathServicesAckBody" id="deathServicesAckBody">Your request has been routed through a secure municipal uplink. Stand by for confirmation.</div>
+                    <div class="deathServicesAckMeta" id="deathServicesAckMeta">LINK:// STABLE • TRACE:// MASKED • ETA:// CALCULATING</div>
+                  </div>
+
+                  <button class="deathServicesAckBtn deathServicesAckBtn--evac" id="deathServicesEvac" type="button">
+                    <span class="deathServicesEvacLabel">EMERGENCY EVACUATION PROTOCOL</span>
+                    <span class="deathServicesEvacSub">₡0 • HOLD 5S TO ACTIVATE</span>
+                    <span class="deathServicesEvacTimer" id="deathServicesEvacTimer" aria-hidden="true"></span>
+                  </button>
+                </div>
+
+                <div class="deathHospital" id="deathHospital" aria-hidden="true">
+                  <div class="deathHospitalCard" role="status" aria-live="polite">
+                    <div class="deathHospitalKicker">NEON CITY MEDICAL SERVICES</div>
+                    <div class="deathHospitalTitle">TRANSPORT COMPLETE</div>
+                    <div class="deathHospitalBody">You've been transported to the hospital free of charge and will awaken momentarily. Thank you for choosing Neon City Medical Services.</div>
+                    <div class="deathHospitalMeta" id="deathHospitalMeta">LINK:// VERIFIED • BILLING:// WAIVED • STATUS:// STABILIZED</div>
+                  </div>
+                  <button class="deathHospitalReset" id="deathHospitalReset" type="button">RESET SIMULATION</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
     <div class="restricted-overlay" id="restrictedOverlay" aria-hidden="true">
       <div class="restricted-message">WARNING:// RESTRICTED AREA SELECTED</div>
     </div>
@@ -247,9 +477,6 @@
         <div class="dKV">
           <div class="dRow"><div class="dK">NAME</div><div class="dV" id="dName">&mdash;</div></div>
           <div class="dRow"><div class="dK">ID</div><div class="dV" id="dId">&mdash;</div></div>
-          <div class="dRow"><div class="dK">TYPE</div><div class="dV" id="dType">&mdash;</div></div>
-          <div class="dRow"><div class="dK">ZONE</div><div class="dV" id="dZone">&mdash;</div></div>
-          <div class="dRow"><div class="dK">BOUNDS</div><div class="dV" id="dBounds">&mdash;</div></div>
         </div>
         <div class="dMedia" aria-hidden="true">
           <img id="detailLogo" alt="" draggable="false" />
@@ -319,7 +546,7 @@
         </div>
 
         <div class="boot-ss" id="bootSecuroserv" aria-hidden="true">
-          <img class="boot-ssLogo" id="bootSecuroLogo" src="./SS2.png" alt="" draggable="false" onerror="this.onerror=null; this.src='./SS2.png';" />
+          <img class="boot-ssLogo" id="bootSecuroLogo" src="./ss.png" alt="" draggable="false" onerror="this.onerror=null; this.src='./ss.png';" />
           <div class="boot-ssBar"><div class="boot-ssFill" id="bootSecuroFill"></div></div>
           <div class="boot-ssMeta"><span id="bootSecuroPct">0%</span><span id="bootSecuroPhase">reboot</span></div>
         </div>
@@ -341,6 +568,7 @@
   <script src="js/40-svg-patterns-and-color.js" defer></script>
   <script src="js/50-svg-loader-and-tooltip.js" defer></script>
   <script src="js/60-securoserv.js" defer></script>
+  <script src="js/65-death-simulation.js" defer></script>
   <script src="js/70-hover-selection-filters-tabs.js" defer></script>
   <script src="js/80-lore-inventory.js" defer></script>
   <script src="js/99-start.js" defer></script>

@@ -240,19 +240,15 @@
         });
       }
 
-      const { name, id, zone } = regionLabel(el);
-      const type = el.getAttribute("data-type") || "unknown";
-      const bounds = el.getAttribute("data-bounds") || "—";
+      const { name, id } = regionLabel(el);
 
-      console.log('[DEBUG] populate details values', {name, id, zone, type, bounds});
+      console.log('[DEBUG] populate details values', { name, id });
+
       try{
         // Update right panel
         document.getElementById("detailState").textContent = "TARGET";
         document.getElementById("dName").textContent = name;
         document.getElementById("dId").textContent = id;
-        document.getElementById("dType").textContent = type;
-        document.getElementById("dZone").textContent = zone || "—";
-        document.getElementById("dBounds").textContent = bounds;
       }catch(err){ console.error('[ERROR] populating detail fields', err); }
       // MAP/INTEL footer now renders structured intel; keep status in command feed instead.
       term("[INTEL] panel updated");
@@ -451,9 +447,6 @@
       document.getElementById("detailState").textContent = "NO TARGET";
       document.getElementById("dName").textContent = "—";
       document.getElementById("dId").textContent = "—";
-      document.getElementById("dType").textContent = "—";
-      document.getElementById("dZone").textContent = "—";
-      document.getElementById("dBounds").textContent = "—";
       // footer intel already reset by renderMapIntelFor(null)
       hideHackPrompt();
       stopRestrictedHack();
@@ -632,6 +625,7 @@
        const mapStage = document.querySelector('main.mapstage');
        const mdtStage = document.getElementById('mdtStage');
        const loreStage = document.getElementById('loreStage');
+       const deathStage = document.getElementById('deathStage');
        const tabs = Array.from(header.querySelectorAll('button.tab[data-view]'));
        if(tabs.length === 0) return;
  
@@ -822,10 +816,12 @@
         setActiveTab(next);
         document.body.classList.toggle('view-lore', next === 'lore');
         document.body.classList.toggle('view-mdt', next === 'mdt');
+        document.body.classList.toggle('view-death', next === 'death');
 
         if(mapStage) mapStage.setAttribute('aria-hidden', (next !== 'map') ? 'true' : 'false');
         if(mdtStage) mdtStage.setAttribute('aria-hidden', next === 'mdt' ? 'false' : 'true');
         if(loreStage) loreStage.setAttribute('aria-hidden', next === 'lore' ? 'false' : 'true');
+        if(deathStage) deathStage.setAttribute('aria-hidden', next === 'death' ? 'false' : 'true');
 
         // Ensure we never carry the input blocker into non-map views.
         if(next !== 'map'){
@@ -846,6 +842,12 @@
              try{ runQuickLoad({ mode: 'blur' }); }catch{}
            }
            try{ if(typeof initMdt === 'function') initMdt(); }catch{}
+         }
+
+         if(next === 'death'){
+           // Keep it simple: always show the idle screen when entering the view.
+           try{ if(typeof initDeathSimulation === 'function') initDeathSimulation(); }catch{}
+           try{ if(typeof resetDeathSimulation === 'function') resetDeathSimulation(); }catch{}
          }
 
 

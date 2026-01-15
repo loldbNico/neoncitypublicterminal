@@ -361,8 +361,9 @@
         .replace(/[^A-Z0-9]+/g, "_")
         .replace(/^_+|_+$/g, "");
 
-      // Backward-compatible aliasing for legacy typos
-      if(k === "LITTLE_SOEUL") return "LITTLE_SEOUL";
+       // Backward-compatible aliasing for legacy typos
+       if(k === "LITTLE_SOEUL") return "LITTLE_SEOUL";
+
 
       return k;
     }

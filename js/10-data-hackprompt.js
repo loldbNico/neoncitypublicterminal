@@ -52,15 +52,15 @@
       MERRYWEATHER: { name: "MERRYWEATHER", iconFiles: ["mw.png", "MW.png"] },
       SECUROSERV: { name: "SECUROSERV", iconFiles: ["SS2.png", "ss2.png"] },
     };
-    const REGION_GANGS = {
-      SOUTH_SIDE: ["THE_LEX"],
-      NEON_CORE: ["NCPD", "TACMED"],
-      NEON_CITY_PRISON: ["NCPD"],
-      APEX_HQ: ["NCPD", "APEX"],
-      MERRYWEATHER_BASE: ["MERRYWEATHER"],
-      SECUROSERV_PORT: ["SECUROSERV"],
-      SECUROSERVE_PORT: ["SECUROSERV"],
-    };
+      const REGION_GANGS = {
+       SOUTH_SIDE: ["THE_LEX", "TACMED"],
+       NEON_CORE: ["NCPD"],
+       NEON_CITY_PRISON: ["NCPD"],
+       APEX_HQ: ["NCPD", "APEX"],
+       MERRYWEATHER_BASE: ["MERRYWEATHER"],
+       SECUROSERV_PORT: ["SECUROSERV"],
+       SECUROSERVE_PORT: ["SECUROSERV"],
+     };
 
     // Restricted intel unlock state (session only)
     const unlockedRestrictedIntel = new Set();

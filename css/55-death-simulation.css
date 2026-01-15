@@ -1,0 +1,1734 @@
+/* Death Simulation view (immersive death UI preview)
+   Kept self-contained so it can evolve without touching other views. */
+
+.deathstage{
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--topbar-h);
+  bottom: 0;
+  overflow: hidden;
+  z-index: 95;
+  pointer-events: auto;
+}
+
+.deathstage[aria-hidden="true"]{
+  pointer-events: none;
+}
+
+.deathSim{
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(900px 520px at 35% 10%, rgba(96,143,255, .10), rgba(0,0,0,0) 60%),
+    radial-gradient(1000px 700px at 70% 0%, rgba(96,143,255, .07), rgba(0,0,0,0) 62%),
+    linear-gradient(180deg, rgba(8, 10, 14, .84) 0%, rgba(0, 0, 0, .92) 100%);
+  /* MUCH stronger blue vignette based on damage level (0 to 1) */
+  box-shadow: inset 0 0 calc(200px + (var(--death-damage, 0) * 180vw)) rgba(10, 30, 80, calc(0.3 + var(--death-damage, 0) * 0.85));
+  transition: box-shadow 0.2s ease;
+}
+
+/* Two-layer background crossfade (preload both, fade opacity). */
+.deathSim::before,
+.deathSim::after{
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  pointer-events: none;
+}
+
+/* Alive background (default visible). */
+.deathSim::before{
+  background-image: url('../alive.png');
+  opacity: .22;
+  transition: opacity 1.0s ease, transform 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,.18) inset;
+  /* Distort based on damage */
+  filter: blur(calc(var(--death-damage, 0) * 2px)) grayscale(calc(var(--death-damage, 0) * 0.5));
+  transform: scale(calc(1 + (var(--death-damage, 0) * 0.03)));
+}
+
+/* Dead background (fades in). */
+.deathSim::after{
+  background-image: url('../dead.png');
+  opacity: 0;
+  transition: opacity 1.0s ease;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,.18) inset;
+}
+
+body.death-sim-dead .deathSim::before{ opacity: 0; }
+@keyframes deathBgTwitch {
+  0%, 85% { transform: translate(0,0); filter: none; opacity: .22; }
+  86% { transform: translate(-3px, 1px); filter: sepia(1) saturate(4) hue-rotate(5deg); opacity: .6; } /* Yellow burst */
+  88% { transform: translate(3px, -2px); filter: sepia(1) saturate(4) hue-rotate(190deg); opacity: .5; } /* Blue burst */
+  90% { transform: translate(-2px, 0); filter: brightness(1.5); opacity: .3; }
+  91% { transform: translate(0,0); filter: none; opacity: .22; }
+  95% { transform: translate(2px, 2px); filter: sepia(1) saturate(5) hue-rotate(5deg); opacity: .5; } /* Yellow burst */
+  96% { transform: translate(0,0); filter: none; opacity: .22; }
+}
+
+body.death-sim-dead .deathSim::after{ 
+  opacity: .22; 
+  animation: deathBgTwitch 2.3s infinite steps(1);
+}
+
+body.death-sim-incapacitated .deathSim::before{ opacity: 0; }
+body.death-sim-incapacitated .deathSim::after{ opacity: .28; }
+body.death-sim-incapacitated.death-sim-dead .deathSim::after{ opacity: .28; }
+
+
+.deathSimScanlines{
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.02) 0, rgba(255,255,255,.02) 1px, rgba(0,0,0,0) 3px);
+  background-size: 100% 6px;
+  opacity: .28;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Idle screen */
+.deathSimEmpty{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.deathSimEmptyInner{
+  width: min(780px, calc(100% - 40px));
+  padding: 22px 20px;
+  border: 1px solid rgba(96,143,255, .30);
+  background: rgba(0,0,0,.92);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.72) inset,
+    0 0 40px rgba(96,143,255, .08);
+  text-align: center;
+}
+
+.deathSimKicker{
+  font-size: 11px;
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .70);
+}
+
+.deathSimTitle{
+  margin-top: 6px;
+  font-weight: 900;
+  font-size: clamp(22px, 3vw, 34px);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .92);
+  text-shadow: 0 0 24px rgba(96,143,255, .14);
+}
+
+.deathSimSub{
+  margin-top: 6px;
+  color: rgba(96,143,255, .66);
+  letter-spacing: .4px;
+}
+
+.deathSimBtn{
+  margin-top: 16px;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(96,143,255, .58);
+  background: rgba(0,0,0,.92);
+  color: rgba(96,143,255, .95);
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: var(--cur-link), pointer;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.70) inset,
+    0 0 24px rgba(96,143,255, .10);
+  transition: border-color .12s ease, color .12s ease, box-shadow .12s ease, transform .12s ease;
+}
+
+.deathSimBtn:hover{
+  border-color: rgba(var(--ylRGB), .88);
+  color: rgba(var(--ylRGB), .98);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.72) inset,
+    0 0 30px rgba(var(--ylRGB), .16);
+}
+
+.deathSimBtn:active{ transform: translateY(1px); }
+
+/* Gameplay HUD (new version, blue/yellow theme) */
+.deathHud{
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  transform: none;
+  z-index: 6;
+  display: none;
+  align-items: flex-end;
+  gap: 20px;
+}
+
+.deathHud.on{ display: flex; }
+
+.deathHudLeft{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.deathHudPlus{
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--ui);
+  display: grid;
+  place-items: center;
+  color: var(--ui);
+  box-shadow: 0 0 12px rgba(96,143,255, .25);
+  background: rgba(0,0,0,.4);
+}
+
+.deathHudPlusIcon{ width: 20px; height: 20px; }
+
+.deathHudRadial{
+  width: 28px;
+  height: 28px;
+  color: var(--ss); /* Keep red for this specific element as per ref? No, ref said red->blue */
+  color: var(--ui);
+  position: relative;
+}
+
+.deathHudRadialSvg{
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.deathHudRadialTrack{ opacity: .3; }
+.deathHudRadialFill{
+    color: var(--yl);
+    stroke-dashoffset: 25; /* partial */
+}
+
+.deathHudLines{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    opacity: .8;
+}
+
+.deathHudLine{
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    color: var(--ss); /* Reference had these red */
+    color: var(--ui);
+    font-weight: 700;
+}
+
+
+.deathHudCenter{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 320px;
+}
+
+.deathHudLabel{
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--ss);
+    color: var(--ui);
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.deathHudTopRow{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.deathHudVal{
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ui);
+}
+
+.deathHudPips{
+    display: flex;
+    gap: 8px;
+}
+.deathHudPips i{
+    width: 4px;
+    height: 4px;
+    background: var(--yl);
+    box-shadow: 0 0 6px var(--yl);
+}
+
+.deathHudBarBox{
+    height: 16px;
+    background: rgba(0,0,0,.6);
+    position: relative;
+    clip-path: polygon(0 0, 100% 0, 100% 70%, 97% 100%, 0 100%);
+}
+
+.deathHudBarFill{
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: var(--ss);
+    background: var(--ui); /* Red -> Blue */
+    width: 100%;
+    transition: width 0.1s linear;
+}
+
+.deathHudBarArmorFill{
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: var(--yl); /* Blue -> Yellow */
+    width: 0%;
+    opacity: 0.8;
+}
+
+.deathHudRight{
+    display: flex;
+    gap: 10px;
+}
+
+.deathHudIconBox{
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--ui);
+    background: rgba(96,143,255, 0.15);
+    display: grid;
+    place-items: center;
+    color: var(--yl);
+}
+
+.deathHudIcon{ width: 18px; height: 18px; color: var(--yl); }
+
+
+
+/* Insurance tier selector (visible only in death view) */
+.deathTier{
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: var(--topbar-h);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 14px 10px;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+body.view-death .deathTier{ display: flex; }
+
+.deathTier[aria-hidden="true"]{ display: none !important; }
+
+.deathTierLabel{
+  font-size: 11px;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .70);
+  font-weight: 900;
+}
+
+.deathTierBtns{ display: flex; gap: 10px; align-items: flex-end; }
+
+.deathTier .insBtn{
+  appearance: none;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid rgba(96,143,255, .22);
+  background: rgba(0,0,0,.85);
+  color: rgba(96,143,255, .80);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-size: 12px;
+  cursor: var(--cur-link), pointer;
+}
+
+.deathTier .insBtn:hover{ border-color: rgba(96,143,255, .55); color: rgba(96,143,255, .92); }
+
+/* Tier buttons match service tier accents */
+#insBtnSilver.on{
+  border-color: rgba(210, 214, 220, .70);
+  color: rgba(235, 240, 246, .92);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 18px rgba(210, 214, 220, .18);
+}
+
+#insBtnGold.on{
+  border-color: rgba(255, 210, 90, .70);
+  color: rgba(255, 228, 160, .92);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 18px rgba(255, 210, 90, .18);
+}
+
+#insBtnPlatinum.on{
+  border-color: rgba(190, 220, 255, .70);
+  color: rgba(220, 242, 255, .92);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 18px rgba(190, 220, 255, .18);
+}
+
+/* Overlay container */
+.deathSimOverlay{
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+
+.deathSimOverlay.on{ display: block; }
+
+.deathSimBg{
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.deathSimBgText{
+  position: absolute;
+  inset: -60px;
+  opacity: .26;
+  filter: blur(.0px);
+  transform: rotate(-12deg);
+  transform-origin: center;
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: 12px;
+  line-height: 1.3;
+  letter-spacing: 1.2px;
+  color: rgba(96,143,255, .36);
+  white-space: pre;
+  user-select: none;
+  mix-blend-mode: screen;
+}
+
+/* Use the subtle screen-glitch from 50-securoserv-overlays.css but blue */
+.deathSimGlitch{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Reusing the screen-glitch structure but overriding colors to blue/yellow */
+  background: transparent; 
+  opacity: .30;
+  z-index: 2;
+  mix-blend-mode: screen;
+}
+
+/* Base state for glitch layers: subtle, using the CSS vars for control */
+.deathSimGlitch::before{
+  content:"";
+  position:absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(0,0,0,.00) 0px,
+      rgba(0,0,0,.00) 2px,
+      rgba(96,143,255, .15) 3px,
+      rgba(0,0,0,.00) 4px
+    ),
+    linear-gradient(90deg,
+      rgba(96,143,255, .20),
+      rgba(0,0,0,0) 35%,
+      rgba(96,143,255, .15) 70%,
+      rgba(0,0,0,0)
+    );
+  mix-blend-mode: screen;
+  opacity: calc(0.22 + (var(--g, 0) * 0.78)); /* Controlled by JS var --g */
+  filter: blur(.15px);
+  animation: securoservScanDrift 1.55s steps(2) infinite;
+}
+
+.deathSimGlitch::after{
+  content:"";
+  position:absolute;
+  inset: 0;
+  background:
+    linear-gradient(0deg,
+      transparent 0%,
+      rgba(96,143,255, .00) 18%,
+      rgba(96,143,255, .30) 22%,
+      rgba(96,143,255, .00) 26%,
+      rgba(0,0,0,0) 100%
+    ),
+    repeating-linear-gradient(90deg,
+      rgba(96,143,255, .25) 0px,
+      rgba(96,143,255, .25) 1px,
+      rgba(0,0,0,0) 1px,
+      rgba(0,0,0,0) 7px
+    ),
+    radial-gradient(circle at 18% 34%, rgba(96,143,255, .30), transparent 40%),
+    radial-gradient(circle at 72% 68%, rgba(96,143,255, .20), transparent 42%);
+  mix-blend-mode: screen;
+  opacity: calc(0.12 + (var(--g, 0) * 0.88)); /* Controlled by JS var --g */
+  animation: securoservGlitchBars 1.25s steps(2) infinite;
+}
+
+/* Punch effect: when the body has the punch class, temporarily boost glitch even more */
+body.death-sim-punch .deathSimGlitch{
+  opacity: 1;
+}
+
+/* Remove the old obnoxious animation on the background */
+body.death-sim-dead .deathSim::after{ 
+  opacity: .22; 
+  animation: none;
+}
+
+body.death-sim-incapacitated .deathSimBgText{ opacity: .40; }
+body.death-sim-incapacitated .deathSimGlitch{ opacity: .34; }
+
+/* Dynamic glitch intensity based on damage */
+body.death-sim-running .deathSimGlitch{
+  opacity: calc(0.25 + (var(--death-damage, 0) * 0.5));
+}
+
+body.death-sim-punch .deathSim{
+  animation: deathPunch .12s ease;
+}
+
+/* 
+   Overrides for the Reboot/Screen-Off sequence when running inside Death Sim.
+   This ensures we don't see red SecuroServ themes during death.
+*/
+
+/* Screen Off: Default is black, but SecuroServ mode adds red gradients. 
+   We force it to be neutral/blue here. */
+body.death-sim-running .screen-off::before{
+  background:
+    radial-gradient(circle at 50% 50%, rgba(96,143,255, .14), transparent 52%),
+    linear-gradient(180deg, rgba(96,143,255, .10), transparent 40%, rgba(96,143,255, .08)) !important;
+}
+
+/* Boot Sequence: Override SecuroServ red theme to Blue/Yellow */
+body.death-sim-running .boot.securosserv-reboot .boot-inner{
+  border-color: rgba(96,143,255, .22) !important;
+}
+
+body.death-sim-running .boot-ssLogo{
+  filter: drop-shadow(0 0 16px rgba(96,143,255, .22)) !important;
+}
+
+body.death-sim-running .boot-ssBar{
+  border-color: rgba(96,143,255, .46) !important;
+}
+
+body.death-sim-running .boot-ssFill{
+  background: linear-gradient(90deg, rgba(96,143,255, .95), rgba(var(--ylRGB), .95)) !important;
+  box-shadow: 0 0 18px rgba(96,143,255, .22) !important;
+}
+
+body.death-sim-running .boot-ssBar::after{
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 7px, rgba(var(--ylRGB), .09) 7px 8px),
+    repeating-linear-gradient(90deg, rgba(var(--ylRGB), .08) 0 1px, rgba(0,0,0,0) 1px 9px) !important;
+}
+
+body.death-sim-running .boot-ssMeta{
+  color: rgba(96,143,255, .70) !important;
+}
+
+body.death-sim-running .boot.securosserv-reboot .boot-bgcode{
+  color: rgba(96,143,255, .42) !important;
+  text-shadow: 0 0 10px rgba(96,143,255, .10) !important;
+}
+
+body.death-sim-running .boot.securosserv-reboot .boot-ss{
+  border-top-color: rgba(96,143,255, .22) !important;
+}
+
+
+@keyframes deathPunch{
+  0%{ transform: translate3d(0,0,0); }
+  35%{ transform: translate3d(-10px, 2px,0); }
+  75%{ transform: translate3d(7px, -3px,0); }
+  100%{ transform: translate3d(0,0,0); }
+}
+
+@keyframes deathGlitchFlicker{
+  0%{ transform: translate3d(0,0,0); filter: hue-rotate(0deg); }
+  28%{ transform: translate3d(-6px, 2px,0); }
+  32%{ transform: translate3d(8px, -3px,0); }
+  39%{ transform: translate3d(-10px, 1px,0); filter: hue-rotate(14deg); }
+  52%{ transform: translate3d(12px, 0,0); }
+  66%{ transform: translate3d(-7px, -2px,0); filter: hue-rotate(-10deg); }
+  83%{ transform: translate3d(5px, 2px,0); }
+  100%{ transform: translate3d(0,0,0); filter: hue-rotate(0deg); }
+}
+
+/* Segmented UI reveal */
+.deathSeg{
+  opacity: 0;
+  transform: translateY(10px);
+  filter: blur(1px);
+  transition: opacity .5s ease, transform .5s ease, filter .5s ease;
+}
+
+.deathSeg.on{
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+.deathSeg--boot{
+  position: absolute;
+  left: 40px;
+  top: 18px;
+  z-index: 4;
+}
+
+.deathBootCard{
+  width: min(360px, calc(100vw - 80px));
+  padding: 12px 12px;
+  border: 1px solid rgba(var(--ylRGB), .5);
+  background: rgba(0,0,0,.85);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.68) inset, 0 0 24px rgba(var(--ylRGB), .15);
+}
+
+.deathBootKicker{
+  font-size: 10px;
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+  color: var(--yl);
+}
+
+.deathBootLine{
+  margin-top: 8px;
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  color: rgba(96,143,255, .90);
+}
+
+/* Critical system failure panel */
+.deathCritical{
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%) scale(0.8); /* Reduced by 20% */
+  width: min(980px, calc(100% - 60px));
+  border: 1px solid rgba(96,143,255, .55);
+  background: rgba(0,0,0,.60); /* 30% more transparent (was .85, now .60) */
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.72) inset,
+    0 0 44px rgba(96,143,255, .14);
+  transition: opacity .55s ease, filter .55s ease, transform .55s ease;
+}
+
+body.death-sim-incapacitated .deathCritical{
+  opacity: .12;
+  filter: blur(1.5px) saturate(.7);
+  transform: translate(-50%, -50%) scale(.788); /* 0.8 * .985 = .788 */
+  background: rgba(0,0,0,.60); /* 30% more transparent */
+}
+
+.deathCriticalTop{
+  padding: 16px 18px 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.deathCriticalIcon{
+  width: 16.5px; /* 22px * 0.75 */
+  height: 16.5px; /* 22px * 0.75 */
+  border: 1px solid rgba(96,143,255, .65);
+  color: rgba(96,143,255, .95);
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  background: rgba(0,0,0,.28);
+  box-shadow: 0 0 14px rgba(96,143,255, .12);
+}
+
+.deathCriticalTag{
+  font-size: 8.25px; /* 11px * 0.75 */
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .70);
+}
+
+.deathCriticalTitle{
+  margin: 0 18px 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(96,143,255, .55);
+  background: linear-gradient(180deg, rgba(96,143,255, .18), rgba(0,0,0,.18));
+  color: rgba(96,143,255, .95);
+  font-weight: 900;
+  font-size: 12px; /* Added explicit font size, 16px * 0.75 */
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.deathCriticalBody{
+  padding: 0 18px 16px;
+}
+
+.deathCriticalLines{
+  height: 82px;
+  overflow: hidden;
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: 8.25px; /* 11px * 0.75 */
+  line-height: 1.5;
+  color: rgba(96,143,255, .66);
+  border: 1px solid rgba(96,143,255, .22);
+  background: rgba(0,0,0,.92);
+  padding: 10px 10px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.68) inset;
+}
+
+.deathCriticalBar{
+  margin-top: 12px;
+  height: 18px;
+  border: 1px solid rgba(96,143,255, .45);
+  background: rgba(0,0,0,.92);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.68) inset;
+  overflow: hidden;
+}
+
+.deathCriticalBarFill{
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(96,143,255, .24), rgba(96,143,255, .72));
+  box-shadow: 0 0 18px rgba(96,143,255, .22);
+  transition: width .18s linear;
+}
+
+.deathCriticalMeta{
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 8.25px; /* 11px * 0.75 */
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .55);
+}
+
+.deathCriticalBottom{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 14px 18px 18px;
+  border-top: 1px solid rgba(96,143,255, .20);
+}
+
+.deathCriticalLabel{
+  font-size: 8.25px; /* 11px * 0.75 */
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .88);
+}
+
+.deathCriticalHint{
+  margin-top: 6px;
+  font-size: 9px; /* 12px * 0.75 */
+  letter-spacing: .6px;
+  color: rgba(96,143,255, .64);
+}
+
+/* Incapacitated screen */
+.deathFlatlined{
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  align-items: stretch;
+  opacity: 1;
+}
+
+.deathFlatlinedLeft{
+  position: absolute;
+  left: 40px;
+  bottom: 28px;
+  align-self: auto;
+  justify-self: auto;
+  transform: translateY(18px);
+  opacity: 0;
+  transition: opacity .55s ease, transform .55s ease;
+}
+
+body.death-sim-incapacitated .deathFlatlinedLeft{
+  transform: translateY(0);
+  opacity: 1;
+  transition-delay: var(--incap-delay, .2s);
+}
+
+.deathFlatlined[aria-hidden="true"]{ display:none; }
+
+/* Multi-step staging for pop-in sequence */
+body.death-sim-incapacitated .deathFlatlinedLeft{ --incap-delay: .35s; }
+body.death-sim-incapacitated .deathFlatlinedRight{ --incap-delay: .35s; }
+
+/* Ensure service UI is hidden until incapacitated state */
+.deathInsuranceTitle,
+.deathInsuranceOpt{
+  pointer-events: none;
+}
+
+body.death-sim-incapacitated .deathInsuranceTitle,
+body.death-sim-incapacitated .deathInsuranceOpt{
+  pointer-events: auto;
+}
+
+.deathFlatlinedCols{
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  align-items: stretch;
+  padding-bottom: 28px;
+}
+
+
+/* Remade services UI from scratch */
+.deathServices{
+  --svc-btn-w: 460px;
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  width: min(520px, calc(100% - 40px));
+  transform: translateY(calc(-50% + 18px));
+  opacity: 0;
+  display: grid;
+  gap: 12px;
+  pointer-events: none;
+  transition: opacity .55s ease, transform .55s ease;
+}
+
+.deathServicesList{ display: grid; gap: 12px; justify-items: end; width: 100%; }
+
+.deathServicesAck{
+  width: 100%;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .35s ease, transform .35s ease;
+}
+
+body.death-sim-services-ack .deathServicesList{ display: none; }
+
+body.death-sim-services-ack .deathServicesTitle{ display: none; }
+
+body.death-sim-services-ack .deathServicesAck{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.deathServicesAckCard{
+  width: min(var(--svc-btn-w), 100%);
+  justify-self: end;
+  border: 1px solid rgba(96,143,255, .30);
+  background: rgba(0,0,0,.60); /* 30% more transparent (was .85, now .60) */
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 26px rgba(96,143,255, .10);
+  padding: 14px 14px;
+}
+
+body.death-sim-ack-silver .deathServicesAckCard{ border-left: 3px solid rgba(210, 214, 220, .85); }
+body.death-sim-ack-gold .deathServicesAckCard{ border-left: 3px solid rgba(255, 210, 90, .92); }
+body.death-sim-ack-platinum .deathServicesAckCard{ border-left: 3px solid rgba(190, 220, 255, .92); }
+
+.deathServicesAckKicker{
+  font-size: 11px;
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .70);
+  font-weight: 900;
+}
+
+.deathServicesAckTitle{
+  margin-top: 8px;
+  font-weight: 900;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .92);
+}
+
+.deathServicesAckBody{
+  margin-top: 8px;
+  font-size: 12px;
+  letter-spacing: .4px;
+  color: rgba(96,143,255, .62);
+  line-height: 1.45;
+}
+
+.deathServicesAckMeta{
+  margin-top: 10px;
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: 11px;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .55);
+}
+
+.deathServicesAckBtn{
+  margin-top: 12px;
+  width: min(var(--svc-btn-w), 100%);
+  justify-self: end;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 1px solid rgba(96,143,255, .35);
+  background: rgba(0,0,0,.60); /* 30% more transparent (was .85, now .60) */
+  color: rgba(96,143,255, .82);
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: var(--cur-link), pointer;
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  position: relative;
+}
+
+.deathServicesAckBtn:hover{ border-color: rgba(96,143,255, .65); color: rgba(96,143,255, .92); }
+.deathServicesAckBtn:active{ transform: translateY(1px); }
+
+.deathServicesEvacLabel{ font-size: 12px; letter-spacing: 2.0px; }
+.deathServicesEvacSub{ font-size: 11px; letter-spacing: 1.2px; color: rgba(96,143,255, .70); }
+
+.deathServicesEvacTimer{
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  color: rgba(255, 210, 90, .92);
+}
+
+.deathServicesAckBtn--evac.is-unavailable{
+  opacity: .40;
+  cursor: not-allowed;
+  border-color: rgba(255,255,255,.12);
+  background: rgba(0,0,0,.10);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset;
+  filter: grayscale(.9);
+}
+
+.deathServicesAckBtn--evac.is-unavailable:hover{ border-color: rgba(255,255,255,.12); }
+
+.deathServicesAckBtn--evac.is-holding{
+  border-color: rgba(255, 210, 90, .85);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 26px rgba(255, 210, 90, .18);
+}
+
+.deathServicesAckBtn--evac.is-holding::after{
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: var(--hold, 0%);
+  background: linear-gradient(90deg, rgba(255, 210, 90, .25), rgba(255, 210, 90, .95));
+}
+
+body.death-sim-services .deathServices{
+  opacity: 1;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+
+/* Hospital completion state */
+body.death-sim-hospital .deathSimOverlay,
+body.death-sim-hospital .deathHud,
+body.death-sim-hospital .deathServices,
+body.death-sim-hospital .deathCritical,
+body.death-sim-hospital .deathSeg{
+  display: none !important;
+}
+
+body.death-sim-hospital .deathFlatlinedLeft{ display: none !important; }
+
+
+body.death-sim-hospital .deathHospital{
+  display: grid;
+  place-items: center;
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: auto;
+}
+
+.deathHospital{
+  display: none;
+  pointer-events: none;
+}
+
+.deathHospitalCard{
+  width: min(720px, calc(100% - 40px));
+  padding: 18px 18px;
+  border: 1px solid rgba(90, 180, 255, .55);
+  background:
+    radial-gradient(700px 380px at 30% 0%, rgba(90, 180, 255, .16), rgba(0,0,0,0) 60%),
+    radial-gradient(600px 360px at 70% 0%, rgba(255, 210, 90, .14), rgba(0,0,0,0) 62%),
+    rgba(0,0,0,.85);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 44px rgba(90, 180, 255, .14);
+}
+
+.deathHospitalKicker{
+  font-size: 11px;
+  letter-spacing: 2.8px;
+  text-transform: uppercase;
+  color: rgba(90, 180, 255, .82);
+  font-weight: 900;
+}
+
+.deathHospitalTitle{
+  margin-top: 10px;
+  font-weight: 900;
+  letter-spacing: 3.2px;
+  text-transform: uppercase;
+  color: rgba(255, 210, 90, .92);
+}
+
+.deathHospitalBody{
+  margin-top: 10px;
+  font-size: 13px;
+  letter-spacing: .35px;
+  color: rgba(230, 240, 250, .80);
+  line-height: 1.5;
+}
+
+.deathHospitalMeta{
+  margin-top: 12px;
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: 11px;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: rgba(255, 210, 90, .70);
+}
+
+.deathHospitalReset{
+  margin-top: 14px;
+  width: min(420px, calc(100% - 40px));
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(90, 180, 255, .55);
+  background: rgba(0,0,0,.92);
+  color: rgba(230, 240, 250, .90);
+  font-weight: 900;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  cursor: var(--cur-link), pointer;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 24px rgba(90, 180, 255, .12);
+}
+
+.deathHospitalReset:hover{
+  border-color: rgba(255, 210, 90, .75);
+  color: rgba(255, 230, 160, .96);
+}
+
+.deathHospitalReset:active{ transform: translateY(1px); }
+
+body.death-sim-hospital .deathSim{
+  background:
+    radial-gradient(900px 520px at 30% 10%, rgba(90, 180, 255, .10), rgba(0,0,0,0) 60%),
+    radial-gradient(1100px 700px at 75% 0%, rgba(255, 210, 90, .08), rgba(0,0,0,0) 62%),
+    linear-gradient(180deg, rgba(0, 10, 24, .84) 0%, rgba(0, 0, 0, .92) 100%);
+}
+
+.deathServicesTitle{
+  font-size: clamp(20px, 3vw, 28px); /* Much bigger and bold */
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  color: rgba(var(--ylRGB), .95); /* Changed to yellow */
+  font-weight: 900;
+  margin-bottom: 16px;
+  text-align: center; /* Centered */
+  width: 100%;
+  text-shadow: 0 0 20px rgba(var(--ylRGB), .3);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .45s ease, transform .45s ease;
+}
+
+body.death-sim-services .deathServicesTitle{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.deathServicesList{ display: grid; gap: 12px; justify-items: end; width: 100%; }
+
+.deathSvc{
+  width: 100%;
+  display: grid;
+  justify-items: end;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity .45s ease, transform .45s ease;
+}
+
+body.death-sim-services .deathSvc{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+body.death-sim-services #deathSvcSilver{ transition-delay: 0s; }
+body.death-sim-services #deathSvcGold{ transition-delay: 1s; }
+body.death-sim-services #deathSvcPlatinum{ transition-delay: 2s; }
+
+.deathSvcBtn{
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  text-align: left;
+  height: 54px;
+  padding: 0 14px;
+  width: min(var(--svc-btn-w), 100%);
+  border: 1px solid rgba(96,143,255, .26);
+  background: rgba(0,0,0,.60); /* 30% more transparent (was .85, now .60) */
+
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.72) inset,
+    0 0 26px rgba(96,143,255, .10);
+  cursor: var(--cur-link), pointer;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  font-weight: 900;
+  transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease, background-color .12s ease, filter .12s ease;
+  width: min(var(--svc-btn-w), 100%);
+  justify-self: end;
+  position: relative;
+}
+
+.deathSvcBtn:hover{
+  border-color: rgba(96,143,255, .62);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.72) inset,
+    0 0 32px rgba(96,143,255, .18);
+}
+
+.deathSvcBtn:active{ transform: translateY(1px); }
+
+.deathSvcBtn--silver{ border-left: 3px solid rgba(210, 214, 220, .85); }
+.deathSvcBtn--gold{ border-left: 3px solid rgba(255, 210, 90, .92); }
+.deathSvcBtn--platinum{ border-left: 3px solid rgba(190, 220, 255, .92); }
+
+/* Hover states - flip background to tier color, text to black */
+.deathSvcBtn--silver:hover,
+.deathSvcBtn--silver:active{
+  background: rgba(210, 214, 220, .92);
+  border-color: rgba(210, 214, 220, .95);
+  box-shadow:
+    0 0 0 1px rgba(210, 214, 220, .5) inset,
+    0 0 32px rgba(210, 214, 220, .3);
+}
+
+.deathSvcBtn--gold:hover,
+.deathSvcBtn--gold:active{
+  background: rgba(255, 210, 90, .92);
+  border-color: rgba(255, 210, 90, .95);
+  box-shadow:
+    0 0 0 1px rgba(255, 210, 90, .5) inset,
+    0 0 32px rgba(255, 210, 90, .3);
+}
+
+.deathSvcBtn--platinum:hover,
+.deathSvcBtn--platinum:active{
+  background: rgba(190, 220, 255, .92);
+  border-color: rgba(190, 220, 255, .95);
+  box-shadow:
+    0 0 0 1px rgba(190, 220, 255, .5) inset,
+    0 0 32px rgba(190, 220, 255, .3);
+}
+
+.deathSvcName{
+  font-size: 12px;
+  letter-spacing: 1.6px;
+  font-weight: 900;
+  color: rgba(96,143,255, .86);
+  white-space: nowrap;
+  transition: color .12s ease;
+}
+
+.deathSvcBtn--silver .deathSvcName{ color: rgba(225, 230, 236, .82); }
+.deathSvcBtn--gold .deathSvcName{ color: rgba(255, 222, 135, .90); }
+.deathSvcBtn--platinum .deathSvcName{ color: rgba(205, 232, 255, .90); }
+
+/* Hover - name becomes black */
+.deathSvcBtn--silver:hover .deathSvcName,
+.deathSvcBtn--silver:active .deathSvcName,
+.deathSvcBtn--gold:hover .deathSvcName,
+.deathSvcBtn--gold:active .deathSvcName,
+.deathSvcBtn--platinum:hover .deathSvcName,
+.deathSvcBtn--platinum:active .deathSvcName{
+  color: rgba(0, 0, 0, .95);
+}
+
+.deathSvcMeta{
+  display: inline-flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.deathSvcPrice{
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  color: rgba(96,143,255, .86);
+  white-space: nowrap;
+  transition: color .12s ease;
+}
+
+/* Hover - price becomes black */
+.deathSvcBtn--silver:hover .deathSvcPrice,
+.deathSvcBtn--silver:active .deathSvcPrice,
+.deathSvcBtn--gold:hover .deathSvcPrice,
+.deathSvcBtn--gold:active .deathSvcPrice,
+.deathSvcBtn--platinum:hover .deathSvcPrice,
+.deathSvcBtn--platinum:active .deathSvcPrice{
+  color: rgba(0, 0, 0, .95);
+}
+
+.deathSvcTimer{
+  font-size: 13px;
+  letter-spacing: 1.2px;
+  color: var(--yl);
+  white-space: nowrap;
+  font-weight: 900;
+  text-shadow: 0 0 10px rgba(0,0,0,0.8);
+
+  /* Timer as centered overlay (only visible when non-empty) */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+  padding: 4px 12px;
+  border: 1px solid var(--yl);
+  background: rgba(0,0,0,.60); /* 30% more transparent (was .85, now .60) */
+  box-shadow: 0 0 0 1px rgba(0,0,0,.70) inset, 0 0 12px rgba(var(--ylRGB), 0.3);
+}
+
+.deathSvcDesc{
+  margin-top: 6px;
+  padding-left: 12px;
+  font-size: 12px;
+  color: rgba(var(--ylRGB), .92); /* Changed to yellow for better readability */
+  letter-spacing: .4px;
+  justify-self: end;
+  width: min(var(--svc-btn-w), 100%);
+  text-shadow: 
+    0 0 8px rgba(0, 0, 0, 1),
+    0 0 16px rgba(0, 0, 0, 0.95),
+    2px 2px 4px rgba(0, 0, 0, 0.9);
+  filter: drop-shadow(1px 1px 3px rgba(0, 0, 0, 0.95));
+}
+
+/* Locked/ghost buttons */
+.deathSvcBtn.is-unavailable{
+  opacity: .35;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, .10);
+  background: rgba(0,0,0,.10);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset;
+  filter: grayscale(.85);
+}
+
+.deathSvcBtn.is-unavailable:hover{ box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset; }
+
+.deathSvcBtn.is-unavailable{
+  pointer-events: none;
+}
+
+/* Tier-insufficient: monotone ghost */
+.deathSvcBtn.is-tier-denied{
+  opacity: .45;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, .14);
+  background: rgba(0,0,0,.12);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.75) inset;
+  filter: grayscale(1);
+}
+
+.deathSvcBtn.is-tier-denied *{
+  color: rgba(200,200,200,.60) !important;
+}
+
+/* On denied click: red warning flash with slow fade */
+.deathSvcBtn.denied{
+  animation: deathDeniedGlitch .34s steps(2, end) 1;
+  border-color: rgba(255, 70, 92, .95);
+  background: rgba(255, 70, 92, .85);
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.85) inset,
+    0 0 40px rgba(255, 70, 92, .28);
+  filter: none;
+  transition: background-color 1.0s ease, border-color 1.0s ease, box-shadow 1.0s ease;
+}
+
+.deathSvcBtn.denied *{
+  color: rgba(0,0,0,.92) !important;
+}
+
+.deathSvcBtn.denied::after{
+  content: 'OPTION UNAVAILABLE';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+  font-weight: 900;
+  color: rgba(0,0,0,.92);
+  pointer-events: none;
+}
+
+@keyframes deathDeniedGlitch{
+  0%{ transform: translateX(0); filter: brightness(1); }
+  15%{ transform: translateX(-2px); filter: brightness(1.4); }
+  25%{ transform: translateX(2px); }
+  40%{ transform: translateX(-1px); }
+  55%{ transform: translateX(1px); }
+  70%{ transform: translateX(0); filter: brightness(.9); }
+  100%{ transform: translateX(0); filter: brightness(1); }
+}
+
+.deathSvcBtn.denied{
+  animation: deathDeniedGlitch .34s steps(2, end) 1;
+  border-color: rgba(255, 70, 92, .85);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.72) inset,
+    0 0 36px rgba(255, 70, 92, .24);
+}
+
+@media (max-width: 980px){
+  .deathFlatlinedCols{ grid-template-columns: 1fr; }
+  .deathServices{
+    width: min(560px, calc(100% - 40px));
+    right: 0;
+    left: 40px;
+    top: auto;
+    transform: translateY(0);
+    margin-top: 16px;
+    position: static;
+  }
+}
+
+.deathFlatlinedLeft{
+  width: min(560px, calc(100% - 40px));
+  margin-left: 40px;
+  margin-bottom: 0;
+  padding: 18px 18px 18px;
+  border-left: 2px solid rgba(96,143,255, .70);
+  background: rgba(0,0,0,.85);
+}
+
+.deathFlatlinedTitleRow{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.deathFlatlinedSub{
+  margin-top: 10px;
+  color: rgba(96,143,255, .62);
+  letter-spacing: .5px;
+}
+
+.deathFlatlinedSkull{
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(var(--ylRGB), .70); /* Changed to yellow */
+  box-shadow: 0 0 18px rgba(var(--ylRGB), .16); /* Changed to yellow */
+  background:
+    radial-gradient(circle at 30% 35%, rgba(var(--ylRGB), .65), rgba(0,0,0,0) 55%), /* Changed to yellow */
+    radial-gradient(circle at 70% 65%, rgba(var(--ylRGB), .45), rgba(0,0,0,0) 60%); /* Changed to yellow */
+}
+
+.deathFlatlinedSkull::after{
+  content: '☠';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  color: rgba(var(--ylRGB), .88); /* Changed to yellow */
+  text-shadow: 0 0 18px rgba(var(--ylRGB), .18); /* Changed to yellow */
+}
+
+.deathCriticalIcon{
+  position: relative;
+}
+
+.deathCriticalIcon::after{
+  content: '☠';
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-52%);
+  font-size: 11px;
+  opacity: .0;
+  color: rgba(96,143,255, .92);
+  text-shadow: 0 0 14px rgba(96,143,255, .18);
+}
+
+body.death-sim-incapacitated .deathCriticalIcon::after{
+  opacity: .92;
+}
+
+.deathFlatlinedTitle{
+  margin-top: 10px;
+  font-weight: 900;
+  font-size: clamp(36px, 6vw, 64px);
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: rgba(var(--ylRGB), .92); /* Changed to yellow */
+  text-shadow: 0 0 30px rgba(var(--ylRGB), .16); /* Changed to yellow */
+}
+
+.deathFlatlinedTitleRow .deathFlatlinedTitle{ margin-top: 0; }
+
+/* (legacy) menu styles kept for compatibility */
+.deathFlatlinedMenu{
+  margin-top: 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.deathFlatlinedBtn{
+  height: 36px;
+  text-align: left;
+  padding: 0 10px;
+  border: 1px solid rgba(96,143,255, .22);
+  background: rgba(0,0,0,.16);
+  color: rgba(96,143,255, .70);
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  font-weight: 800;
+  cursor: not-allowed;
+}
+
+.deathFlatlinedBtn--ghost{
+  margin-top: 16px;
+  cursor: var(--cur-link), pointer;
+  border-color: rgba(96,143,255, .46);
+  color: rgba(96,143,255, .88);
+}
+
+.deathFlatlinedBtn--ghost:hover{
+  border-color: rgba(var(--ylRGB), .82);
+  color: rgba(var(--ylRGB), .92);
+}
+
+.deathFlatlinedBtn--ghost:active{ transform: translateY(1px); }
+
+/* Service Confirmation Popup (center screen) */
+.deathConfirmPopup{
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 105;
+  width: min(560px, calc(100% - 40px));
+  background: rgba(0,0,0,.92);
+  border: 2px solid rgba(96,143,255, .60);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 44px rgba(96,143,255, .18);
+  padding: 20px 22px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease, transform .35s ease;
+}
+
+.deathConfirmPopup.on{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Color variants for insurance tiers */
+body.death-sim-confirm-silver .deathConfirmPopup{
+  border-color: rgba(210, 214, 220, .70);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 44px rgba(210, 214, 220, .14);
+}
+
+body.death-sim-confirm-gold .deathConfirmPopup{
+  border-color: rgba(255, 210, 90, .70);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 44px rgba(255, 210, 90, .14);
+}
+
+body.death-sim-confirm-platinum .deathConfirmPopup{
+  border-color: rgba(190, 220, 255, .70);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 44px rgba(190, 220, 255, .14);
+}
+
+.deathConfirmTitle{
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 2.8px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .92);
+  margin-bottom: 12px;
+}
+
+body.death-sim-confirm-silver .deathConfirmTitle{ color: rgba(225, 230, 236, .88); }
+body.death-sim-confirm-gold .deathConfirmTitle{ color: rgba(255, 222, 135, .90); }
+body.death-sim-confirm-platinum .deathConfirmTitle{ color: rgba(205, 232, 255, .90); }
+
+.deathConfirmBody{
+  font-size: 12px;
+  letter-spacing: .5px;
+  color: rgba(96,143,255, .70);
+  line-height: 1.45;
+  margin-bottom: 18px;
+}
+
+.deathConfirmActions{
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.deathConfirmBtn{
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid rgba(96,143,255, .45);
+  background: rgba(0,0,0,.85);
+  color: rgba(96,143,255, .88);
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  cursor: var(--cur-link), pointer;
+  transition: border-color .12s ease, color .12s ease, transform .12s ease;
+}
+
+.deathConfirmBtn:hover{
+  border-color: rgba(96,143,255, .75);
+  color: rgba(96,143,255, .98);
+}
+
+.deathConfirmBtn:active{ transform: translateY(1px); }
+
+.deathConfirmBtn--confirm{
+  border-color: rgba(var(--ylRGB), .65);
+  color: rgba(var(--ylRGB), .92);
+}
+
+.deathConfirmBtn--confirm:hover{
+  border-color: rgba(var(--ylRGB), .88);
+  color: rgba(var(--ylRGB), .98);
+}
+
+/* Hide old acknowledgement card (replaced by EMS banner) */
+body.death-sim-services-ack .deathServicesAck{
+  display: none !important;
+}
+
+/* Top Banner (EMS Response Requested) */
+.deathEmsBanner{
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--topbar-h);
+  z-index: 100;
+  background: rgba(0,0,0,.75);
+  border-bottom: 3px solid rgba(96,143,255, .65);
+  padding: 20px 24px;
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+  transition: opacity .45s ease, transform .45s ease;
+  text-align: center;
+  box-shadow: 0 4px 28px rgba(0,0,0,.6);
+}
+
+.deathEmsBanner.on{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Color variants */
+body.death-sim-ack-silver .deathEmsBanner{
+  border-bottom-color: rgba(210, 214, 220, .80);
+}
+
+body.death-sim-ack-gold .deathEmsBanner{
+  border-bottom-color: rgba(255, 210, 90, .80);
+}
+
+body.death-sim-ack-platinum .deathEmsBanner{
+  border-bottom-color: rgba(190, 220, 255, .80);
+}
+
+.deathEmsBannerTitle{
+  font-size: clamp(24px, 4.5vw, 42px);
+  font-weight: 900;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .95);
+  text-shadow: 0 0 32px rgba(96,143,255, .28);
+  line-height: 1.2;
+}
+
+body.death-sim-ack-silver .deathEmsBannerTitle{
+  color: rgba(225, 230, 236, .92);
+  text-shadow: 0 0 32px rgba(210, 214, 220, .24);
+}
+
+body.death-sim-ack-gold .deathEmsBannerTitle{
+  color: rgba(255, 222, 135, .95);
+  text-shadow: 0 0 32px rgba(255, 210, 90, .24);
+}
+
+body.death-sim-ack-platinum .deathEmsBannerTitle{
+  color: rgba(205, 232, 255, .95);
+  text-shadow: 0 0 32px rgba(190, 220, 255, .24);
+}
+
+.deathEmsBannerSub{
+  margin-top: 10px;
+  font-size: 15px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(var(--ylRGB), .95);
+  font-weight: 700;
+  text-shadow: 0 0 12px rgba(var(--ylRGB), .18);
+}
+
+.deathEmsBannerTimer{
+  color: rgba(var(--ylRGB), .98);
+  font-weight: 900;
+  text-shadow: 0 0 16px rgba(var(--ylRGB), .28);
+}
+
+/* Evacuation Hold Bar (center screen) */
+.deathEvacHold{
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 110;
+  width: min(680px, calc(100% - 40px));
+  background: rgba(0,0,0,.92);
+  border: 2px solid rgba(var(--ylRGB), .75);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.72) inset, 0 0 44px rgba(var(--ylRGB), .18);
+  padding: 18px 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+
+.deathEvacHold.on{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.deathEvacHoldTitle{
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(var(--ylRGB), .92);
+  text-shadow: 0 0 18px rgba(var(--ylRGB), .18);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.deathEvacHoldBarBox{
+  height: 28px;
+  border: 1px solid rgba(var(--ylRGB), .55);
+  background: rgba(0,0,0,.65);
+  position: relative;
+  overflow: hidden;
+}
+
+.deathEvacHoldBarFill{
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(var(--ylRGB), .75), rgba(var(--ylRGB), .95));
+  box-shadow: 0 0 18px rgba(var(--ylRGB), .28);
+  transition: width .05s linear;
+}
+
+.deathEvacHoldHint{
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: rgba(96,143,255, .68);
+}
+
+/* Subtitles (bottom center) - Cyberpunk style */
+.deathSubtitles{
+  position: fixed;
+  left: 50%;
+  bottom: 60px;
+  transform: translateX(-50%);
+  z-index: 108;
+  width: min(1200px, calc(100% - 100px));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s ease;
+}
+
+.deathSubtitles.on{
+  opacity: 1;
+}
+
+.deathSubtitleLine{
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  text-align: left;
+  min-height: 100px; /* Pre-allocate space to prevent jumping */
+}
+
+.deathSubtitleName{
+  font-weight: 900;
+  font-size: clamp(18px, 2.2vw, 24px);
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: rgba(96, 143, 255, 1); /* Blue */
+  text-shadow: 
+    0 0 20px rgba(0, 0, 0, 1),
+    0 0 40px rgba(0, 0, 0, 0.95),
+    0 0 60px rgba(0, 0, 0, 0.9),
+    0 0 80px rgba(0, 0, 0, 0.85),
+    4px 4px 8px rgba(0, 0, 0, 0.95),
+    0 0 50px rgba(96, 143, 255, .5),
+    0 0 70px rgba(96, 143, 255, .3);
+  white-space: nowrap;
+  flex-shrink: 0;
+  filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.95));
+}
+
+.deathSubtitleText{
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: rgba(var(--ylRGB), 1); /* Yellow */
+  line-height: 1.5;
+  flex: 1;
+  text-shadow: 
+    0 0 20px rgba(0, 0, 0, 1),
+    0 0 40px rgba(0, 0, 0, 0.95),
+    0 0 60px rgba(0, 0, 0, 0.9),
+    0 0 80px rgba(0, 0, 0, 0.85),
+    4px 4px 8px rgba(0, 0, 0, 0.95),
+    0 0 50px rgba(var(--ylRGB), .4),
+    0 0 70px rgba(var(--ylRGB), .2);
+  filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.95));
+}
+
+/* Reduce motion option */
+@media (prefers-reduced-motion: reduce){
+  .deathCriticalBarFill{ transition: none; }
+}

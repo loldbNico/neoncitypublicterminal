@@ -797,11 +797,15 @@ body.view-lore .securoserv-midbar{ z-index: 85; }
       position: fixed;
       inset: 0;
       background: #000;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
       z-index: 120;
       opacity: 0;
       transition: opacity .12s linear;
       pointer-events: none;
     }
+
     .screen-off.on{
       opacity: 1;
       pointer-events: auto;
@@ -832,6 +836,12 @@ body.view-lore .securoserv-midbar{ z-index: 85; }
       pointer-events: auto;
       background: transparent;
     }
+
+    /* Safety: never let a hidden blocker capture clicks. */
+    .input-blocker:not(.on){
+      pointer-events: none;
+    }
+
     .input-blocker.on{ display:block; }
 
     /* User counterhack window (yellow) — separate from red system midbar */
