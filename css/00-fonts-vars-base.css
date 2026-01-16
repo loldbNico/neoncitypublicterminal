@@ -335,6 +335,9 @@
     body.hide-buildings #layerBuildings{ opacity: 0; }
     body.hide-roads #layerRoads{ opacity: 0; }
     body.hide-markers #markersLayer{ opacity: 0; }
+
+    /* POI reveal control: visible by default; when hidden, only show after pin click */
+    body.hide-poi-buildings #svgHost svg .poi-shape{ opacity: 0 !important; pointer-events: none !important; }
     .sidemenu .tab{
       appearance:none;
       background: transparent;

@@ -580,6 +580,7 @@
     bindLayerToggle('toggleRoads', 'hide-roads');
     bindLayerToggle('toggleBuildings', 'hide-buildings');
     bindLayerToggle('toggleMarkers', 'hide-markers');
+    bindLayerToggle('togglePoiBuildings', 'hide-poi-buildings');
 
     function getActiveMenuId(){
       const ids = ['menuShowAll','menuRestricted','menuHideAll'];

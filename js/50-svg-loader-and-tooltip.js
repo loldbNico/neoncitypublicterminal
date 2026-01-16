@@ -141,6 +141,7 @@
         colorizeRegions();
         ensureWastelineMarquee();
         buildDistrictLogos();
+        if(typeof buildPoiMarkersFromSvg === "function") buildPoiMarkersFromSvg();
 
         if(!safeOnRegionMove || !safeOnRegionEnter || !safeOnRegionLeave || !safeSelectRegion){
           bootLine("[WARN] UI scripts missing; check console for syntax errors", true);

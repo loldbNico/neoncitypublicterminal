@@ -109,10 +109,15 @@
       if(zoomReadout) zoomReadout.textContent = `ZOOM: ${Math.round(camera.zoom * 100)}%`;
       const panEl = document.getElementById("panReadout");
       if(panEl) panEl.textContent = `${Math.round(camera.x)},${Math.round(camera.y)}`;
-      if(logosLayer){
-        const scale = camera.zoom > 0 ? 1 / camera.zoom : 1;
-        logosLayer.style.setProperty('--logoZoomScale', String(scale));
-      }
+       if(logosLayer){
+         const scale = camera.zoom > 0 ? 1 / camera.zoom : 1;
+         logosLayer.style.setProperty('--logoZoomScale', String(scale));
+       }
+       const markersLayer = document.getElementById("markersLayer");
+       if(markersLayer){
+         const scale = camera.zoom > 0 ? 1 / camera.zoom : 1;
+         markersLayer.style.setProperty('--poiZoomScale', String(scale));
+       }
 
       // Side zoom bar fills from center: up for zoom-in, down for zoom-out
       if(zoomBar){
@@ -692,18 +697,170 @@
       });
     }
 
-    function setDistrictLogoStateFor(el, state){
-      if(!el) return;
-      const key = normalizeRegionKey(el.id || el.getAttribute?.("data-name") || "");
-      const node = document.querySelector(`#logosLayer .districtLogo[data-key="${CSS.escape(key)}"]`);
-      if(!node) return;
-      if(state === "base"){
-        node.classList.remove("hot");
-        return;
-      }
-      const isActive = state === "hover" || state === "selected";
-      node.classList.toggle("hot", isActive);
-    }
+     function setDistrictLogoStateFor(el, state){
+       if(!el) return;
+       const key = normalizeRegionKey(el.id || el.getAttribute?.("data-name") || "");
+       const node = document.querySelector(`#logosLayer .districtLogo[data-key="${CSS.escape(key)}"]`);
+       if(!node) return;
+       if(state === "base"){
+         node.classList.remove("hot");
+         return;
+       }
+       const isActive = state === "hover" || state === "selected";
+       node.classList.toggle("hot", isActive);
+     }
+
+     function buildPoiMarkersFromSvg(){
+       const layer = document.getElementById("markersLayer");
+       if(!layer || !svgEl) return;
+       layer.innerHTML = "";
+
+       const mapRect = mapwrap.getBoundingClientRect();
+
+       const markerEls = Array.from(svgEl.querySelectorAll("[marker], [id^=\"24/7\"], [id^=\"mechanic_shop\"], [id^=\"neon_\"]"));
+       markerEls.forEach(el => {
+         const rawMarker = String(el.getAttribute("marker") || "").trim();
+         const idMarker = String(el.id || "").trim();
+
+         // Some POIs are authored as plain paths with ids like "24/7_*" or "mechanic_shop_*".
+         const markerName = rawMarker || idMarker;
+         if(!markerName) return;
+
+         const c = regionCenterInWorld(el, mapRect);
+         if(!c) return;
+
+         el.dataset.poiMarker = markerName;
+         el.classList.add("poi-shape");
+         el.classList.toggle("poi-revealed", false);
+
+         // Default: POI buildings visible; CSS restyles them.
+         // If the user enables "Hide POI Buildings", CSS hides them and we only temporarily
+         // reveal on pin click.
+         el.style.opacity = "";
+         el.style.pointerEvents = "";
+
+         const pin = document.createElement("div");
+         pin.className = "poiMarker";
+         pin.dataset.marker = markerName;
+
+         // Variant styling for known generic POIs
+         const lower = markerName.toLowerCase();
+         if(lower.startsWith("24/7")) pin.classList.add("poiMarker--shop");
+         if(lower.startsWith("mechanic_shop")) pin.classList.add("poiMarker--mechanic");
+         pin.style.left = c.x + "px";
+         pin.style.top = c.y + "px";
+
+         pin.addEventListener("mouseenter", () => {
+           const tip = document.getElementById("tooltip");
+           if(!tip) return;
+           tip.textContent = markerName.replace(/[_\-]+/g, " ");
+           tip.classList.add("on");
+           // Position tooltip near the pin in screen coordinates
+           const r = pin.getBoundingClientRect();
+           tip.style.left = (r.left + r.width / 2) + "px";
+           tip.style.top = (r.top - 12) + "px";
+           tip.style.bottom = "auto";
+           tip.style.transform = "translate(-50%, -100%)";
+         });
+          function hidePoiTooltip(){
+            const tip = document.getElementById("tooltip");
+            if(!tip) return;
+            tip.classList.remove("on");
+          }
+
+          pin.addEventListener("mouseleave", hidePoiTooltip);
+
+          // If user moves from a pin onto the SVG (district areas), make sure
+          // the pin tooltip cannot remain stuck.
+          try{
+            mapwrap.addEventListener("pointerdown", (e) => {
+              if(e.target?.closest?.("#markersLayer .poiMarker")) return;
+              hidePoiTooltip();
+            }, { passive:true });
+            mapwrap.addEventListener("pointerleave", hidePoiTooltip, { passive:true });
+          }catch{}
+
+         pin.addEventListener("click", (e) => {
+           e.stopPropagation();
+
+           // Hide any previously revealed POI shapes
+           try{
+             svgEl.querySelectorAll(".poi-shape.poi-revealed").forEach(s => {
+               s.classList.remove("poi-revealed");
+               if(document.body.classList.contains("hide-poi-buildings")){
+                 s.style.opacity = "0";
+                 s.style.pointerEvents = "none";
+               }
+             });
+           }catch{}
+
+           // Set theme so revealed highlight color matches the pin type
+           try{
+             const lower = markerName.toLowerCase();
+             let rgb = "255, 238, 152"; // default: yellow
+             if(lower.startsWith("24/7")) rgb = "80, 242, 224";
+             if(lower.startsWith("mechanic_shop")) rgb = "96, 143, 255";
+             document.documentElement.style.setProperty("--activePoiRGB", rgb);
+           }catch{}
+
+           // Note: CSS.escape() is for CSS identifiers (not attribute values).
+           // For attribute selectors, escape quotes/backslashes. Prefer id lookup for weird characters.
+           const attrVal = String(markerName).replace(/\\/g, "\\\\").replace(/\"/g, "\\\"");
+           const selector = `[marker="${attrVal}"]`;
+           const idTarget = svgEl.getElementById?.(markerName);
+
+
+           // Reveal + highlight shapes for this POI
+           const targets = Array.from(svgEl.querySelectorAll(selector));
+           if(idTarget) targets.push(idTarget);
+           targets.forEach(shape => {
+             shape.classList.add("poi-revealed");
+
+             // When POI buildings are hidden, reveal only while active.
+             // When visible by default, keep styles untouched (CSS handles normal view).
+             if(document.body.classList.contains("hide-poi-buildings")){
+               shape.style.opacity = "1";
+               shape.style.pointerEvents = "auto";
+             }
+           });
+
+           // Focus camera on clicked POI
+           if(targets.length){
+             try{ flyToElement(targets[0], 3.2, 520, true); }catch{}
+           }else{
+             try{ cameraFlyTo(c.x, c.y, 3.2, 520); }catch{}
+           }
+         });
+
+         layer.appendChild(pin);
+       });
+     }
+
+     function hideAllPoiReveals(){
+       if(!svgEl) return;
+       try{
+         svgEl.querySelectorAll(".poi-shape.poi-revealed").forEach(s => {
+           s.classList.remove("poi-revealed");
+           if(document.body.classList.contains("hide-poi-buildings")){
+             s.style.opacity = "0";
+             s.style.pointerEvents = "none";
+           }
+         });
+       }catch{}
+       try{ document.documentElement.style.removeProperty("--activePoiRGB"); }catch{}
+     }
+
+     // Clicking off-map pins should hide revealed POI areas.
+     try{
+       window.addEventListener("mousedown", (e) => {
+         const clickedPin = Boolean(e.target?.closest?.("#markersLayer .poiMarker"));
+         if(clickedPin) return;
+         hideAllPoiReveals();
+       }, { passive:true });
+     }catch{}
+
+     try{ window.buildPoiMarkersFromSvg = buildPoiMarkersFromSvg; }catch{}
+
 
     function buildDistrictLogos(filterFn = null){
       const layer = document.getElementById("logosLayer");
