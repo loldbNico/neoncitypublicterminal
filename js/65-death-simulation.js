@@ -26,16 +26,53 @@
     return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
 
-  // Audio helper
+  // Audio preloading and playback system
+  const audioCache = {};
+  const soundFiles = [
+    './reboot.mp3',
+    './10-47 (silver).mp3',
+    './10-47 (gold).mp3',
+    './10-47 (platinum).mp3'
+  ];
+
+  // Preload all audio files
+  function preloadAudio(){
+    soundFiles.forEach(src => {
+      try{
+        const audio = new Audio();
+        audio.preload = 'auto';
+        audio.src = src;
+        audio.volume = 0.7;
+        // Load the audio file
+        audio.load();
+        audioCache[src] = audio;
+      }catch(e){
+        console.warn('Audio preload failed for:', src, e);
+      }
+    });
+  }
+
+  // Play preloaded audio (or create new if not cached)
   function playSound(src){
     try{
-      const audio = new Audio(src);
-      audio.volume = 0.7;
-      audio.play().catch(e => console.warn('Audio play failed:', e));
+      // Try to use cached audio
+      if(audioCache[src]){
+        const audio = audioCache[src].cloneNode();
+        audio.volume = 0.7;
+        audio.play().catch(e => console.warn('Audio play failed:', e));
+      } else {
+        // Fallback: create new audio element
+        const audio = new Audio(src);
+        audio.volume = 0.7;
+        audio.play().catch(e => console.warn('Audio play failed:', e));
+      }
     }catch(e){
-      console.warn('Audio creation failed:', e);
+      console.warn('Audio playback failed:', e);
     }
   }
+
+  // Preload audio when script loads
+  preloadAudio();
 
   // Subtitle system
   let subtitleState = {
