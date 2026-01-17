@@ -53,17 +53,17 @@
   }
 
   // Play preloaded audio (or create new if not cached)
-  function playSound(src){
+  function playSound(src, volume = 0.2){
     try{
       // Try to use cached audio
       if(audioCache[src]){
         const audio = audioCache[src].cloneNode();
-        audio.volume = 0.7;
+        audio.volume = volume;
         audio.play().catch(e => console.warn('Audio play failed:', e));
       } else {
         // Fallback: create new audio element
         const audio = new Audio(src);
-        audio.volume = 0.7;
+        audio.volume = volume;
         audio.play().catch(e => console.warn('Audio play failed:', e));
       }
     }catch(e){
