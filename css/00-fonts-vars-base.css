@@ -338,6 +338,29 @@
 
     /* POI reveal control: visible by default; when hidden, only show after pin click */
     body.hide-poi-buildings #svgHost svg .poi-shape{ opacity: 0 !important; pointer-events: none !important; }
+
+    /* Per-type POI filtering via legend toggles */
+    body.hide-poi-type-default #markersLayer .poiMarker[data-poi-type="default"],
+    body.hide-poi-type-shop #markersLayer .poiMarker[data-poi-type="shop"],
+    body.hide-poi-type-mechanic #markersLayer .poiMarker[data-poi-type="mechanic"],
+    body.hide-poi-type-tower #markersLayer .poiMarker[data-poi-type="tower"],
+    body.hide-poi-type-job #markersLayer .poiMarker[data-poi-type="job"],
+    body.hide-poi-type-gov #markersLayer .poiMarker[data-poi-type="gov"],
+    body.hide-poi-type-ammo #markersLayer .poiMarker[data-poi-type="ammo"]{ display:none !important; }
+
+    /* Dual-typed POIs (tower primary + ammo fallback): hide only if both are disabled */
+    body.hide-poi-type-tower.hide-poi-type-ammo #markersLayer .poiMarker[data-poi-alt-type="ammo"]{ display:none !important; }
+
+    body.hide-poi-type-default #svgHost svg .poi-shape[data-poi-type="default"],
+    body.hide-poi-type-shop #svgHost svg .poi-shape[data-poi-type="shop"],
+    body.hide-poi-type-mechanic #svgHost svg .poi-shape[data-poi-type="mechanic"],
+    body.hide-poi-type-tower #svgHost svg .poi-shape[data-poi-type="tower"],
+    body.hide-poi-type-job #svgHost svg .poi-shape[data-poi-type="job"],
+    body.hide-poi-type-gov #svgHost svg .poi-shape[data-poi-type="gov"],
+    body.hide-poi-type-ammo #svgHost svg .poi-shape[data-poi-type="ammo"]{ opacity: 0 !important; pointer-events:none; }
+
+    /* Dual-typed POIs (tower primary + ammo fallback): hide only if both are disabled */
+    body.hide-poi-type-tower.hide-poi-type-ammo #svgHost svg .poi-shape[data-poi-alt-type="ammo"]{ opacity: 0 !important; pointer-events:none; }
     .sidemenu .tab{
       appearance:none;
       background: transparent;

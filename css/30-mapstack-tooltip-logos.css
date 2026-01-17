@@ -21,6 +21,59 @@
       -webkit-user-select: text;
     }
 
+    /* POI legend */
+    .poiLegend{
+      position: absolute;
+      left: 14px;
+      /* Move below the layer toggles */
+      top: calc(var(--topbar-h) + 10px + 72px + 10px + 160px);
+      z-index: 12;
+      width: 170px;
+      padding: 10px 10px;
+      pointer-events: auto;
+    }
+    .poiLegend .legendTitle{
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(96,143,255,.92);
+      margin-bottom: 6px;
+    }
+    .poiLegend .legendRow{
+      width: 100%;
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      padding: 7px 8px;
+      border: 1px solid rgba(96,143,255,.18);
+      background: rgba(6,10,22,.55);
+      color: rgba(96,143,255,.88);
+      margin: 6px 0;
+      cursor: var(--cur-link), pointer;
+      text-transform: uppercase;
+      letter-spacing: 1.1px;
+      font-size: 11px;
+    }
+    .poiLegend .legendRow[aria-pressed="false"]{
+      opacity: .45;
+      filter: saturate(.65);
+    }
+    .poiLegend .legendRow:hover{ border-color: rgba(96,143,255,.38); color: rgba(96,143,255,.98); }
+    .poiLegend .swatch{
+      width: 14px;
+      height: 14px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      box-shadow: 0 0 10px rgba(255,255,255,.08);
+    }
+    .poiLegend .swatch--tower{ background: rgba(255,65,65,.92); box-shadow: 0 0 12px rgba(255,65,65,.18); }
+    .poiLegend .swatch--gov{ background: rgba(245,248,255,.92); box-shadow: 0 0 12px rgba(245,248,255,.14); }
+    .poiLegend .swatch--job{ background: rgba(70,255,158,.92); box-shadow: 0 0 12px rgba(70,255,158,.16); }
+    .poiLegend .swatch--shop{ background: rgba(255,86,214,.92); box-shadow: 0 0 12px rgba(255,86,214,.18); }
+    .poiLegend .swatch--ammo{ background: rgba(255,148,44,.92); box-shadow: 0 0 12px rgba(255,148,44,.18); }
+    .poiLegend .swatch--mechanic{ background: rgba(96,143,255,.92); box-shadow: 0 0 12px rgba(96,143,255,.18); }
+    .poiLegend .swatch--default{ background: rgba(var(--ylRGB), .92); box-shadow: 0 0 12px rgba(var(--ylRGB), .18); }
+
     /* Panels */
     .hudpanel, .hudpopup, .dockpanel{
       background:
@@ -84,12 +137,11 @@
       );
 
       /* Auto-size height to content; still cap to viewport and allow scroll when needed. */
-      bottom: auto;
+      /* REMOVED bottom:auto override - let .hudpopup bottom positioning work */
       height: auto;
       max-height: calc(
         100vh
-        - var(--detailsTop, calc(var(--topbar-h) + 10px + 170px))
-        - (14px + var(--dockH, 0px) + 14px)
+        - var(--topbar-h) - 100px
       );
     }
 

@@ -47,14 +47,51 @@
   <div class="stage">
     <main class="mapstage" aria-hidden="false">
       <div class="maphud">
-        <div class="hudfilters" id="hudFilters">
-          <button class="hudf" id="btnShowAllDistricts" type="button">SHOW ALL DISTRICTS</button>
-          <button class="hudf" id="btnRestricted" type="button">RESTRICTED ZONE</button>
-          <button class="hudf" id="btnHideAll" type="button">HIDE ALL DISTRICTS</button>
-        </div>
+      <div class="hudfilters" id="hudFilters">
+        <button class="hudf" id="btnShowAllDistricts" type="button">SHOW ALL DISTRICTS</button>
+        <button class="hudf" id="btnRestricted" type="button">RESTRICTED ZONE</button>
+        <button class="hudf" id="btnHideAll" type="button">HIDE ALL DISTRICTS</button>
       </div>
 
-      <div class="mapwrap">
+        <aside class="poiLegend hudpanel" id="poiLegend" aria-label="Pin legend">
+
+        <div class="legendTitle">PINS</div>
+        <button class="legendRow" type="button" data-poi-type="tower" aria-pressed="true">
+          <span class="swatch swatch--tower" aria-hidden="true"></span>
+          <span class="label">TOWERS</span>
+        </button>
+        <button class="legendRow" type="button" data-poi-type="gov" aria-pressed="true">
+          <span class="swatch swatch--gov" aria-hidden="true"></span>
+          <span class="label">GOV</span>
+        </button>
+        <button class="legendRow" type="button" data-poi-type="job" aria-pressed="true">
+          <span class="swatch swatch--job" aria-hidden="true"></span>
+          <span class="label">JOBS</span>
+        </button>
+        <button class="legendRow" type="button" data-poi-type="shop" aria-pressed="true">
+          <span class="swatch swatch--shop" aria-hidden="true"></span>
+          <span class="label">STORES</span>
+        </button>
+        <button class="legendRow" type="button" data-poi-type="ammo" aria-pressed="true">
+          <span class="swatch swatch--ammo" aria-hidden="true"></span>
+          <span class="label">AMMU-NATION</span>
+        </button>
+        <button class="legendRow" type="button" data-poi-type="mechanic" aria-pressed="true">
+          <span class="swatch swatch--mechanic" aria-hidden="true"></span>
+          <span class="label">MECHANIC</span>
+        </button>
+        <button class="legendRow" type="button" data-poi-type="default" aria-pressed="true">
+          <span class="swatch swatch--default" aria-hidden="true"></span>
+          <span class="label">OTHER</span>
+        </button>
+      </aside>
+      </div>
+
+        <div class="mapwrap">
+          <div class="areaCursorTab" id="areaCursorTab" aria-hidden="true">
+            <span class="k">AREA AT CURSOR:</span>
+            <span class="v" id="areaCursorName">NONE</span>
+          </div>
         <div id="mapStack">
           <img id="layerOcean" draggable="false" alt="" loading="lazy" decoding="async" />
           <img id="layerLand" draggable="false" alt="" loading="lazy" decoding="async" />
