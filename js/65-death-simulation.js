@@ -29,7 +29,7 @@
   // Audio preloading and playback system
   const audioCache = {};
   const soundFiles = [
-    './reboot.mp3',
+    './Reboot.mp3',
     './10-47 (silver).mp3',
     './10-47 (gold).mp3',
     './10-47 (platinum).mp3'
@@ -569,7 +569,7 @@
           screenOff.setAttribute('aria-hidden', 'false');
         }
         // Play reboot sound on final punch
-        playSound('./reboot.mp3');
+        playSound('./Reboot.mp3');
       });
 
       softDelay(5850, () => {

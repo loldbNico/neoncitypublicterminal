@@ -2494,7 +2494,6 @@
       background: rgba(var(--ssHot), .92);
       box-shadow: 0 0 22px rgba(var(--ss), .22);
       transition: width .06s linear;
-      will-change: width;
     }
     .shutdownPopupHead{
       display:flex;
@@ -2555,7 +2554,6 @@
 
     .counterhackBait:not(.glitching){
       animation: counterhackBaitPulse 1.05s ease-in-out infinite;
-      will-change: transform, filter;
     }
 
     .counterhackBaitBtn{
@@ -2638,12 +2636,10 @@
 
     .counterhackBait.glitching{
       animation: counterhackBaitGlitchOut .30s steps(2, end) both;
-      will-change: transform, opacity, filter;
     }
 
     .counterhackBaitBtn.glitching{
       animation: counterhackBaitBtnGlitch .30s steps(2, end) both;
-      will-change: transform, filter;
     }
 
     /* Finale palette compliance for the click moment: black + red */
