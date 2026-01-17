@@ -218,7 +218,11 @@
     window.regionLabel = regionLabel;
 
     function refreshHoverTab(){
-      const el = hoveredEl || selectedEl;
+      // Area at cursor ONLY shows the hovered element, not the selected one
+      const el = hoveredEl;
+      const tab = document.getElementById('areaCursorTab');
+      const tabName = document.getElementById('areaCursorName');
+
       if(!el){
         tooltip.classList.remove("on");
         tooltip.classList.remove("glitch");
@@ -227,35 +231,24 @@
           clearInterval(securoservTooltipTimer);
           securoservTooltipTimer = null;
         }
+        if(tab) tab.classList.remove('on');
+        if(tabName) tabName.textContent = '';
         return;
       }
+
       const { name } = regionLabel(el);
 
+      // Move the big area label off the cursor tooltip and into the bottom tab.
+      if(tabName) tabName.textContent = name;
+      if(tab) tab.classList.add('on');
+
+      // Keep handling SecuroServ glitch state on tooltip element for reuse elsewhere,
+      // but do not show the big area name in the tooltip anymore.
       const key = normalizeRegionKey(el.id || el.getAttribute("data-name") || "");
       const isSecuroserv = (key === "SECUROSERV_PORT" || key === "SECUROSERVE_PORT" || key.startsWith("SECUROSERV_"))
         && !securoservBypassedThisSession;
 
       tooltip.classList.toggle("securoserv", isSecuroserv);
-
-      if(isSecuroserv){
-        tooltip.classList.add("glitch");
-        tooltip.dataset.base = name;
-        if(!securoservTooltipTimer){
-          securoservTooltipTimer = setInterval(() => {
-            if(!tooltip.classList.contains("on")) return;
-            const base = tooltip.dataset.base || "";
-            tooltip.textContent = glitchifyText(base, 0.62);
-          }, 85);
-        }
-        tooltip.textContent = glitchifyText(name, 0.62);
-      }else{
-        tooltip.classList.remove("glitch");
-        if(securoservTooltipTimer){
-          clearInterval(securoservTooltipTimer);
-          securoservTooltipTimer = null;
-        }
-        tooltip.textContent = name;
-      }
-      tooltip.classList.add("on");
+      tooltip.classList.remove('on');
     }
 

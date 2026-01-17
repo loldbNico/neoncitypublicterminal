@@ -58,14 +58,14 @@
       overflow:hidden;
     }
 
-    /* Side zoom bar (blue outline, yellow fill from center) */
+    /* Horizontal zoom bar under the area details panel */
     .zoomBar{
-      position:absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 10px;
-      height: 190px;
+      position:fixed;
+      right: 14px;
+      /* Position just below the area details panel (hudpopup) */
+      bottom: calc(14px + var(--dockH, 0px));
+      width: 270px; /* Match the hudpopup width */
+      height: 10px;
       border: 1px solid var(--ui);
       background: transparent;
       z-index: 12;
@@ -73,36 +73,42 @@
       --fill: 0;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: center;
     }
     .zoomReadout{
       position: absolute;
-      right: 100%;
-      margin-right: 8px;
-      font-size: 11px;
+      bottom: 100%;
+      margin-bottom: 4px;
+      left: 0;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 1.2px;
       color: rgba(96,143,255,.72);
       font-weight: 600;
       white-space: nowrap;
-      writing-mode: vertical-rl;
+      writing-mode: horizontal-tb;
       text-orientation: mixed;
-      transform: rotate(180deg);
+      transform: none;
       pointer-events: none;
     }
     .zoomBar .fill{
       position:absolute;
-      left: 1px;
-      right: 1px;
+      top: 1px;
+      bottom: 1px;
       background: var(--yl);
     }
     .zoomBar .fill.up{
-      bottom: 50%;
-      height: calc(var(--fill) * 50%);
+      right: 50%;
+      width: calc(var(--fill) * 50%);
+      height: auto;
+      left: auto;
     }
     .zoomBar .fill.down{
-      top: 50%;
-      height: calc(var(--fill) * 50%);
+      left: 50%;
+      width: calc(var(--fill) * 50%);
+      height: auto;
+      right: auto;
+      top: 1px;
     }
     /* Map stack: raster layers + SVG share one transform */
     #mapStack{
@@ -110,7 +116,6 @@
       left: 0;
       top: 0;
       transform-origin: 0 0;
-      will-change: transform;
       cursor: var(--cur-default), default;
     }
     #mapStack.grabbing{ cursor: var(--cur-move), grabbing; }
@@ -152,11 +157,11 @@
 
     .poiMarker{
       position: absolute;
-      transform: translate(-50%, -100%) scale(var(--poiZoomScale, 1));
-      transform-origin: 50% 100%;
+      transform: translate(-50%, -50%) scale(var(--poiZoomScale, 1));
+      transform-origin: 50% 50%;
       width: 22px;
       height: 26px;
-      pointer-events: auto;
+      pointer-events: auto; /* Pins receive hover/click events */
       cursor: var(--cur-link), pointer;
       filter:
         drop-shadow(0 0 10px rgba(var(--ylRGB), .16))
@@ -192,23 +197,66 @@
       box-shadow: 0 0 0 1px rgba(var(--ylRGB), .55) inset;
     }
 
-    /* SHOP (24/7): green-ish hologram + striped "badge" */
+    /* Pinned POI label (shown above selected pin) */
+    .poiPinnedLabel{
+      position: absolute;
+      transform: translate(-50%, -100%) scale(var(--poiZoomScale, 1));
+      transform-origin: 50% 100%;
+      padding: 8px 12px;
+      background: rgba(6,10,22,.92);
+      border: 1px solid rgba(var(--poiLabelRGB, var(--ylRGB)), 0.7);
+      border-radius: 3px;
+      pointer-events: none;
+      z-index: 10;
+      max-width: 280px;
+      box-shadow:
+        0 0 8px rgba(var(--poiLabelRGB, var(--ylRGB)), .20),
+        0 0 16px rgba(var(--poiLabelRGB, var(--ylRGB)), .12);
+    }
+
+    .poiPinnedLabel-title{
+      color: rgba(var(--poiLabelRGB, var(--ylRGB)), 1);
+      font-family: var(--monoFont);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      text-shadow:
+        0 0 6px rgba(var(--poiLabelRGB, var(--ylRGB)), .45),
+        0 0 12px rgba(var(--poiLabelRGB, var(--ylRGB)), .30);
+    }
+
+    .poiPinnedLabel-desc{
+      color: rgba(var(--poiLabelRGB, var(--ylRGB)), 0.8);
+      font-family: var(--monoFont);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      line-height: 1.4;
+      margin-top: 5px;
+      white-space: normal;
+      text-shadow:
+        0 0 4px rgba(var(--poiLabelRGB, var(--ylRGB)), .25);
+    }
+
+    /* SHOP (24/7): pink */
     .poiMarker--shop{
       filter:
-        drop-shadow(0 0 10px rgba(80,242,224,.18))
-        drop-shadow(0 0 18px rgba(80,242,224,.10));
+        drop-shadow(0 0 10px rgba(255,86,214,.20))
+        drop-shadow(0 0 18px rgba(255,86,214,.12));
     }
     .poiMarker--shop::before{
       background:
         repeating-linear-gradient(90deg, rgba(255,255,255,.22) 0 2px, transparent 2px 4px),
         radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), transparent 40%),
-        radial-gradient(circle at 50% 55%, rgba(80,242,224,.95), rgba(80,242,224,.55) 55%, rgba(80,242,224,.20) 100%);
+        radial-gradient(circle at 50% 55%, rgba(255,86,214,.95), rgba(255,86,214,.55) 55%, rgba(255,86,214,.20) 100%);
       box-shadow:
-        0 0 10px rgba(80,242,224,.18),
-        0 0 18px rgba(80,242,224,.10);
+        0 0 10px rgba(255,86,214,.20),
+        0 0 18px rgba(255,86,214,.12);
     }
     .poiMarker--shop::after{
-      box-shadow: 0 0 0 1px rgba(80,242,224,.55) inset;
+      box-shadow: 0 0 0 1px rgba(255,86,214,.55) inset;
     }
 
     /* MECHANIC: blue core + subtle "gear" ring */
@@ -217,6 +265,72 @@
         drop-shadow(0 0 10px rgba(96,143,255,.20))
         drop-shadow(0 0 18px rgba(96,143,255,.12));
     }
+
+    /* TOWER: aggressive red */
+    .poiMarker--tower{
+      filter:
+        drop-shadow(0 0 10px rgba(255,65,65,.22))
+        drop-shadow(0 0 18px rgba(255,65,65,.12));
+    }
+    .poiMarker--tower::before{
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), transparent 40%),
+        radial-gradient(circle at 50% 55%, rgba(255,65,65,.95), rgba(255,65,65,.55) 55%, rgba(255,65,65,.20) 100%);
+      box-shadow:
+        0 0 10px rgba(255,65,65,.22),
+        0 0 18px rgba(255,65,65,.12);
+    }
+    .poiMarker--tower::after{ box-shadow: 0 0 0 1px rgba(255,65,65,.55) inset; }
+
+    /* GOV: clean white */
+    .poiMarker--gov{
+      filter:
+        drop-shadow(0 0 10px rgba(245,248,255,.16))
+        drop-shadow(0 0 18px rgba(245,248,255,.10));
+    }
+    .poiMarker--gov::before{
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255,255,255,.75), transparent 42%),
+        radial-gradient(circle at 50% 55%, rgba(245,248,255,.95), rgba(245,248,255,.55) 55%, rgba(245,248,255,.20) 100%);
+      box-shadow:
+        0 0 10px rgba(245,248,255,.16),
+        0 0 18px rgba(245,248,255,.10);
+    }
+    .poiMarker--gov::after{ box-shadow: 0 0 0 1px rgba(245,248,255,.45) inset; }
+
+    /* AMMO: orange */
+    .poiMarker--ammo{
+      filter:
+        drop-shadow(0 0 10px rgba(255,148,44,.22))
+        drop-shadow(0 0 18px rgba(255,148,44,.12));
+    }
+    .poiMarker--ammo::before{
+      background:
+        repeating-linear-gradient(45deg, rgba(0,0,0,.0) 0 3px, rgba(0,0,0,.18) 3px 6px),
+        radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), transparent 40%),
+        radial-gradient(circle at 50% 55%, rgba(255,148,44,.95), rgba(255,148,44,.55) 55%, rgba(255,148,44,.20) 100%);
+      box-shadow:
+        0 0 10px rgba(255,148,44,.22),
+        0 0 18px rgba(255,148,44,.12);
+    }
+    .poiMarker--ammo::after{ box-shadow: 0 0 0 1px rgba(255,148,44,.55) inset; }
+
+    /* JOB: green */
+    .poiMarker--job{
+      filter:
+        drop-shadow(0 0 10px rgba(70,255,158,.20))
+        drop-shadow(0 0 18px rgba(70,255,158,.12));
+    }
+    .poiMarker--job::before{
+      background:
+        repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 2px, transparent 2px 5px),
+        radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), transparent 40%),
+        radial-gradient(circle at 50% 55%, rgba(70,255,158,.95), rgba(70,255,158,.55) 55%, rgba(70,255,158,.20) 100%);
+      box-shadow:
+        0 0 10px rgba(70,255,158,.20),
+        0 0 18px rgba(70,255,158,.12);
+    }
+    .poiMarker--job::after{ box-shadow: 0 0 0 1px rgba(70,255,158,.55) inset; }
     .poiMarker--mechanic::before{
       background:
         conic-gradient(from 0deg, rgba(255,255,255,.0) 0 10deg, rgba(255,255,255,.22) 10deg 20deg, rgba(255,255,255,.0) 20deg 30deg),
@@ -238,25 +352,33 @@
 
     /* Base POI styling (when visible by default): same look as selected, but calmer */
     #svgHost svg .poi-shape{
-      fill: rgba(var(--ylRGB), .08) !important;
-      stroke: rgba(var(--ylRGB), .55) !important;
+      /* Ensure POI shapes can be hovered when visible - use 'all' to catch even transparent areas */
+      pointer-events: all !important;
+      cursor: pointer;
+
+      /* Default color comes from per-type CSS variable set in JS */
+      fill: rgba(var(--poiRGB, var(--ylRGB)), .08) !important;
+      stroke: rgba(var(--poiRGB, var(--ylRGB)), .55) !important;
       stroke-width: 1.25 !important;
       filter:
-        drop-shadow(0 0 8px rgba(var(--ylRGB), .10))
-        drop-shadow(0 0 14px rgba(var(--ylRGB), .06));
+        drop-shadow(0 0 8px rgba(var(--poiRGB, var(--ylRGB)), .10))
+        drop-shadow(0 0 14px rgba(var(--poiRGB, var(--ylRGB)), .06));
     }
 
     /* Selected/revealed POI styling (pulsating + themed to match pin) */
     #svgHost svg .poi-shape.poi-revealed{
       opacity: 1;
-      pointer-events: auto;
-      fill: rgba(var(--activePoiRGB, var(--ylRGB)), .12) !important;
-      stroke: rgba(var(--activePoiRGB, var(--ylRGB)), .88) !important;
-      stroke-width: 2.0 !important;
+      pointer-events: all !important;
+      cursor: pointer;
+
+      /* Keep same base type color; just make it thicker/brighter */
+      fill: rgba(var(--poiRGB, var(--ylRGB)), .12) !important;
+      stroke: rgba(var(--poiRGB, var(--ylRGB)), .92) !important;
+      stroke-width: 2.25 !important;
       animation: poiPulse 1.25s ease-in-out infinite;
       filter:
-        drop-shadow(0 0 10px rgba(var(--activePoiRGB, var(--ylRGB)), .16))
-        drop-shadow(0 0 18px rgba(var(--activePoiRGB, var(--ylRGB)), .10));
+        drop-shadow(0 0 12px rgba(var(--poiRGB, var(--ylRGB)), .18))
+        drop-shadow(0 0 22px rgba(var(--poiRGB, var(--ylRGB)), .12));
     }
     .districtLogo{
       position:absolute;
@@ -298,6 +420,8 @@
       display:block;
       transform-origin: 0 0;
       z-index: 6;
+      /* Let POI shapes receive pointer events for hover/click */
+      pointer-events: auto;
     }
 
     #restrictedBlurLayer{
@@ -319,11 +443,38 @@
       user-select:none;
     }
 
+    /* Bottom hover tab: AREA AT CURSOR */
+    .areaCursorTab{
+      position: absolute;
+      left: 50%;
+      bottom: calc(14px + var(--dockH, 0px) + 14px);
+      transform: translateX(-50%);
+      z-index: 12;
+      pointer-events: none;
+      padding: 6px 10px;
+      border: 1px solid rgba(96,143,255,.32);
+      background: rgba(6,10,22,.68);
+      color: rgba(96,143,255,.92);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      font-size: 15px;
+      box-shadow: 0 0 14px rgba(96,143,255,.10);
+      opacity: 0;
+      transition: opacity .10s ease;
+      max-width: min(560px, calc(100vw - 28px));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .areaCursorTab.on{ opacity: 1; }
+    .areaCursorTab .k{ color: rgba(96,143,255,.70); margin-right: 6px; }
+    .areaCursorTab .v{ color: rgba(var(--ylRGB), .92); text-shadow: 0 0 8px rgba(var(--ylRGB), .18); }
+
     /* Tooltip */
     .tip{
       position:absolute;
       pointer-events:none;
-      z-index: 10;
+      z-index: 999; /* Ensure tooltip appears above everything */
       padding: 10px 12px;
       border: 1px solid var(--ui); /* blue box */
       background: rgba(6,10,22,.78); /* dark blue, barely transparent */
@@ -392,16 +543,13 @@
       100%{ opacity: 1; transform: translate(16px, -50%) scale(1) skewX(0deg); filter: drop-shadow(0 0 10px rgba(96,143,255,.18)) drop-shadow(0 0 18px rgba(96,143,255,.10)); }
     }
 
-    /* Popup window */
+    /* Popup window (area details) - moved to bottom-right */
     .hudpopup{
       position:fixed;
-      left: 14px;
-      /* Keep this panel below top header + filter UI.
-         `--detailsTop` is recomputed from the left-side UI. */
-      top: max(var(--detailsTop, calc(var(--topbar-h) + 10px + 170px)), calc(var(--topbar-h) + 10px + 6px + 36px + 10px));
+      right: 14px;
       bottom: calc(14px + var(--dockH, 0px) + 14px);
       width: 270px;
-      max-height: none;
+      max-height: calc(100vh - var(--topbar-h) - 240px);
       overflow:auto;
       z-index: 7;
       display:none;
@@ -725,8 +873,8 @@ body.view-lore #inputBlocker{ z-index: 70; }
 
     body.finale-shake .stage{
       animation: finaleHackShake .12s steps(2, end) infinite;
-      will-change: transform;
     }
+
 
     body.finale-blur .mapstage,
     body.finale-blur .lorestage{

@@ -30,6 +30,7 @@
       camera.vw = r.width;
       camera.vh = r.height;
     }
+    try{ window.updateViewport = updateViewport; }catch{}
     updateViewport();
     new ResizeObserver(updateViewport).observe(mapwrap);
 
@@ -721,143 +722,413 @@
        markerEls.forEach(el => {
          const rawMarker = String(el.getAttribute("marker") || "").trim();
          const idMarker = String(el.id || "").trim();
-
-         // Some POIs are authored as plain paths with ids like "24/7_*" or "mechanic_shop_*".
          const markerName = rawMarker || idMarker;
          if(!markerName) return;
 
          const c = regionCenterInWorld(el, mapRect);
          if(!c) return;
 
+         // Calculate POI type
+         const basePoiType = (typeof getPoiTypeForMarkerName === "function")
+           ? getPoiTypeForMarkerName(markerName)
+           : "default";
+
+         const lower = markerName.toLowerCase();
+         const isRollupAmmuTower = /pdm/.test(lower) && /ammunation|ammunition/.test(lower) && /tower\b|_tower\b|towers\b/.test(lower);
+
+         let poiType = basePoiType;
+         let displayType = poiType;
+         if(isRollupAmmuTower){
+           poiType = 'tower';
+           displayType = document.body.classList.contains('hide-poi-type-tower') ? 'ammo' : 'tower';
+         }
+
+         // Visibility rules
+         if(isRollupAmmuTower){
+           const towerHidden = document.body.classList.contains('hide-poi-type-tower');
+           const ammoHidden = document.body.classList.contains('hide-poi-type-ammo');
+           if(towerHidden && ammoHidden) return;
+         }else{
+           if(document.body.classList.contains(`hide-poi-type-${poiType}`)) return;
+         }
+
+         // Setup the SVG shape
          el.dataset.poiMarker = markerName;
          el.classList.add("poi-shape");
          el.classList.toggle("poi-revealed", false);
+         el.dataset.poiType = poiType;
+         if(isRollupAmmuTower) el.dataset.poiAltType = 'ammo';
 
-         // Default: POI buildings visible; CSS restyles them.
-         // If the user enables "Hide POI Buildings", CSS hides them and we only temporarily
-         // reveal on pin click.
-         el.style.opacity = "";
-         el.style.pointerEvents = "";
+         // Set typed color for POI buildings
+         let rgb = "255, 238, 152";
+         if(poiType === "gov") rgb = "245, 248, 255";
+         else if(poiType === "ammo") rgb = "255, 148, 44";
+         else if(poiType === "shop") rgb = "255, 86, 214";
+         else if(poiType === "mechanic") rgb = "96, 143, 255";
+         else if(poiType === "tower") rgb = "255, 65, 65";
+         else if(poiType === "job") rgb = "70, 255, 158";
+         try{ el.style.setProperty("--poiRGB", rgb); }catch{}
 
-         const pin = document.createElement("div");
-         pin.className = "poiMarker";
-         pin.dataset.marker = markerName;
+          el.style.opacity = "";
 
-         // Variant styling for known generic POIs
-         const lower = markerName.toLowerCase();
-         if(lower.startsWith("24/7")) pin.classList.add("poiMarker--shop");
-         if(lower.startsWith("mechanic_shop")) pin.classList.add("poiMarker--mechanic");
-         pin.style.left = c.x + "px";
-         pin.style.top = c.y + "px";
+          // Create the pin marker with events
+          const pin = document.createElement("div");
+          pin.className = "poiMarker";
+          pin.dataset.marker = markerName;
+          pin.dataset.poiType = displayType;
+          if(isRollupAmmuTower) pin.dataset.poiAltType = 'ammo';
 
-         pin.addEventListener("mouseenter", () => {
-           const tip = document.getElementById("tooltip");
-           if(!tip) return;
-           tip.textContent = markerName.replace(/[_\-]+/g, " ");
-           tip.classList.add("on");
-           // Position tooltip near the pin in screen coordinates
-           const r = pin.getBoundingClientRect();
-           tip.style.left = (r.left + r.width / 2) + "px";
-           tip.style.top = (r.top - 12) + "px";
-           tip.style.bottom = "auto";
-           tip.style.transform = "translate(-50%, -100%)";
-         });
-          function hidePoiTooltip(){
-            const tip = document.getElementById("tooltip");
-            if(!tip) return;
-            tip.classList.remove("on");
+          // Variant styling for pin
+          if(displayType === "gov") pin.classList.add("poiMarker--gov");
+          else if(displayType === "ammo") pin.classList.add("poiMarker--ammo");
+          else if(displayType === "shop") pin.classList.add("poiMarker--shop");
+          else if(displayType === "mechanic") pin.classList.add("poiMarker--mechanic");
+          else if(displayType === "tower") pin.classList.add("poiMarker--tower");
+          else if(displayType === "job") pin.classList.add("poiMarker--job");
+
+          pin.style.left = c.x + "px";
+          pin.style.top = c.y + "px";
+
+          // Helper
+          function prettyPoiLabel(s){
+            let label = String(s || "").trim()
+              .replace(/[_\-]+/g, " ")  // underscores/dashes to spaces
+              .replace(/\s+/g, " ");     // collapse multiple spaces
+            
+            // Fix specific compound words that need spaces
+            label = label
+              .replace(/littleseoul/gi, "Little Seoul")
+              .replace(/southside/gi, "South Side")
+              .replace(/grapeseed/gi, "Grapeseed");
+            
+            return label.toUpperCase();
           }
 
-          pin.addEventListener("mouseleave", hidePoiTooltip);
+          // HOVER on PIN - show styled tooltip
+          pin.addEventListener("mouseenter", () => {
+            const tip = document.getElementById("tooltip");
+            if(!tip) return;
+            tip.classList.remove("securoserv");
+            tip.textContent = prettyPoiLabel(markerName);
+            tip.style.borderColor = `rgba(${rgb}, 0.8)`;
+            tip.style.color = `rgba(${rgb}, 0.95)`;
+            tip.style.boxShadow = `0 0 10px rgba(${rgb}, .22), 0 0 18px rgba(${rgb}, .14)`;
+            tip.style.textShadow = `0 0 6px rgba(${rgb}, .35), 0 0 12px rgba(${rgb}, .22)`;
+            tip.classList.add("on");
+          });
 
-          // If user moves from a pin onto the SVG (district areas), make sure
-          // the pin tooltip cannot remain stuck.
-          try{
-            mapwrap.addEventListener("pointerdown", (e) => {
-              if(e.target?.closest?.("#markersLayer .poiMarker")) return;
-              hidePoiTooltip();
-            }, { passive:true });
-            mapwrap.addEventListener("pointerleave", hidePoiTooltip, { passive:true });
-          }catch{}
+          pin.addEventListener("mousemove", (e) => {
+            const tip = document.getElementById("tooltip");
+            if(!tip) return;
+            tip.style.left = (e.clientX + 14) + "px";
+            tip.style.top = (e.clientY + 10) + "px";
+            tip.style.bottom = "auto";
+            tip.style.transform = "none";
+          });
 
-         pin.addEventListener("click", (e) => {
-           e.stopPropagation();
+          pin.addEventListener("mouseleave", () => {
+            hidePoiTooltip();
+          });
 
-           // Hide any previously revealed POI shapes
-           try{
-             svgEl.querySelectorAll(".poi-shape.poi-revealed").forEach(s => {
-               s.classList.remove("poi-revealed");
-               if(document.body.classList.contains("hide-poi-buildings")){
-                 s.style.opacity = "0";
-                 s.style.pointerEvents = "none";
-               }
-             });
-           }catch{}
+          // CLICK on PIN - reveal shape, fly to it, and show pinned label
+          pin.addEventListener("click", (e) => {
+            e.stopPropagation();
 
-           // Set theme so revealed highlight color matches the pin type
-           try{
-             const lower = markerName.toLowerCase();
-             let rgb = "255, 238, 152"; // default: yellow
-             if(lower.startsWith("24/7")) rgb = "80, 242, 224";
-             if(lower.startsWith("mechanic_shop")) rgb = "96, 143, 255";
-             document.documentElement.style.setProperty("--activePoiRGB", rgb);
-           }catch{}
+            // Hide any previously revealed POI shapes
+            try{
+              svgEl.querySelectorAll(".poi-shape.poi-revealed").forEach(s => {
+                s.classList.remove("poi-revealed");
+                if(document.body.classList.contains("hide-poi-buildings")){
+                  s.style.opacity = "0";
+                }
+              });
+            }catch{}
 
-           // Note: CSS.escape() is for CSS identifiers (not attribute values).
-           // For attribute selectors, escape quotes/backslashes. Prefer id lookup for weird characters.
-           const attrVal = String(markerName).replace(/\\/g, "\\\\").replace(/\"/g, "\\\"");
-           const selector = `[marker="${attrVal}"]`;
-           const idTarget = svgEl.getElementById?.(markerName);
+            // Clear previous pinned label
+            clearPinnedPoiLabel();
 
+            // Set theme color for revealed highlight
+            try{
+              document.documentElement.style.setProperty("--activePoiRGB", rgb);
+            }catch{}
 
-           // Reveal + highlight shapes for this POI
-           const targets = Array.from(svgEl.querySelectorAll(selector));
-           if(idTarget) targets.push(idTarget);
-           targets.forEach(shape => {
-             shape.classList.add("poi-revealed");
+            // Reveal shapes for this POI
+            const attrVal = String(markerName).replace(/\\/g, "\\\\").replace(/\"/g, "\\\"");
+            const selector = `[marker="${attrVal}"]`;
+            const idTarget = svgEl.getElementById?.(markerName);
 
-             // When POI buildings are hidden, reveal only while active.
-             // When visible by default, keep styles untouched (CSS handles normal view).
-             if(document.body.classList.contains("hide-poi-buildings")){
-               shape.style.opacity = "1";
-               shape.style.pointerEvents = "auto";
-             }
-           });
+            const targets = Array.from(svgEl.querySelectorAll(selector));
+            if(idTarget && !targets.includes(idTarget)) targets.push(idTarget);
+            targets.forEach(shape => {
+              shape.classList.add("poi-revealed");
+              if(document.body.classList.contains("hide-poi-buildings")){
+                shape.style.opacity = "1";
+              }
+            });
 
-           // Focus camera on clicked POI
-           if(targets.length){
-             try{ flyToElement(targets[0], 3.2, 520, true); }catch{}
-           }else{
-             try{ cameraFlyTo(c.x, c.y, 3.2, 520); }catch{}
-           }
-         });
+            // Show pinned label above this pin
+            showPinnedPoiLabel(pin, prettyPoiLabel(markerName), rgb, poiType, markerName);
 
-         layer.appendChild(pin);
-       });
-     }
+            // Focus camera on clicked POI
+            if(targets.length){
+              try{ flyToElement(targets[0], 3.2, 520, true); }catch{}
+            }else{
+              try{ cameraFlyTo(c.x, c.y, 3.2, 520); }catch{}
+            }
 
-     function hideAllPoiReveals(){
-       if(!svgEl) return;
-       try{
-         svgEl.querySelectorAll(".poi-shape.poi-revealed").forEach(s => {
-           s.classList.remove("poi-revealed");
-           if(document.body.classList.contains("hide-poi-buildings")){
-             s.style.opacity = "0";
-             s.style.pointerEvents = "none";
-           }
-         });
-       }catch{}
-       try{ document.documentElement.style.removeProperty("--activePoiRGB"); }catch{}
-     }
+            hidePoiTooltip();
+          });
+
+          layer.appendChild(pin);
+        });
+      }
+
+      // --- Pinned POI Label (shows above selected pin) ---
+      let currentPinnedLabel = null;
+
+      // Get description for a POI based on name/type
+      function getPoiDescription(markerName, poiType){
+        const lower = String(markerName || "").toLowerCase();
+
+        // Specific POI descriptions (ordered from most specific to least)
+        
+        // Humane Labs specifics
+        if(/humane.*labs.*electrical.*#?1|humane.*electrical.*#?1/.test(lower)) 
+          return "Help Neon City by making sure its electrical grid works as intended. Be careful, you might get zapped. At least the pay is decent!";
+        if(/humane.*labs.*electrical.*#?2|humane.*electrical.*#?2/.test(lower)) 
+          return "Electrical fires and issues outside the wall need dealing with too! Humane pays extra, but the risks of the job are obvious. Don't expect PD response if you get robbed!";
+        if(/humane.*cocks.*catching|humane_cocks_\(catching/.test(lower)) 
+          return "Do you know where \"meat\" comes from in Neon City? You don't? Good. Now go and catch those bugs for no reason at all!";
+        if(/humane.*cocks.*meat.*beating|humane_cocks_\(meat_beating/.test(lower)) 
+          return "Good job, you caught some bugs! Since you're no fisherman, go pound them real hard into a nice useful paste. Don't worry about the heat, Humane will deliver some hydration (sometimes). NOW GO BACK TO BEATING YOUR MEAT!!";
+
+        // Securo Serv specifics
+        if(/securo.*serv.*arena/.test(lower)) 
+          return "NEWEST SEASON OF ARENA WARS COMING SOON! Deadly free-for-all with suited up cars and bikes turned death machines! People die all the time, that's why it's so FUN TO WATCH!! (looking for new drivers).";
+        if(/securo.*serv.*prime/.test(lower)) 
+          return "Securo Serv's own drive-on-demand service. Sign your life away to sit behind the wheel and give rides to those infinitely more wealthy than you. But hey, maybe one day they'll let you drive a cool armored and armed car!";
+        if(/securo.*serv.*tower/.test(lower)) 
+          return "You don't want to know...";
+
+        // Mega buildings
+        if(/mega.*building.*empty.*1|mega_building_\(empty_1\)/.test(lower)) 
+          return "Promise of future apartments... for now, an empty shell to look at and dream about what could be when you can afford it...";
+        if(/mega.*building.*empty.*2|mega_building_\(empty_2\)/.test(lower)) 
+          return "Promise of future apartments... for now, an empty shell to look at and dream about what could be when you can afford it...";
+        if(/mega.*building.*apartments|mega_building_\(apartments\)/.test(lower)) 
+          return "If you've lived in Neon City for a bit, you probably live here... Most common and affordable living space, alongside with all you need in life (guns, restaurants, clothes).";
+
+        // Markets
+        if(/market.*little.*seoul|market_littleseoul/.test(lower)) 
+          return "Your local market, where anybody and everybody can set up a stall and try to earn a living by offering their services or products! Will you be the buyer, or salesperson?";
+        if(/market.*underground/.test(lower)) 
+          return "Unregulated market, police knows better than to show up here often. Best for... delicate deals.";
+
+        // Go Postal
+        if(/go.*postal.*tower/.test(lower)) 
+          return "Start your new career behind the wheel, surrounded by boxes and shipping containers. Decide if you want to deliver goods to people, or corporations, and try not to lose it!";
+
+        // Other specific locations
+        if(/lifeinvader/.test(lower)) 
+          return "Social media controls the masses, why not be a cog in the machine if it's well oiled? Start your own ad campaign, or earn money from your streams! Be the star you always wanted to be!";
+        if(/weazel.*news/.test(lower)) 
+          return "Owned by Lifeinvader CO, be the media weasel, creeping through the streets looking for the newest radical scoop of drama!";
+        if(/dynasty/.test(lower)) 
+          return "Infinite opportunities, infinite rental agreements, true land sharks of Neon City.";
+        if(/lexie.*club|lexies.*club/.test(lower)) 
+          return "Most popular night club in the city, with sex workers protecting each other's back. Not a smart idea to start a fight there, unless you're into getting your ass kicked... weirdo.";
+        if(/fishing.*office/.test(lower)) 
+          return "Grab your fishing equipment and learn the basics. Go ahead and try to catch the last natural source of (very toxic) protein in the whole state!";
+        if(/recycling.*office|recycling/.test(lower)) 
+          return "Grab a garbage truck, clock on, and go out there and try to clean up the city (you'll fail, but hey, at least you're getting paid!).";
+        if(/scrapping.*office|scrapping/.test(lower)) 
+          return "Learn the basics of taking what's broken and making it useful... Hey, that car you broke apart was abandoned, right...?";
+        if(/palamino.*factory/.test(lower)) 
+          return "Take your mats and turn them into something useful. From plastic to metal bits, they'll help you refine anything!";
+        if(/grapeseed.*sheriff/.test(lower)) 
+          return "Are they ever not drunk? Are they ever professional? Do they even know the law? Are they even real cops? Stupid questions to ask with a revolver pressed against your cranium, don't you agree?";
+
+        // General categories
+        if(lower.startsWith("24/7")) return "Your local store for your local needs. Overpriced and undernourished items, available at all times.";
+        if(/market/.test(lower)) return "Local market where vendors gather to sell their wares.";
+        if(/mega_mall|mega\s*mall/.test(lower)) return "The biggest shopping center in Neon City. If you can't find it here, it doesn't exist.";
+        if(/krapea/.test(lower)) return "Assemble your own furniture, assemble your own life. Swedish minimalism at maximum markup.";
+        if(/ammunation|ammunition/.test(lower)) return "Licensed firearms dealer. Background checks optional, trigger discipline recommended.";
+        if(/mechanic/.test(lower)) return "Vehicle repairs and modifications. No questions asked about bullet holes.";
+        if(/hospital/.test(lower)) return "Emergency medical services. Patch up and get back out there.";
+        if(/prison/.test(lower)) return "Neon City Correctional Facility. Extended stays available.";
+        if(/police|ncpd/.test(lower)) return "Neon City Police Department. To protect and serve... sometimes.";
+        if(/diamond\s*_?casino/.test(lower)) return "Lady Luck awaits. The house always wins, but you might get lucky.";
+
+        // Fallback by type
+        if(poiType === "shop") return "Retail establishment. Goods and services available.";
+        if(poiType === "ammo") return "Licensed firearms dealer.";
+        if(poiType === "mechanic") return "Vehicle services and repairs.";
+        if(poiType === "gov") return "Government facility.";
+        if(poiType === "tower") return "Corporate or residential high-rise.";
+        if(poiType === "job") return "Employment opportunity available.";
+
+        return "Point of interest.";
+      }
+
+      function showPinnedPoiLabel(pin, labelText, rgb, poiType, markerName){
+        clearPinnedPoiLabel();
+
+        const label = document.createElement("div");
+        label.className = "poiPinnedLabel";
+        label.style.setProperty("--poiLabelRGB", rgb);
+
+        // Title
+        const title = document.createElement("div");
+        title.className = "poiPinnedLabel-title";
+        title.textContent = labelText;
+        label.appendChild(title);
+
+        // Description
+        const desc = document.createElement("div");
+        desc.className = "poiPinnedLabel-desc";
+        desc.textContent = getPoiDescription(markerName, poiType);
+        label.appendChild(desc);
+
+        // Position will be updated by the pin's position
+        label.dataset.forMarker = pin.dataset.marker;
+
+        const layer = document.getElementById("markersLayer");
+        if(layer){
+          layer.appendChild(label);
+          currentPinnedLabel = label;
+
+          // Position above the pin
+          updatePinnedLabelPosition(pin, label);
+        }
+      }
+
+      function updatePinnedLabelPosition(pin, label){
+        if(!pin || !label) return;
+        const left = parseFloat(pin.style.left) || 0;
+        const top = parseFloat(pin.style.top) || 0;
+        label.style.left = left + "px";
+        label.style.top = (top - 32) + "px"; // Above the pin
+      }
+
+      function clearPinnedPoiLabel(){
+        if(currentPinnedLabel){
+          currentPinnedLabel.remove();
+          currentPinnedLabel = null;
+        }
+      }
+
+      const LEGEND_TYPES = ["tower", "job", "shop", "mechanic", "gov", "ammo", "default"];
+      function hideAllPoiReveals(){
+        if(!svgEl) return;
+        try{
+          svgEl.querySelectorAll(".poi-shape.poi-revealed").forEach(s => {
+            s.classList.remove("poi-revealed");
+            if(document.body.classList.contains("hide-poi-buildings")){
+              s.style.opacity = "0";
+            }
+          });
+        }catch{}
+        try{ document.documentElement.style.removeProperty("--activePoiRGB"); }catch{}
+        clearPinnedPoiLabel();
+      }
+
+       function hidePoiTooltip(){
+         const tip = document.getElementById("tooltip");
+         if(!tip) return;
+         tip.classList.remove("on");
+         // Reset inline color overrides
+         tip.style.removeProperty('border-color');
+         tip.style.removeProperty('color');
+         tip.style.removeProperty('box-shadow');
+         tip.style.removeProperty('text-shadow');
+       }
+
+      // If user moves from a pin onto the SVG (district areas), make sure
+      // the pin tooltip cannot remain stuck.
+      (function bindPoiTooltipSafety(){
+        let bound = false;
+        try{
+          if(bound) return;
+          bound = true;
+          mapwrap.addEventListener("pointerdown", (e) => {
+            if(e.target?.closest?.("#markersLayer .poiMarker")) return;
+            hidePoiTooltip();
+          }, { passive:true });
+          mapwrap.addEventListener("pointerleave", hidePoiTooltip, { passive:true });
+        }catch{}
+      })();
+
 
      // Clicking off-map pins should hide revealed POI areas.
-     try{
-       window.addEventListener("mousedown", (e) => {
-         const clickedPin = Boolean(e.target?.closest?.("#markersLayer .poiMarker"));
-         if(clickedPin) return;
-         hideAllPoiReveals();
-       }, { passive:true });
-     }catch{}
+       try{
+         window.addEventListener("mousedown", (e) => {
+           const clickedPin = Boolean(e.target?.closest?.("#markersLayer .poiMarker"));
+           if(clickedPin) return;
+           hideAllPoiReveals();
+         }, { passive:true });
+       }catch{}
+
+       // Type filtering (legend toggles)
+        function getPoiTypeForMarkerName(markerName){
+          const lower = String(markerName || "").toLowerCase();
+
+           // Explicit typings first
+           if(/police|station|hospital|prison|city\s*_?council\s*_?hq/.test(lower)) return "gov";
+          if(/ammunation|ammunition/.test(lower)) return "ammo";
+
+          // Stores (24/7, markets, mega mall, KRAPEA)
+          if(lower.startsWith("24/7")) return "shop";
+          if(/market|mega_mall|mega\s*mall|krapea_store|krapea\s*store/.test(lower)) return "shop";
+
+          // Mechanics
+          if(lower.startsWith("mechanic_shop")) return "mechanic";
+
+          // Towers
+          if(/dynasty/.test(lower)) return "tower";
+          if(/tower\b|_tower\b|towers\b/.test(lower)) return "tower";
+
+          // Jobs (green)
+          if(/electrical|farming/.test(lower)) return "job";
+          if(/scrapping|recycling|go_postal_docks|fishing|securo\s*_?serv\s*_?prime|humane\s*_?cocks/.test(lower)) return "job";
+
+          return "default";
+        }
+
+
+        window.setPoiTypeEnabled = function(type, enabled){
+          const t = String(type || "").toLowerCase();
+          if(!LEGEND_TYPES.includes(t)) return;
+
+          const on = Boolean(enabled);
+          document.body.classList.toggle(`hide-poi-type-${t}`, !on);
+
+          // Some POIs can have fallback typing (e.g. tower->ammo). Rebuild pins.
+
+          // Also hide any active reveal of that type
+          try{
+            svgEl.querySelectorAll(`.poi-shape.poi-revealed[data-poi-type=\"${t}\"]`).forEach(s => {
+              s.classList.remove("poi-revealed");
+              if(document.body.classList.contains("hide-poi-buildings")){
+                s.style.opacity = "0";
+                s.style.pointerEvents = "none";
+              }
+            });
+          }catch{}
+
+          hidePoiTooltip();
+
+          try{ buildPoiMarkersFromSvg(); }catch{}
+        }
+
+        window.getPoiTypeEnabled = function(type){
+          const t = String(type || "").toLowerCase();
+          if(!LEGEND_TYPES.includes(t)) return true;
+          return !document.body.classList.contains(`hide-poi-type-${t}`);
+        }
+
+
+       try{ window.getPoiTypeForMarkerName = getPoiTypeForMarkerName; }catch{}
 
      try{ window.buildPoiMarkersFromSvg = buildPoiMarkersFromSvg; }catch{}
 
@@ -942,4 +1213,3 @@
       if(hoveredEl) setDistrictLogoStateFor(hoveredEl, "hover");
       if(selectedEl) setDistrictLogoStateFor(selectedEl, "selected");
     }
-

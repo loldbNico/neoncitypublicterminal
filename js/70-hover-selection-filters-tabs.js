@@ -582,6 +582,86 @@
     bindLayerToggle('toggleMarkers', 'hide-markers');
     bindLayerToggle('togglePoiBuildings', 'hide-poi-buildings');
 
+    // =========================
+    // POI LEGEND (TYPE FILTER)
+    // =========================
+    (function bindPoiLegend(){
+      const legend = document.getElementById('poiLegend');
+      if(!legend) return;
+
+      const rows = Array.from(legend.querySelectorAll('.legendRow[data-poi-type]'));
+      if(rows.length === 0) return;
+
+      function setRowState(row, enabled){
+        row.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      }
+
+      function syncAll(){
+        rows.forEach(row => {
+          const type = String(row.dataset.poiType || '').toLowerCase();
+          let enabled = true;
+          if(typeof window.getPoiTypeEnabled === 'function'){
+            enabled = Boolean(window.getPoiTypeEnabled(type));
+          }else{
+            enabled = !document.body.classList.contains(`hide-poi-type-${type}`);
+          }
+          setRowState(row, enabled);
+        });
+      }
+
+      const LEGEND_HINT = 'click to disable/enable';
+      function showLegendHintAt(clientX, clientY){
+        const tip = document.getElementById('tooltip');
+        if(!tip) return;
+        tip.classList.remove('securoserv');
+        tip.textContent = LEGEND_HINT;
+        tip.style.left = (clientX + 14) + 'px';
+        tip.style.top = (clientY + 10) + 'px';
+        tip.style.bottom = 'auto';
+        tip.style.transform = 'none';
+        // Use default tooltip styling (yellow/blue)
+        tip.style.removeProperty('padding');
+        tip.style.removeProperty('background');
+        tip.style.removeProperty('border');
+        tip.style.removeProperty('box-shadow');
+        tip.style.removeProperty('color');
+        tip.style.removeProperty('text-shadow');
+        tip.classList.add('on');
+      }
+      function hideLegendHint(){
+        const tip = document.getElementById('tooltip');
+        if(!tip) return;
+        // Only hide if it is our hint (avoid fighting POI hover)
+        if(tip.textContent === LEGEND_HINT) tip.classList.remove('on');
+      }
+
+      legend.addEventListener('pointerenter', (e) => {
+        showLegendHintAt(e.clientX, e.clientY);
+      }, { passive:true });
+      legend.addEventListener('pointermove', (e) => {
+        showLegendHintAt(e.clientX, e.clientY);
+      }, { passive:true });
+      legend.addEventListener('pointerleave', hideLegendHint, { passive:true });
+
+      rows.forEach(row => {
+        row.addEventListener('click', () => {
+          const type = String(row.dataset.poiType || '').toLowerCase();
+          const currentlyEnabled = row.getAttribute('aria-pressed') !== 'false';
+          const nextEnabled = !currentlyEnabled;
+
+          setRowState(row, nextEnabled);
+          if(typeof window.setPoiTypeEnabled === 'function'){
+            window.setPoiTypeEnabled(type, nextEnabled);
+          }else{
+            document.body.classList.toggle(`hide-poi-type-${type}`, !nextEnabled);
+            try{ window.buildPoiMarkersFromSvg?.(); }catch{}
+          }
+        });
+      });
+
+      syncAll();
+    })();
+
     function getActiveMenuId(){
       const ids = ['menuShowAll','menuRestricted','menuHideAll'];
       for(const id of ids){
