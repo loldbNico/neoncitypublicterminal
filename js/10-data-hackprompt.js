@@ -47,10 +47,11 @@
     const GANGS = {
       THE_LEX: { name: "THE LEX", iconFiles: ["LEX.png", "lex.png"] },
       NCPD: { name: "NCPD", iconFiles: ["NEON_CITY_PRISON.png", "ncpd.png", "NCPD.png", "neon_city_prison.png"] },
-      TACMED: { name: "TACMED", iconFiles: ["tacmed.png", "TACMED.png"] },
+      TACMED: { name: "TACMED", iconFiles: ["TACMED(logobare).png", "tacmed(logobare).png"] },
       APEX: { name: "APEX", iconFiles: ["APEX_HQ.png", "apex_hq.png"] },
       MERRYWEATHER: { name: "MERRYWEATHER", iconFiles: ["mw.png", "MW.png"] },
       SECUROSERV: { name: "SECUROSERV", iconFiles: ["SS2.png", "ss2.png"] },
+      RAGNAROK: { name: "RAGNAROK", iconFiles: ["RAGNAROK(logo).png", "ragnarok(logo).png"] },
     };
       const REGION_GANGS = {
        SOUTH_SIDE: ["THE_LEX", "TACMED"],
@@ -60,6 +61,7 @@
        MERRYWEATHER_BASE: ["MERRYWEATHER"],
        SECUROSERV_PORT: ["SECUROSERV"],
        SECUROSERVE_PORT: ["SECUROSERV"],
+       PALAMINO_LANDS: ["RAGNAROK"],
      };
 
     // Restricted intel unlock state (session only)
@@ -346,8 +348,9 @@
       const panel = document.getElementById("popupDetails");
       if(!hp || !panel) return;
       const r = panel.getBoundingClientRect();
-      // Place to the right of the panel, aligned near the header
-      const left = Math.min(window.innerWidth - 10, r.right + 12);
+      // Place to the left of the panel
+      const hpWidth = 320;
+      const left = Math.max(10, r.left - hpWidth - 12);
       const top = Math.max(10, r.top + 38);
       hp.style.left = left + "px";
       hp.style.top = top + "px";
